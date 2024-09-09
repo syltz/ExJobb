@@ -1,0 +1,30 @@
+y(t) = h(t)*x(t)
+Figure out transfer function -> y(t) = h(t)*(h^-1(t)*x(t))
+
+Pulse wrapping
+	Requires calibrated frequency without distortions
+	Replace flux offset with pulse, varying dt step -> function
+	What happens if there is some time evolution of the qubit? Would this kind of msmt need to be done often or is the transfer function more or less constant?
+	
+Cryoscope
+	FIR filter - what is?
+	
+TLS defects
+	Some debate what they are.
+	Modeled by 2 level potential well
+	TLSs close in frequency steal excitation from QB
+	
+Quasiparticles
+	Pulse sequence to figure out parity of qb
+	Random telgraphic switching -> Lorentzian shape
+	Switching rate seems to randomly vary by factor 4-5 on the scale of hours
+	
+Purcell effect
+	Limits design by limiting coupling b/w qb and resonator
+	qb decay is frequency deåendent due to Purcell, TLS and quasiparticles
+	TLS and QP dominate Purcell effect, Purcell basically negligible
+	Purcell dominates at SMALL detunings
+	Calibration needed at each bias
+
+FIR potentially not stable, didn't present as a problem. Can be modeled.
+SQUID redesign? Tighter loops maybe? Don't know if it would have a measurable effect.
