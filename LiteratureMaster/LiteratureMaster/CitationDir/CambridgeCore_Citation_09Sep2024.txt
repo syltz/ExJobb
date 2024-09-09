@@ -1,0 +1,1 @@
+@book{Sakurai_Napolitano_2020, place={Cambridge}, edition={3}, title={Modern Quantum Mechanics}, publisher={Cambridge University Press}, author={Sakurai, J. J. and Napolitano, Jim}, year={2020}} <div></div>
