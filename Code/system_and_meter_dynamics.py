@@ -64,23 +64,10 @@ class SystemAndMeter:
         p0_n = self.tls_state[0]*self.population_distribution(n)
         p1_n = 0
         for m in range(0, self.total_levels+1):
-            if t==0 and np.abs(alpha) == 0:
-                alpha_term = -g/np.sqrt(2*omega)
-            else:
-                alpha_term = alpha
-            #if m <= n:
-            #    p1_n += self.population_distribution(m)*np.abs(np.sqrt(factorial(m)/factorial(n))*\
-            #    alpha_term**(n-m)*np.exp(-np.abs(alpha)**2/2)*assoc_laguerre(np.abs(alpha_term)**2, m, n-m))**2
-            #else:
-            #    #p1_n += self.population_distribution(m)*np.abs(np.sqrt(factorial(m)/factorial(n))*\
-            #    #                                               alpha_term**(n-m)*np.exp(-np.abs(alpha)**2/2)*\
-            #    #                                                (-np.abs(alpha_term)**2)**(m-n)*factorial(n)/factorial(m)*assoc_laguerre(np.abs(alpha_term)**2, n-m, m-n))**2
-            #    p1_n += self.population_distribution(m)*np.abs(np.sqrt(factorial(n)/factorial(m))*\
-            #                                                   alpha_term**(n-m)*(-1*np.abs(alpha_term)**2)**(m-n)*\
-            #                                                    np.exp(-np.abs(alpha)**2/2)*assoc_laguerre(np.abs(alpha_term)**2, n, m-n))**2
             if m <= n:
                 p1_n += self.population_distribution(m)*np.abs(np.sqrt(factorial(m)/factorial(n))*\
-                                                               np.exp(-np.abs(alpha)**2/2)*(alpha)**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, n-m))**2
+                                                               np.exp(-np.abs(alpha)**2/2)*(alpha)**(n-m)*\
+                                                                assoc_laguerre(np.abs(alpha)**2, m, n-m))**2
             else:
                 p1_n += self.population_distribution(m)*np.abs(np.sqrt(factorial(n)/factorial(m))*\
                                                                np.exp(-np.abs(alpha)**2/2)*(-np.conjugate(alpha))**(m-n)*\
@@ -100,7 +87,6 @@ class SystemAndMeter:
         # Eigenstate of the meter to measure
         n = self.n
         # Initialize the system and meter states
-        meter_state = self.meter_state
         # Time step
         dt = self.time/1000
         # Time array
@@ -115,25 +101,6 @@ class SystemAndMeter:
             p0_n_given[i] = p0
             p1_n_given[i] = p1
         return p0_n_given, p1_n_given
-
-    def dynamics(self):
-        # Time evolution of the system and meter
-        # Initialize the system and meter states
-        system_state = self.tls_state
-        meter_state = self.meter_state
-        # Time step
-        dt = self.time/1000
-        # Time array
-        time = np.arange(0, self.time, dt)
-        # Loop through time
-        for t in time:
-            # Update the meter state
-            for n in range(0, self.total_levels+1):
-                p0_n_given, p1_n_given = self.conditional_probability(n, t)
-                meter_state[n] = p0_n_given*system_state[0] + p1_n_given*system_state[1]
-            # Update the system state
-            system_state = np.array([np.sum(meter_state), np.sum(meter_state)])
-        return system_state, meter_state
 
     # Functions to set the parameters of the system and meter
     def set_temp_system(self, temp_system):
