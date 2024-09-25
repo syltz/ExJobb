@@ -30,6 +30,24 @@ def plot_conditional_probabilities(sam):
     ax.legend()
     plt.close(fig)
     return  ax
+def plot_joint_probabilities(sam):
+    """Returns a plot of the joint probabilities as a function of time of the system being in state 0 or 1 and the meter being in state n.
+
+    Args:
+        sam (SystemAndMeter): The system and meter object to plot the joint probabilities for.
+    
+    Returns:
+        ax (matplotlib.axes.Axes): The axes object of the plot.
+    """
+    p0, p1 = sam.joint_prob_evol()
+    fig, ax = plt.subplots()
+    ax.plot(np.arange(0, len(p0))*(sam.get_time()/len(p0)), p0, label='p0', color='blue')
+    ax.plot(np.arange(0, len(p1))*(sam.get_time()/len(p1)), p1, label='p1', color='red')
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Probability')
+    ax.legend()
+    plt.close(fig)
+    return ax
 
 temp_meter = 1
 temp_system = 1
@@ -38,21 +56,69 @@ time = 10/omega_meter
 coupling = 1
 init_system_state = (1/2, 1/2)
 measurement_state = 1
+total_levels = 10
 sam = SystemAndMeter(temp_meter=temp_meter, temp_system=temp_system, omega_meter=omega_meter,\
                         coupling=coupling, time=time, init_system_state=init_system_state,\
-                        measurement_state=measurement_state)
+                        measurement_state=measurement_state, total_levels=total_levels)
 
 times = np.array([time, time/2, time/10])
 fig, axs = plt.subplots(len(times), 1, figsize=(10, 8))
+plt.title('Conditional Probabilities as a function of time measuring in n=1')
 for i,t in enumerate(times):
     sam.set_time(t)
-    sam.full_update()
     ax = plot_conditional_probabilities(sam)
-    axs[i].plot(ax.lines[0].get_xdata(), ax.lines[0].get_ydata(), label='p0', color='blue')
-    axs[i].plot(ax.lines[1].get_xdata(), ax.lines[1].get_ydata(), label='p1', color='red')
-    axs[i].plot(ax.lines[2].get_xdata(), ax.lines[2].get_ydata(), label='p0+p1', color='black')
+    ax2 = plot_joint_probabilities(sam)
+    axs[i].plot(ax.lines[0].get_xdata(), ax.lines[0].get_ydata(), label=r'$P_0(t|n)$', color='blue')
+    axs[i].plot(ax.lines[1].get_xdata(), ax.lines[1].get_ydata(), label=r'$P_1(t|n)$', color='red')
+    axs[i].plot(ax.lines[2].get_xdata(), ax.lines[2].get_ydata(), label=r'$P_0(t|n)+P_1(1|n)$', color='black')
+    axs[i].plot(ax2.lines[0].get_xdata(), ax2.lines[0].get_ydata(), label=r'$P_0(n,t)$', color='blue', linestyle='--')
+    axs[i].plot(ax2.lines[1].get_xdata(), ax2.lines[1].get_ydata(), label=r'$P_1(n,t)$', color='red', linestyle='--')
     axs[i].set_xlabel('Time')
     axs[i].set_ylabel('Probability')
     axs[i].legend()
 plt.tight_layout()
+
+#fig, ax = plt.subplots()
+#time = np.random.random()*2
+#sam.set_time(time)
+#sam.set_total_levels(100)
+#p0, p1 = sam.prob_test()
+#ax.plot(np.arange(0, len(p1)), p1, label='p1', color='red') 
+#ax.set_xlabel('Meter Level')
+#ax.set_ylabel('Probability')
+#ax.legend()
+#ax.set_title(f'Prob of n given system in 1 at time t={time:.3f}')
+
+fig, ax = plt.subplots()
+time = 1
+#time = np.random.random()*2
+time = 0.9
+sam.set_time(time)
+sam.set_temp_meter(100)
+sam.full_update()
+
+meas_levels = np.arange(0, 10)#sam.get_total_levels()+1)
+joint_probs = np.zeros_like(meas_levels, dtype=np.float64)
+joint_probs_0 = np.zeros_like(meas_levels, dtype=np.float64)
+cond_probs = np.zeros_like(meas_levels, dtype=np.float64)
+for i in range(len(meas_levels)):
+    sam.set_n(i) # Set the meter level to i
+    p0_n, p1_n = sam.joint_probability(sam.get_n(), sam.get_time())
+    joint_probs[i] = p1_n
+    joint_probs_0[i] = p0_n
+    cond_probs[i] = p1_n/(p0_n+p1_n)
+
+x = np.arange(0, 10)
+y = np.exp(-(sam.get_gamma()+0.5)*x/100)
+y = sam.get_tls_state()[0]*y/np.sum(y)
+ax.plot(x, y, label='TLS State 0', color='black')
+ax.scatter(meas_levels, joint_probs, s=10, color='red', label='P_1(n,t)')
+ax.scatter(meas_levels, cond_probs, s=10, color='blue', label='P(1|n,t)')
+ax.scatter(meas_levels, joint_probs_0, s=10, color='green', label='P_0(n,t)')
+ax.set_xlabel('Meter Level')
+ax.set_ylabel('Probability')
+ax.legend()
+ax.set_title(f'Prob of i given meter in n time t={time:.3f}')
+print(joint_probs)
+print(cond_probs)
 plt.show()
