@@ -77,24 +77,12 @@ for i,t in enumerate(times):
     axs[i].set_ylabel('Probability')
     axs[i].legend()
 plt.tight_layout()
-
-#fig, ax = plt.subplots()
-#time = np.random.random()*2
-#sam.set_time(time)
-#sam.set_total_levels(100)
-#p0, p1 = sam.prob_test()
-#ax.plot(np.arange(0, len(p1)), p1, label='p1', color='red') 
-#ax.set_xlabel('Meter Level')
-#ax.set_ylabel('Probability')
-#ax.legend()
-#ax.set_title(f'Prob of n given system in 1 at time t={time:.3f}')
+plt.savefig(f'../images/conditional_probabilities_Tm_{temp_meter}.png')
 
 fig, ax = plt.subplots()
-time = 1
-#time = np.random.random()*2
 time = 0.9
 sam.set_time(time)
-sam.set_temp_meter(100)
+sam.set_temp_meter(10)
 sam.full_update()
 
 meas_levels = np.arange(0, 10)#sam.get_total_levels()+1)
@@ -107,11 +95,10 @@ for i in range(len(meas_levels)):
     joint_probs[i] = p1_n
     joint_probs_0[i] = p0_n
     cond_probs[i] = p1_n/(p0_n+p1_n)
-
-x = np.arange(0, 10)
-y = np.exp(-(sam.get_gamma()+0.5)*x/100)
-y = sam.get_tls_state()[0]*y/np.sum(y)
-ax.plot(x, y, label='TLS State 0', color='black')
+#x = np.arange(0, 10)
+#y = np.exp(-(sam.get_gamma()+0.5)*x/100)
+#y = sam.get_tls_state()[0]*y/np.sum(y)
+#ax.plot(x, y, label='TLS State 0', color='black')
 ax.scatter(meas_levels, joint_probs, s=10, color='red', label='P_1(n,t)')
 ax.scatter(meas_levels, cond_probs, s=10, color='blue', label='P(1|n,t)')
 ax.scatter(meas_levels, joint_probs_0, s=10, color='green', label='P_0(n,t)')
@@ -119,6 +106,5 @@ ax.set_xlabel('Meter Level')
 ax.set_ylabel('Probability')
 ax.legend()
 ax.set_title(f'Prob of i given meter in n time t={time:.3f}')
-print(joint_probs)
-print(cond_probs)
-plt.show()
+plt.savefig(f'../images/joint_probabilities_Tm_{sam.get_temp_meter()}_tm_{sam.get_time()}.png')
+
