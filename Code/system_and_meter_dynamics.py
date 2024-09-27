@@ -49,11 +49,11 @@ def plot_joint_probabilities(sam):
     plt.close(fig)
     return ax
 
-temp_meter = 1
+temp_meter = 10
 temp_system = 1
 omega_meter = 2*np.pi
 time = 10/omega_meter
-coupling = 1
+coupling = 1/np.sqrt(hbar*omega_meter/2)
 init_system_state = (1/2, 1/2)
 measurement_state = 1
 total_levels = 10
@@ -70,9 +70,9 @@ for i,t in enumerate(times):
     ax2 = plot_joint_probabilities(sam)
     axs[i].plot(ax.lines[0].get_xdata(), ax.lines[0].get_ydata(), label=r'$P_0(t|n)$', color='blue')
     axs[i].plot(ax.lines[1].get_xdata(), ax.lines[1].get_ydata(), label=r'$P_1(t|n)$', color='red')
-    axs[i].plot(ax.lines[2].get_xdata(), ax.lines[2].get_ydata(), label=r'$P_0(t|n)+P_1(1|n)$', color='black')
-    axs[i].plot(ax2.lines[0].get_xdata(), ax2.lines[0].get_ydata(), label=r'$P_0(n,t)$', color='blue', linestyle='--')
-    axs[i].plot(ax2.lines[1].get_xdata(), ax2.lines[1].get_ydata(), label=r'$P_1(n,t)$', color='red', linestyle='--')
+    #axs[i].plot(ax.lines[2].get_xdata(), ax.lines[2].get_ydata(), label=r'$P_0(t|n)+P_1(1|n)$', color='black')
+    #axs[i].plot(ax2.lines[0].get_xdata(), ax2.lines[0].get_ydata(), label=r'$P_0(n,t)$', color='blue', linestyle='--')
+    #axs[i].plot(ax2.lines[1].get_xdata(), ax2.lines[1].get_ydata(), label=r'$P_1(n,t)$', color='red', linestyle='--')
     axs[i].set_xlabel('Time')
     axs[i].set_ylabel('Probability')
     axs[i].legend()
@@ -108,3 +108,57 @@ ax.legend()
 ax.set_title(f'Prob of i given meter in n time t={time:.3f}')
 plt.savefig(f'../images/joint_probabilities_Tm_{sam.get_temp_meter()}_tm_{sam.get_time()}.png')
 
+# Plot conditional entropy
+fig, axs = plt.subplots(3,1)
+times = np.array([0.5, 0.75, 1.0])
+for i,t in enumerate(zip(times,axs)):
+    sam.set_time(t[0])
+    cond_entropy = np.zeros(sam.get_total_levels())
+    for i in range(sam.get_total_levels()):
+        cond_entropy[i] = sam.conditional_entropy(n=i)
+    t[1].hlines(cond_entropy[0], 0, sam.get_total_levels(), color='black', linestyle='--', label='Meter Level 0')
+    t[1].scatter(np.arange(0, sam.get_total_levels()), cond_entropy, label=f'$S_n(t={t[0]})$')
+    t[1].set_xlabel('Meter Level')
+    t[1].set_ylabel('Conditional Entropy')
+    t[1].set_title(f'Conditional Entropy as a function of meter level at time t={sam.get_time()}')
+plt.tight_layout()
+plt.savefig(f'../images/conditional_entropy_Tm_{sam.get_temp_meter()}.png')
+
+# Plot entropy and conditional entropy as a function of time 
+fig, ax = plt.subplots()
+times = np.linspace(0.1, 2, 100)
+entropy = np.zeros_like(times)
+cond_entropy = np.zeros_like(times)
+sam.set_n(0)
+for i,t in enumerate(times):
+    sam.set_time(t)
+    entropy[i] = sam.entropy()
+    cond_entropy[i] = sam.conditional_entropy()
+ax.plot(times, entropy, color='blue', label='Entropy')
+ax.plot(times, cond_entropy, color='red', label='Conditional Entropy')
+ax.legend()
+ax.set_xlabel('Time')
+ax.set_ylabel('Entropy')
+ax.set_title('Entropy as a function of time')
+plt.savefig(f'../images/entropy_Tm_{sam.get_temp_meter()}.png')
+
+# Plot mutual information as a function of time
+mut_info = np.zeros_like(times)
+fig, ax = plt.subplots()
+for i, t in enumerate(times):
+    #sam.set_time(t)
+    mut_info[i] = sam.mutual_information(time = t)
+ax.plot(times, mut_info, color='blue', label='Mutual Information')
+ax.set_xlabel('Time')
+ax.set_ylabel('Mutual Information')
+ax.set_title('Mutual information between system and meter as a function of time')
+plt.savefig(f'../images/mutual_information_Tm_{sam.get_temp_meter()}.png')
+
+# Plot observer information at time t=0.9 as a function of meter level
+fig, ax = plt.subplots()
+sam.set_time(0.9)
+for n in range(sam.get_total_levels()):
+    sam.set_n(n)
+    obs_info = sam.observer_information()
+    ax.scatter(n, obs_info, color='blue', label='Observer Information')
+plt.savefig(f'../images/observer_information_Tm_{sam.get_temp_meter()}.png')
