@@ -1,3 +1,4 @@
 # Ignore images in the images/ directory. Any potentially important 
 # images can be added to a separate folder later on.
 images/
+.pyc
