@@ -244,7 +244,7 @@ class SystemAndMeter:
             n = self.n
         p0_n, p1_n = self.joint_probability(n, time)
         p_n = p0_n + p1_n
-        I_O = -kB(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
+        I_O = -kB*(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
         return I_O
 
     # Functions to set the parameters of the system and meter
