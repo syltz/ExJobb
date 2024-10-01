@@ -34,7 +34,8 @@ class SystemAndMeter:
         self.n = measurement_state
         self.gamma = hbar*self.omega_meter
         if total_levels == False:
-            self.total_levels = int((self.beta/self.gamma))+1
+            #self.total_levels = int((self.beta/self.gamma))+1
+            self.total_levels = int(10*np.ceil(1/(self.beta*self.gamma))+1)
         else:
             self.total_levels = int(total_levels)
         self.meter_state = self.calc_meter_state()
@@ -63,10 +64,20 @@ class SystemAndMeter:
         beta = self.beta
         gamma = self.gamma
         N = self.total_levels
-        #p_n = (1-np.exp(-gamma*beta))*np.exp(-gamma*beta*n)/(np.exp(-gamma*beta*(m+1))-1)
-        #p_n = (1-np.exp(-gamma*beta))*np.exp(-gamma*beta*n)/(1-np.exp(-gamma*beta*(N+1)))
         p_n = (1-np.exp(-beta*(gamma+0.5)))*np.exp(-beta*(gamma+0.5)*n)/(1-np.exp(-beta*(gamma+0.5)*(N+1)))
         return p_n
+    
+    def shift_factor(self, n, m, t):
+        g = self.g
+        omega = self.omega_meter
+        gamma = self.gamma
+        alpha = -g/np.sqrt(2*gamma)*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
+        if n >= m:
+            return np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(m)/factorial(n))*\
+                          alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
+        else:
+            return np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(n)/factorial(m))*\
+                          (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
 
     def joint_probability(self, n, t):
         """Returns the joint probabilities of the system and meter being in a certain state at time t.
@@ -88,16 +99,20 @@ class SystemAndMeter:
         p0_n = self.tls_state[0]*self.population_distribution(n)
         p1_n = 0
         for m in range(0, self.total_levels+1):
-            if m >= n:
-                p1_n += self.population_distribution(m)*np.abs(np.exp(-np.abs(alpha)**2/2)*\
-                                                               np.sqrt(factorial(n)/factorial(m))*\
-                                                               (alpha)**(m-n)*\
-                                                                assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
-            else:
-                p1_n += self.population_distribution(m)*np.abs(np.exp(-np.abs(alpha)**2/2)*\
-                                                                np.sqrt(factorial(m)/factorial(n))*\
-                                                                (-np.conjugate(alpha))**(n-m)*\
-                                                                 assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
+            p1_n += self.population_distribution(m)*self.shift_factor(n, m, t)
+            #p1_n += self.shift_factor(n, m, t)
+
+        #for m in range(0, self.total_levels+1):
+        #    if m >= n:
+        #        p1_n += self.population_distribution(m)*np.abs(np.exp(-np.abs(alpha)**2/2)*\
+        #                                                       np.sqrt(factorial(n)/factorial(m))*\
+        #                                                       (alpha)**(m-n)*\
+        #                                                        assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
+        #    else:
+        #        p1_n += self.population_distribution(m)*np.abs(np.exp(-np.abs(alpha)**2/2)*\
+        #                                                        np.sqrt(factorial(m)/factorial(n))*\
+        #                                                        (-np.conjugate(alpha))**(n-m)*\
+        #                                                         assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
         p1_n *= self.tls_state[1]
         return p0_n, p1_n
         
@@ -191,7 +206,7 @@ class SystemAndMeter:
         # Get the conditional probabilities P(0|n,t) and P(1|n,t)
         p0, p1 = self.conditional_probability(n, time)
         # Calculate the conditional entropy
-        S_n = -kB*(p0*np.log(p0) + p1*np.log(p1))
+        S_n = -(p0*np.log(p0) + p1*np.log(p1))
         return S_n
     
     def entropy(self, time=False):
@@ -316,8 +331,9 @@ class SystemAndMeter:
         """
             Updates the total number of energy levels in the meter.
         """
-        self.total_levels = 10*int((1/(self.beta*self.gamma)))+1
-        self.meter_state = self.calc_meter_state()
+        #self.total_levels = 10*int((1/(self.beta*self.gamma)))+1
+        self.total_levels = int(10*np.ceil(1/(self.beta*self.gamma))+1)
+        #self.meter_state = self.calc_meter_state()
     def full_update(self):
         """
             Updates all the hidden parameters of the system and meter.
@@ -398,4 +414,6 @@ class SystemAndMeter:
             float: Gamma value.
         """
         return self.gamma
-   
+    # ----------------------------------------------------------------------------------------
+    # --------------- Functions for testing the SystemAndMeter class --------------------------
+
