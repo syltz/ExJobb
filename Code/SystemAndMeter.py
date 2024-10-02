@@ -53,7 +53,7 @@ class SystemAndMeter:
     
     def population_distribution(self, n):
         """Returns the Gibbs-Boltzmann probability at a given energy level n and the temperature of the meter.
-            Accepts vectorized inputs.
+            Accepts vectorized inputs. Assumes total_levels chosen so that N >> k_B T/hbar omega.
 
         Args:
             n (int): The energy level of the meter to calculate the probability for.
@@ -63,8 +63,10 @@ class SystemAndMeter:
         """
         beta = self.beta
         gamma = self.gamma
-        N = self.total_levels
-        p_n = (1-np.exp(-beta*(gamma+0.5)))*np.exp(-beta*(gamma+0.5)*n)/(1-np.exp(-beta*(gamma+0.5)*(N+1)))
+        #p_n = (1-np.exp(-beta*(gamma+0.5)))*np.exp(-beta*(gamma+0.5)*n)/(1-np.exp(-beta*(gamma+0.5)*(N+1)))
+        # Actually Z = np.exp(-beta*gamma*0.5)*1/(1-np.exp(-beta*gamma)) but the 0.5 cancels out later
+        Z_prime = 1/(1-np.exp(-beta*gamma))
+        p_n = np.exp(-beta*gamma*n)/Z_prime
         return p_n
     
     def shift_factor(self, n, m, t):
@@ -89,30 +91,13 @@ class SystemAndMeter:
         Returns:
             float: The joint probabilities of 0,n and 1,n.
         """
-        g = self.g
-        omega = self.omega_meter
-        gamma = self.gamma
-        #alpha = -g/np.sqrt(2*omega)*(np.sin(omega*t) +1j*(np.cos(omega*t) -1))
-        alpha = -g/np.sqrt(gamma)*(np.sin(omega*t) -1j*(1-np.cos(omega*t)))
         # The joint probability of the system and meter being in a certain state
         # at time t
         p0_n = self.tls_state[0]*self.population_distribution(n)
         p1_n = 0
         for m in range(0, self.total_levels+1):
             p1_n += self.population_distribution(m)*self.shift_factor(n, m, t)
-            #p1_n += self.shift_factor(n, m, t)
 
-        #for m in range(0, self.total_levels+1):
-        #    if m >= n:
-        #        p1_n += self.population_distribution(m)*np.abs(np.exp(-np.abs(alpha)**2/2)*\
-        #                                                       np.sqrt(factorial(n)/factorial(m))*\
-        #                                                       (alpha)**(m-n)*\
-        #                                                        assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
-        #    else:
-        #        p1_n += self.population_distribution(m)*np.abs(np.exp(-np.abs(alpha)**2/2)*\
-        #                                                        np.sqrt(factorial(m)/factorial(n))*\
-        #                                                        (-np.conjugate(alpha))**(n-m)*\
-        #                                                         assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
         p1_n *= self.tls_state[1]
         return p0_n, p1_n
         
@@ -189,12 +174,12 @@ class SystemAndMeter:
             p1_n[i] = p1
         return p0_n, p1_n
 
-    def conditional_entropy(self, time=False, n=False):
+    def conditional_entropy(self, n=False, time=False):
         """Calculates the conditional entropy of the system given the meter at time t.
 
         Args:
-            time (float, optional): The time to calculate the conditional entropy at. Defaults to self.time if not set.
             n (int, optional): The energy level of the meter to condition on. Defaults to self.n if not set.
+            time (float, optional): The time to calculate the conditional entropy at. Defaults to self.time if not set.
 
         Returns:
             float: The conditional entropy of the system given the meter at time t.
@@ -202,7 +187,8 @@ class SystemAndMeter:
         if not time:
             time = self.time
         # Eigenstate of the meter to measure in
-        n = self.n
+        if not n:
+            n = self.n
         # Get the conditional probabilities P(0|n,t) and P(1|n,t)
         p0, p1 = self.conditional_probability(n, time)
         # Calculate the conditional entropy
