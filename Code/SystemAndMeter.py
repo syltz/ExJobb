@@ -25,24 +25,25 @@ class SystemAndMeter:
             mass (float, optional): The mass of the meter. Defaults to 1.
         """        
         
-        if (time==None):
-            time = 1/omega_meter
-        self.T_m = temp_meter
-        self.temp_system = temp_system
-        self.omega_meter = omega_meter
-        self.g = coupling
-        self.time = time
-        self.beta = 1/(self.T_m*kB)
-        self.tls_state = init_system_state
-        self.n = measurement_state
-        self.gamma = hbar*self.omega_meter
+        if (time==None): # If time is not set, set it to 2*pi/omega_meter
+            time = 2*np.pi/omega_meter
+        self.T_m = temp_meter # Temperature of the meter
+        self.temp_system = temp_system # Temperature of the system
+        self.omega_meter = omega_meter # Angular frequency of the meter
+        self.g = coupling # Coupling strength
+        self.time = time # Interaction time
+        self.beta = 1/(self.T_m*kB) # Thermodynamic beta
+        self.tls_state = init_system_state # Initial state of the system
+        self.n = measurement_state # State of the meter to measure
+        self.gamma = hbar*self.omega_meter # Just hbar*omega for the meter to make things easier
+        # Automatically choose the total number of energy levels in the meter if not set
         if total_levels == False:
             self.total_levels = int(10*np.ceil(1/(self.beta*self.gamma))+1)
         else:
             self.total_levels = int(total_levels)
-        self.meter_state = self.calc_meter_state()
-        self.delta_E = delta_E
-        self.mass = mass
+        self.meter_state = self.calc_meter_state() # This isn't really used, I had an idea to use it but it's not necessary.
+        self.delta_E = delta_E # Energy difference between the two states of the system
+        self.mass = mass # Mass of the meter
 
     def calc_meter_state(self):
         """Generates the Gibbs-Boltzmann distribution of the meter.
