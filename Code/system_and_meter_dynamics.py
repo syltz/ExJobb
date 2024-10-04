@@ -31,13 +31,13 @@ def main():
     plot_joint_probabilities(sam, time=time)
     plot_cond_entropy(sam, times=times)
     sam.set_time(2*np.pi/sam.get_omega())
-    plot_entropy(sam, times=np.linspace(0.0, sam.get_time(), 50))
+    plot_entropy(sam, times=np.linspace(0.0, 2*sam.get_time(), 100))
     sam.set_time(2*np.pi/sam.get_omega())
-    plot_mutual_info(sam, times=np.linspace(0.0, sam.get_time(), 50))
+    plot_mutual_info(sam, times=np.linspace(0.0, 2*sam.get_time(), 100))
     sam.set_time(2*np.pi/sam.get_omega())
     plot_observer_info(sam, times=time)
     sam.set_time(2*np.pi/sam.get_omega())
-    plot_work(sam, times=np.linspace(0.0, sam.get_time(), 50), work_type='both', sep=True)
+    plot_work(sam, times=np.linspace(0.0, 2*sam.get_time(), 100), work_type='both', sep=True)
     
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0]):
