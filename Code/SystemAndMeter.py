@@ -312,6 +312,31 @@ class SystemAndMeter:
         b = self.tls_state[1]
         return b*m*g**2*(1-np.cos(omega*time))
 
+    def quality_factor(self, time=None):
+        """Calculates the quality factor of the measurement at time t.
+
+        Args:
+            time (float, optional): The time to calculate the quality factor at. Defaults to self.time if not set.
+
+        Returns:
+            float: The quality factor of the measurement at time t.
+        """
+        if time == None:
+            time = self.time
+        if time == 0:
+            return 0
+        else:
+            return self.work_measurement(time)/self.work_extraction(time)
+    def quality_factor_info(self, time=None):
+
+        if time == None:
+            time = self.time
+        mutual_info = self.mutual_information(time)
+        if time == 0:
+            return 0, 0
+        else:
+            return mutual_info/self.work_extraction(time), mutual_info/self.work_measurement(time)
+
 
     # Functions to set the parameters of the system and meter
     def set_temp_system(self, temp_system):

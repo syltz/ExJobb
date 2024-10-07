@@ -27,17 +27,19 @@ def main():
     rng = np.random.default_rng(seed=42)
     times = np.sort(rng.uniform(0,1, 4))
     time = rng.uniform(0, 1, 1)
-    plot_cond_prob(sam, times=times)
-    plot_joint_probabilities(sam, time=time)
-    plot_cond_entropy(sam, times=times)
-    sam.set_time(2*np.pi/sam.get_omega())
-    plot_entropy(sam, times=np.linspace(0.0, 2*sam.get_time(), 100))
-    sam.set_time(2*np.pi/sam.get_omega())
-    plot_mutual_info(sam, times=np.linspace(0.0, 2*sam.get_time(), 100))
-    sam.set_time(2*np.pi/sam.get_omega())
-    plot_observer_info(sam, times=time)
-    sam.set_time(2*np.pi/sam.get_omega())
-    plot_work(sam, times=np.linspace(0.0, 2*sam.get_time(), 100), work_type='both', sep=True)
+    #plot_cond_prob(sam, times=times)
+    #plot_joint_probabilities(sam, time=time)
+    #plot_cond_entropy(sam, times=times)
+    #sam.set_time(2*np.pi/sam.get_omega())
+    #plot_entropy(sam, times=np.linspace(0.0, 2*sam.get_time(), 100))
+    #sam.set_time(2*np.pi/sam.get_omega())
+    #plot_mutual_info(sam, times=np.linspace(0.0, 2*sam.get_time(), 100))
+    #sam.set_time(2*np.pi/sam.get_omega())
+    #plot_observer_info(sam, times=time)
+    #sam.set_time(2*np.pi/sam.get_omega())
+    #plot_work(sam, times=np.linspace(0.0, 2*sam.get_time(), 100), work_type='both', sep=True)
+    plot_quality(sam)
+    
     
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0]):
@@ -218,10 +220,35 @@ def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=Fa
         plt.savefig(f'../images/{work_type}_work_Tm_{sam.get_temp_meter()}.png')
     print(f"{work_type.capitalize()} work plotted")
 
-
-
-
-
+def plot_quality(sam, times=np.linspace(0.0, 2, 100)):
+    # Plot the quality of the measurement as a function of time
+    fig, ax = plt.subplots(3,1)
+    quality_work = np.zeros_like(times)
+    quality_info_ext = np.zeros_like(times)
+    quality_info_msmt = np.zeros_like(times)
+    for i, t in enumerate(times):
+        sam.set_time(t)
+        quality_work[i] = sam.quality_factor()
+        quality_info_ext[i], quality_info_msmt[i] = sam.quality_factor_info()
+        
+    ax[0].plot(times, quality_work, color='blue', label='$W_{meas}/W_{ext}$')
+    ax[0].set_xlabel('Time')
+    ax[0].set_ylabel('Quality Factor')
+    ax[0].set_title('Quality of the measurement as a function of time')
+    ax[0].legend()
+    ax[1].plot(times, quality_info_ext, color='red', label='$I/W_{ext}$')
+    ax[1].set_xlabel('Time')
+    ax[1].set_ylabel('Quality Factor')
+    ax[1].set_title('Quality of the measurement as a function of time')
+    ax[1].legend()
+    ax[2].plot(times, quality_info_msmt, color='green', label='$I/W_{meas}$')
+    ax[2].set_xlabel('Time')
+    ax[2].set_ylabel('Quality Factor')
+    ax[2].set_title('Quality of the measurement as a function of time')
+    ax[2].legend()
+    plt.tight_layout()
+    plt.savefig(f'../images/quality_Tm_{sam.get_temp_meter()}.png')
+    print("Quality plotted")
 
 if __name__=='__main__':
     main()
