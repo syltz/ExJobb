@@ -338,6 +338,7 @@ class SystemAndMeter:
             Q_S (float): Dimensionless scaling parameter for the TLS energy.
         """
         self.Q_S = Q_S
+        self.update_params()
     def set_Q_M(self, Q_M):
         """Setter function for the dimensionless scaling parameter for the meter energy.
 
@@ -345,6 +346,7 @@ class SystemAndMeter:
             Q_M (float): Dimensionless scaling parameter for the meter energy.
         """
         self.Q_M = Q_M
+        self.update_params()
     def set_P(self, P):
         """Setter function for the dimensionless parameter that sets coupling strength and mass.
 
@@ -352,6 +354,7 @@ class SystemAndMeter:
             P (float): Dimensionless parameter that sets coupling strength and mass.
         """
         self.P = P
+        self.update_params()
     def set_x(self, x):
         """Setter function for the normalized temperature of the meter.
 
@@ -359,6 +362,7 @@ class SystemAndMeter:
             x (float): Normalized temperature of the meter.
         """
         self.x = x
+        self.update_params()
     def set_temp_system(self, temp_system):
         """Setter function for the temperature of the system.
 
