@@ -331,6 +331,34 @@ class SystemAndMeter:
 
 
     # Functions to set the parameters of the system and meter
+    def set_Q_S(self, Q_S):
+        """Setter function for the dimensionless scaling parameter for the TLS energy.
+
+        Args:
+            Q_S (float): Dimensionless scaling parameter for the TLS energy.
+        """
+        self.Q_S = Q_S
+    def set_Q_M(self, Q_M):
+        """Setter function for the dimensionless scaling parameter for the meter energy.
+
+        Args:
+            Q_M (float): Dimensionless scaling parameter for the meter energy.
+        """
+        self.Q_M = Q_M
+    def set_P(self, P):
+        """Setter function for the dimensionless parameter that sets coupling strength and mass.
+
+        Args:
+            P (float): Dimensionless parameter that sets coupling strength and mass.
+        """
+        self.P = P
+    def set_x(self, x):
+        """Setter function for the normalized temperature of the meter.
+
+        Args:
+            x (float): Normalized temperature of the meter.
+        """
+        self.x = x
     def set_temp_system(self, temp_system):
         """Setter function for the temperature of the system.
 
@@ -507,6 +535,34 @@ class SystemAndMeter:
             float: Energy difference between the two states of the system.
         """
         return self.delta_E
+    def get_Q_S(self):
+        """Getter function for the dimensionless scaling parameter for the TLS energy.
+
+        Returns:
+            float: Dimensionless scaling parameter for the TLS energy.
+        """
+        return self.Q_S
+    def get_Q_M(self):
+        """Getter function for the dimensionless scaling parameter for the meter energy.
+
+        Returns:
+            float: Dimensionless scaling parameter for the meter energy.
+        """
+        return self.Q_M
+    def get_P(self):
+        """Getter function for the dimensionless parameter that sets coupling strength and mass.
+
+        Returns:
+            float: Dimensionless parameter that sets coupling strength and mass.
+        """
+        return self.P
+    def get_x(self):
+        """Getter function for the normalized temperature of the meter.
+
+        Returns:
+            float: Normalized temperature of the meter.
+        """
+        return self.x
     # ----------------------------------------------------------------------------------------
     # --------------- Functions for testing the SystemAndMeter class --------------------------
 
