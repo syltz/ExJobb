@@ -2,11 +2,11 @@ import numpy as np
 import scipy as sp # Not currently used but can be uncommented if needed
 from scipy.special import factorial, assoc_laguerre
 
-kB = sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in eV/K
-hbar = sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in eV s
+kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 class SystemAndMeter:
-    def __init__(self, temp_system=300, x=1, Q_S=1, Q_M=1, P=1, msmt_state=0):
+    def __init__(self, temp_system=300, x=1, Q_S=1, Q_M=1, P=1, norm_time = 0.5, msmt_state=0):
         """Initializes the system and meter with the given parameters.
         Ideally, we use the dimensionless parameters Q_S, Q_M, and P to set the energy scales of the system and meter.
         However, you can set the parameters directly if you want via the seter functions, but this requires
@@ -18,6 +18,7 @@ class SystemAndMeter:
             Q_S (float): Dimensionless scaling parameter for the TLS energy, delta_E = Q_S*kB*T_S. Default is 1.
             Q_M (float): Dimensionless scaling parameter for the meter energy, hbar*omega = Q_M*delta_E. Default is 1.
             P (float): Dimensionless parameter that sets coupling strength and mass, g^2*m/2 = P*delta_E. Default is 1.
+            norm_time (float): The normalized time of interaction between the system and meter, t = norm_time*2*pi/omega. Default is 0.5.
             msm_state (int): The energy level of the meter to measure. Default is 0.
 
         """        
@@ -27,6 +28,7 @@ class SystemAndMeter:
         self.Q_M = Q_M
         self.P = P
         self.n = msmt_state
+        self.norm_time = norm_time
         self.update_params()
         self.update_total_levels()
         
@@ -265,7 +267,7 @@ class SystemAndMeter:
             time (float, optional): System time to calculate the work extracted at. Defaults to self.time if not set.
 
         Returns:
-            float: The work extracted from the system at time t. P(n,t)*(P(1|n,t) - P(1|n,0))*delta_E
+            float: The work extracted from the system at time t. sum_n P(n,t)*(P(1|n,t) - P(1|n,0))*delta_E
         """
         if (time==None):
             time = self.time
@@ -277,7 +279,7 @@ class SystemAndMeter:
             p_1_cond_t = p1_n/(p0_n + p1_n) # P(1|n,t)
             p1_cond_t0 = self.conditional_probability(n=i, t=0)[1] # P(1|n,0)
             W += (p0_n + p1_n)*delta_E*(p_1_cond_t - p1_cond_t0) # P(n,t)*(P(1|n,t) - P(1|n,0))
-        return -W
+        return W
 
     def work_measurement(self, time=None):
         """Returns the amount of work required to measure the meter at time t.
@@ -294,7 +296,7 @@ class SystemAndMeter:
         omega = self.omega_meter
         m = self.mass
         b = self.tls_state[1]
-        return -b*m*g**2*(1-np.cos(omega*time))
+        return b*m*g**2*(1-np.cos(omega*time))
 
     def quality_factor(self, time=None):
         """Calculates the quality factor of the measurement at time t.
@@ -363,6 +365,14 @@ class SystemAndMeter:
         """
         self.x = x
         self.update_params()
+    def set_norm_time(self, norm_time):
+        """Setter function for the normalized time of interaction between the system and meter.
+
+        Args:
+            norm_time (float): Normalized time of interaction between the system and meter.
+        """
+        self.norm_time = norm_time
+        self.update_params()
     def set_temp_system(self, temp_system):
         """Setter function for the temperature of the system.
 
@@ -384,13 +394,14 @@ class SystemAndMeter:
             coupling (float): Coupling strength between the system and meter.
         """
         self.g = coupling
-    def set_time(self, time):
+    def set_time(self, norm_time):
         """Setter function for the interaction time between the system and meter.
 
         Args:
-            time (float): Time of interaction between the system and meter.
+            time_norm (float): Normalized time of interaction between the system and meter.
+                                t = norm_time*2*pi/omega
         """
-        self.time = time*2*np.pi/self.omega_meter
+        self.time = norm_time*2*np.pi/self.omega_meter
     def set_omega(self, omega_meter):
         """Setter function for the angular frequency of the meter.
 
@@ -434,7 +445,8 @@ class SystemAndMeter:
         self.delta_E = self.Q_S*kB*self.temp_system # Q_S*kB*T_S
         self.mass = 1 # Always set to 1 for now
         self.omega_meter = self.Q_M*self.T_m*kB/hbar # Q_M*T_M*kB/hbar
-        self.g = np.sqrt(2*self.P*self.delta_E/self.mass) # sqrt(2*P*delta_E/m)
+        self.time = self.norm_time*2*np.pi/self.omega_meter # t = norm_time*2*pi/omega
+        self.g = self.P*np.sqrt(2*self.delta_E/self.mass) # P*sqrt(2*delta_E/m)
         a = 1/(1+np.exp(-self.Q_S))
         b = np.exp(-self.Q_S)/(1+np.exp(-self.Q_S)) 
         self.tls_state = (a,b) # Initial state of the system, a+b=1
@@ -567,6 +579,13 @@ class SystemAndMeter:
             float: Normalized temperature of the meter.
         """
         return self.x
+    def get_norm_time(self):
+        """Getter function for the normalized time of interaction between the system and meter.
+
+        Returns:
+            float: Normalized time of interaction between the system and meter.
+        """
+        return self.norm_time
     # ----------------------------------------------------------------------------------------
     # --------------- Functions for testing the SystemAndMeter class --------------------------
 
