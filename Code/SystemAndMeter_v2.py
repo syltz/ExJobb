@@ -433,13 +433,13 @@ class SystemAndMeter:
         self.T_m = self.x*self.temp_system # T_M = x*T_S
         self.delta_E = self.Q_S*kB*self.temp_system # Q_S*kB*T_S
         self.mass = 1 # Always set to 1 for now
-        self.omega_meter = self.Q_M*self.delta_E/hbar # Q_M*delta_E/hbar
+        self.omega_meter = self.Q_M*self.T_m*kB/hbar # Q_M*T_M*kB/hbar
         self.g = np.sqrt(2*self.P*self.delta_E/self.mass) # sqrt(2*P*delta_E/m)
-        self.gamma = hbar*self.omega_meter # hbar*omega
         a = 1/(1+np.exp(-self.Q_S))
         b = np.exp(-self.Q_S)/(1+np.exp(-self.Q_S)) 
         self.tls_state = (a,b) # Initial state of the system, a+b=1
         self.beta = 1/(self.T_m*kB) # Thermodynamic beta for the meter
+        self.gamma = hbar*self.omega_meter # hbar*omega
 
     
     #--------- Functions to update the hidden parameters of the system and meter ------------
