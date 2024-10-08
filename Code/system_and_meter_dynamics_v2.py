@@ -26,21 +26,24 @@ def main():
     # Plot the conditional probabilities
     sam.set_n(0)
     #plot_cond_prob(sam)
-    plot_cond_entropy(sam)
+    #plot_cond_entropy(sam)
     #plot_entropy(sam)
     #plot_mutual_info(sam)
     #plot_observer_info(sam)
     #plot_work(sam)
     #plot_quality(sam)
+    plot_quality_coupling(sam)
     
 
-def plot_cond_prob(sam, times=[0.5, 0.75, 1.0]):
+def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
     """ Plots the conditional probabilities as a function of time measuring in state n.
         Here n is the measurement state of the meter.
         
         Args:
             sam (SystemAndMeter): The system and meter object.
-            times (ndarray or list, optional): The times at which to evaluate the conditional probabilities. Defaults to [0.5, 0.75, 1.0]."""
+            times (ndarray or list, optional): The times at which to evaluate the conditional probabilities. Defaults to [0.5, 0.75, 1.0].
+            fname (str, optional): The filename to save the plot. Defaults to None.
+            """
     fig, axs = plt.subplots(len(times), 1, figsize=(10, 8))
     for i,t in enumerate(times):
         sam.set_time(t)
@@ -56,15 +59,19 @@ def plot_cond_prob(sam, times=[0.5, 0.75, 1.0]):
         axs[i].legend()
 
     plt.tight_layout()
-    plt.savefig(f'../images/conditional_probabilities_Tm_{sam.get_temp_meter()}.png')
+    if fname is None:
+        plt.savefig(f'../images/conditional_probabilities_Tm_{sam.get_temp_meter()}.png')
+    else:
+        plt.savefig(fname)
     print("Conditional probabilities plotted")
 
-def plot_joint_probabilities(sam, time = 0.9):
+def plot_joint_probabilities(sam, time = 0.9, fname=None):
     """Plots the joint probabilities as a function of meter level at a given time.
 
     Args:
         sam (SystemAndMeter): The system and meter object.
         time (float, optional): The time at which to evaluate hte joint probabilities. Defaults to 0.9.
+        fname (str, optional): The filename to save the plot. Defaults to None.
     """
     fig, ax = plt.subplots()
     if isinstance(time, (np.ndarray, list)):
@@ -88,15 +95,19 @@ def plot_joint_probabilities(sam, time = 0.9):
     ax.set_ylabel('Probability')
     ax.legend()
     ax.set_title(fr'Prob of i given meter in n time $t={time:.3f}')
-    plt.savefig(f'../images/joint_probabilities_Tm_{sam.get_temp_meter()}_tm_{time}.png')
+    if fname is None:
+        plt.savefig(f'../images/joint_probabilities_Tm_{sam.get_temp_meter()}_tm_{time}.png')
+    else:
+        plt.savefig(fname)
     print("Joint probabilities plotted")
 
-def plot_cond_entropy(sam, times=[0.5, 0.75, 1.0]):
+def plot_cond_entropy(sam, times=[0.5, 0.75, 1.0], fname=None):
     """Plots the conditional entropy as a function of meter level at different times.
 
     Args:
         sam (SystemAndMeter): The system and meter object.
         times (ndarray or list, optional): The times at which to evaluate the conditional entropy. Defaults to [0.5, 0.75, 1.0].
+        fname (str, optional): The filename to save the plot. Defaults to None.
     """
     fig, axs = plt.subplots(len(times),1)
     for i,t in enumerate(times):
@@ -109,15 +120,19 @@ def plot_cond_entropy(sam, times=[0.5, 0.75, 1.0]):
         axs[i].set_title(f'Conditional Entropy as a function of meter level at time t={t:.3f}')
         axs[i].legend()
     plt.tight_layout()
-    plt.savefig(f'../images/conditional_entropy_Tm_{sam.get_temp_meter()}.png')
+    if fname is None:
+        plt.savefig(f'../images/conditional_entropy_Tm_{sam.get_temp_meter()}.png')
+    else:
+        plt.savefig(fname)
     print("Conditional entropy plotted")
 
-def plot_entropy(sam, times=np.linspace(0.0, 2, 100)):
+def plot_entropy(sam, times=np.linspace(0.0, 2, 100), fname=None):
     """Plots the entropy as a function of time.
 
     Args:
         sam (SystemAndMeter): The system and meter object.
         times (ndarray or list, optional): The times at which to evaluate the entropy. Defaults to np.linspace(0.0, 2, 100).
+        fname (str, optional): The filename to save the plot. Defaults to None.
     """
     fig, ax = plt.subplots()
     entropy = np.zeros_like(times)
@@ -131,15 +146,19 @@ def plot_entropy(sam, times=np.linspace(0.0, 2, 100)):
     ax.set_xlabel('Time')
     ax.set_ylabel('Entropy')
     ax.set_title('Entropy as a function of time')
-    plt.savefig(f'../images/entropy_Tm_{sam.get_temp_meter()}.png')
+    if fname is None:
+        plt.savefig(f'../images/entropy_Tm_{sam.get_temp_meter()}.png')
+    else:
+        plt.savefig(fname)
     print("Entropy plotted")
 
-def plot_mutual_info(sam, times=np.linspace(0.0, 2, 100)):
+def plot_mutual_info(sam, times=np.linspace(0.0, 2, 100), fname=None):
     """Plots the mutual information between the system and meter as a function of time.
 
     Args:
         sam (SystemAndMeter): The system and meter object.
         times (ndarray or list, optional): The times at which to evaluate the mutual information. Defaults to np.linspace(0.0, 2, 100).
+        fname (str, optional): The filename to save the plot. Defaults to None.
     """
     # Plot mutual information as a function of time
     mut_info = np.zeros_like(times)
@@ -151,15 +170,19 @@ def plot_mutual_info(sam, times=np.linspace(0.0, 2, 100)):
     ax.set_xlabel('Time')
     ax.set_ylabel('Mutual Information')
     ax.set_title('Mutual information between system and meter as a function of time')
-    plt.savefig(f'../images/mutual_information_Tm_{sam.get_temp_meter()}.png')
+    if fname is not None:
+        plt.savefig(fname)
+    else:
+        plt.savefig(f'../images/mutual_information_Tm_{sam.get_temp_meter()}.png')
     print("Mutual information plotted")
 
-def plot_observer_info(sam, times=[0.9]):
+def plot_observer_info(sam, times=[0.9], fname=None):
     """Plots the observer information as a function of meter level at different times.
     
     Args:
         sam (SystemAndMeter): The system and meter object.
         times (ndarray or list, optional): The times at which to evaluate the observer information. Defaults to [0.9].
+        fname (str, optional): The filename to save the plot. Defaults to None.
     """
     fig, axs = plt.subplots(len(times), 1)
     if len(times) == 1:
@@ -173,10 +196,13 @@ def plot_observer_info(sam, times=[0.9]):
         ax.set_xlabel('Meter Level')
         ax.set_ylabel('Observer Information')
         ax.set_title('Observer Information as a function of meter level')
-    plt.savefig(f'../images/observer_information_Tm_{sam.get_temp_meter()}.png')
+    if fname is None:
+        plt.savefig(f'../images/observer_information_Tm_{sam.get_temp_meter()}.png')
+    else:
+        plt.savefig(fname)
     print("Observer information plotted")
 
-def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=False):
+def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=False, fname=None):
     """Plots work as a function of time, either extracted, measurement, or both.
         Can plot the extracted and measurement work in separate plots if sep is True.
 
@@ -185,7 +211,10 @@ def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=Fa
         times (ndarray, optional): The times at which to evaluate the work. Defaults to np.linspace(0.0, 2, 100).
         work_type (str, optional): The type of plot you want, valid options are 'extracted', 'measurement', 'both'. Defaults to 'extracted'.
         sep (bool, optional): Whether to plot in separate plots. Defaults to False.
+        fname (str, optional): The filename to save the plot. Defaults to None.
     """
+    if fname is None:
+        fname = f'../images/{work_type}_work_Tm_{sam.get_temp_meter()}'
     # If sep is True but only one type of work is requested, set sep to False
     if sep and work_type != 'both':
         sep = False
@@ -223,17 +252,18 @@ def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=Fa
         ax.legend()
     plt.tight_layout()
     if sep:
-        plt.savefig(f'../images/{work_type}_work_Tm_{sam.get_temp_meter()}_sep.png')
+        plt.savefig(f'{fname}_sep.png')
     else:
-        plt.savefig(f'../images/{work_type}_work_Tm_{sam.get_temp_meter()}.png')
+        plt.savefig(f'{fname}.png')
     print(f"{work_type.capitalize()} work plotted")
 
-def plot_quality(sam, times=np.linspace(0.0, 2, 100)):
+def plot_quality(sam, times=np.linspace(0.0, 2, 100), fname=None):
     """Plots the quality of the measurement as a function of time.
 
     Args:
         sam (SystemAndMeter): The coupled system and meter object.
         times (ndarray or list, optional): The times at which to evaluate info and work. Defaults to np.linspace(0.0, 2, 100).
+        fname (str, optional): The filename to save the plot. Defaults to None.
     """
     # Plot the quality of the measurement as a function of time
     fig, ax = plt.subplots(3,1)
@@ -261,10 +291,25 @@ def plot_quality(sam, times=np.linspace(0.0, 2, 100)):
     ax[2].set_title('Quality of the measurement as a function of time')
     ax[2].legend()
     plt.tight_layout()
-    plt.savefig(f'../images/quality_Tm_{sam.get_temp_meter()}.png')
+    if fname is not None:
+        plt.savefig(fname)
+    else:
+        plt.savefig(f'../images/quality_Tm_{sam.get_temp_meter()}.png')
     print("Quality plotted")
 
-#def plot_quality_coupling(sam):
+def plot_quality_coupling(sam, coupling_strengths=[0.0, 1.0, 10.0]):
+    """Plots the quality of the measurement as a function of coupling strength.
+
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+        coupling_strengths (ndarray or list, optional): The coupling strengths at which to evaluate the quality. Defaults to [0.0, 1.0, 10.0].
+    """
+    for P in coupling_strengths:
+        sam.set_P(P)
+        plot_quality(sam, fname=f'../images/quality_Tm_{sam.get_temp_meter()}_P_{P}.png')
+    sam.set_P(1.0)
+    print("Quality plotted for different coupling strengths and P reset to 1.0")
+
 
 
 if __name__=='__main__':
