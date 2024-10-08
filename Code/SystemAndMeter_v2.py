@@ -30,26 +30,6 @@ class SystemAndMeter:
         self.update_params()
         self.update_total_levels()
         
-        #if (time==None): # If time is not set, set it to 2*pi/omega_meter
-        #    time = 2*np.pi/omega_meter
-        #self.T_m = temp_meter # Temperature of the meter
-        #self.temp_system = temp_system # Temperature of the system
-        #self.omega_meter = omega_meter # Angular frequency of the meter
-        #self.g = coupling # Coupling strength
-        #self.time = time # Interaction time
-        #self.beta = 1/(self.T_m*kB) # Thermodynamic beta
-        #self.tls_state = init_system_state # Initial state of the system
-        #self.n = measurement_state # State of the meter to measure
-        #self.gamma = hbar*self.omega_meter # Just hbar*omega for the meter to make things easier
-        ## Automatically choose the total number of energy levels in the meter if not set
-        #if total_levels == False:
-        #    self.total_levels = int(10*np.ceil(1/(self.beta*self.gamma))+1)
-        #else:
-        #    self.total_levels = int(total_levels)
-        #self.meter_state = self.calc_meter_state() # This isn't really used, I had an idea to use it but it's not necessary.
-        #self.delta_E = delta_E # Energy difference between the two states of the system
-        #self.mass = mass # Mass of the meter
-
     def calc_meter_state(self):
         """Generates the Gibbs-Boltzmann distribution of the meter.
 
@@ -96,7 +76,6 @@ class SystemAndMeter:
         omega = self.omega_meter
         gamma = self.gamma
         mass = self.mass
-        #alpha = -g/np.sqrt(2*gamma)*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
         alpha = g*np.sqrt(mass/(2*gamma))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
         if n >= m:
             return np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(m)/factorial(n))*\
@@ -344,15 +323,6 @@ class SystemAndMeter:
         # Since we divide by W_ext and W_msmt, we need to check if they are zero
         # If they are zero, we set the quality factor to zero since this should also mean
         # that the mutual information is zero.
-        #if W_ext == 0:
-        #    Q_ext = 0.0
-        #else:
-        #    Q_ext = mutual_info/W_ext
-        #if W_msmt == 0:
-        #    Q_msmt = 0.0
-        #else:
-        #    Q_msmt = mutual_info/W_msmt
-        #return Q_ext, Q_msmt
         if mutual_info == 0:
             return 0.0, 0.0
         else: 

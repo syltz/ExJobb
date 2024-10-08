@@ -22,27 +22,29 @@ def main():
     msmt_state = 0
     sam = SystemAndMeter(temp_system=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
     # Plot the joint probabilities
-    plot_joint_probabilities(sam, time=0.9)
+    #plot_joint_probabilities(sam, time=0.9)
     # Plot the conditional probabilities
     sam.set_n(0)
     #plot_cond_prob(sam)
-    #plot_cond_entropy(sam)
+    plot_cond_entropy(sam)
     #plot_entropy(sam)
     #plot_mutual_info(sam)
     #plot_observer_info(sam)
-    plot_work(sam)
-    plot_quality(sam)
-
-
+    #plot_work(sam)
+    #plot_quality(sam)
     
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0]):
+    """ Plots the conditional probabilities as a function of time measuring in state n.
+        Here n is the measurement state of the meter.
+        
+        Args:
+            sam (SystemAndMeter): The system and meter object.
+            times (ndarray or list, optional): The times at which to evaluate the conditional probabilities. Defaults to [0.5, 0.75, 1.0]."""
     fig, axs = plt.subplots(len(times), 1, figsize=(10, 8))
     for i,t in enumerate(times):
         sam.set_time(t)
         p0, p1 = sam.joint_prob_evol()
-        #axs[i].plot(np.arange(0, len(p0))*(sam.get_time()/len(p0)), p0, label=rf'Joint prob $P_0(n,t)$', color='blue', linestyle='--')
-        #axs[i].plot(np.arange(0, len(p1))*(sam.get_time()/len(p1)), p1, label=rf'Joint prob $P_1(n,t)$', color='red', linestyle='--')
         # Calculate conditional probabilities without calling the function for efficiency
         p0_cond = p0/(p0+p1)
         p1_cond = p1/(p0+p1)
@@ -58,6 +60,12 @@ def plot_cond_prob(sam, times=[0.5, 0.75, 1.0]):
     print("Conditional probabilities plotted")
 
 def plot_joint_probabilities(sam, time = 0.9):
+    """Plots the joint probabilities as a function of meter level at a given time.
+
+    Args:
+        sam (SystemAndMeter): The system and meter object.
+        time (float, optional): The time at which to evaluate hte joint probabilities. Defaults to 0.9.
+    """
     fig, ax = plt.subplots()
     if isinstance(time, (np.ndarray, list)):
         time = time[0]
@@ -84,18 +92,17 @@ def plot_joint_probabilities(sam, time = 0.9):
     print("Joint probabilities plotted")
 
 def plot_cond_entropy(sam, times=[0.5, 0.75, 1.0]):
-    # Plot conditional entropy
+    """Plots the conditional entropy as a function of meter level at different times.
+
+    Args:
+        sam (SystemAndMeter): The system and meter object.
+        times (ndarray or list, optional): The times at which to evaluate the conditional entropy. Defaults to [0.5, 0.75, 1.0].
+    """
     fig, axs = plt.subplots(len(times),1)
     for i,t in enumerate(times):
         cond_entropy = np.zeros(sam.get_total_levels(), dtype=np.float64)
-        p0_cond = np.zeros(sam.get_total_levels(), dtype=np.float64)
-        p1_cond = np.zeros(sam.get_total_levels(), dtype=np.float64)
         for n in range(sam.get_total_levels()):
-            #cond_entropy[n] = sam.conditional_entropy(n=n, time=t)
-            p0, p1 = sam.conditional_probability(n, t)
-            p0_cond[n] = p0
-            p1_cond[n] = p1
-            cond_entropy[n] = -(p1*np.log(p1) + p0*np.log(p0))
+            cond_entropy[n] = sam.conditional_entropy(n=n, time=t)
         axs[i].scatter(np.arange(0, sam.get_total_levels()), cond_entropy, label=f'$S_n(t={t:.3f})$')
         axs[i].set_xlabel('Meter Level')
         axs[i].set_ylabel('Conditional Entropy')
@@ -106,7 +113,12 @@ def plot_cond_entropy(sam, times=[0.5, 0.75, 1.0]):
     print("Conditional entropy plotted")
 
 def plot_entropy(sam, times=np.linspace(0.0, 2, 100)):
-    # Plot entropy and conditional entropy as a function of time 
+    """Plots the entropy as a function of time.
+
+    Args:
+        sam (SystemAndMeter): The system and meter object.
+        times (ndarray or list, optional): The times at which to evaluate the entropy. Defaults to np.linspace(0.0, 2, 100).
+    """
     fig, ax = plt.subplots()
     entropy = np.zeros_like(times)
     cond_entropy = np.zeros_like(times)
@@ -114,9 +126,7 @@ def plot_entropy(sam, times=np.linspace(0.0, 2, 100)):
     for i,t in enumerate(times):
         sam.set_time(t)
         entropy[i] = sam.entropy()
-        #cond_entropy[i] = sam.conditional_entropy()
     ax.plot(times, entropy, color='blue', label='Entropy')
-    #ax.plot(times, cond_entropy, color='red', label=f'Conditional Entropy, n={sam.get_n()}')
     ax.legend()
     ax.set_xlabel('Time')
     ax.set_ylabel('Entropy')
@@ -125,6 +135,12 @@ def plot_entropy(sam, times=np.linspace(0.0, 2, 100)):
     print("Entropy plotted")
 
 def plot_mutual_info(sam, times=np.linspace(0.0, 2, 100)):
+    """Plots the mutual information between the system and meter as a function of time.
+
+    Args:
+        sam (SystemAndMeter): The system and meter object.
+        times (ndarray or list, optional): The times at which to evaluate the mutual information. Defaults to np.linspace(0.0, 2, 100).
+    """
     # Plot mutual information as a function of time
     mut_info = np.zeros_like(times)
     fig, ax = plt.subplots()
@@ -139,6 +155,12 @@ def plot_mutual_info(sam, times=np.linspace(0.0, 2, 100)):
     print("Mutual information plotted")
 
 def plot_observer_info(sam, times=[0.9]):
+    """Plots the observer information as a function of meter level at different times.
+    
+    Args:
+        sam (SystemAndMeter): The system and meter object.
+        times (ndarray or list, optional): The times at which to evaluate the observer information. Defaults to [0.9].
+    """
     fig, axs = plt.subplots(len(times), 1)
     if len(times) == 1:
         axs = [axs]
@@ -187,14 +209,6 @@ def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=Fa
             ax.set_xlabel('Time')
             ax.set_ylabel('Work')
             ax.set_title(f'{typ.capitalize()} Work as a function of time')
-        #axs[0].plot(times, work, color='blue', label='Extracted Work')
-        #axs[1].plot(times, work_meas, color='red', label='Measurement Work')
-        #axs[0].set_title('Extracted Work as a function of time')
-        #axs[1].set_title('Measurement Work as a function of time')
-        #axs[0].set_xlabel('Time')
-        #axs[1].set_xlabel('Time')
-        #axs[0].set_ylabel('Work')
-        #axs[1].set_ylabel('Work')
     else:
         if work_type == 'extracted':
             ax.plot(times, work, color='blue', label='Extracted Work')
@@ -215,6 +229,12 @@ def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=Fa
     print(f"{work_type.capitalize()} work plotted")
 
 def plot_quality(sam, times=np.linspace(0.0, 2, 100)):
+    """Plots the quality of the measurement as a function of time.
+
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+        times (ndarray or list, optional): The times at which to evaluate info and work. Defaults to np.linspace(0.0, 2, 100).
+    """
     # Plot the quality of the measurement as a function of time
     fig, ax = plt.subplots(3,1)
     quality_work = np.zeros_like(times)
@@ -243,6 +263,9 @@ def plot_quality(sam, times=np.linspace(0.0, 2, 100)):
     plt.tight_layout()
     plt.savefig(f'../images/quality_Tm_{sam.get_temp_meter()}.png')
     print("Quality plotted")
+
+#def plot_quality_coupling(sam):
+
 
 if __name__=='__main__':
     main()
