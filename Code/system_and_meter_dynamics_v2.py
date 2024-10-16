@@ -20,7 +20,7 @@ def main():
     Q_M = 1.0
     P = 1.0
     msmt_state = 0
-    sam = SystemAndMeter(temp_system=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
+    sam = SystemAndMeter(T_S=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
     # Plot the joint probabilities
     #plot_joint_probabilities(sam, time=0.9)
     # Plot the conditional probabilities
@@ -33,12 +33,13 @@ def main():
     #plot_work(sam, work_type='both')
     #plot_quality(sam)
     #plot_quality_coupling(sam)
-    couplings = [0.01, 0.1, 1.0, 10.0, 100.0]
-    for P in couplings:
-        sam.set_P(P)
-        plot_work(sam, work_type='both', fname=f'../images/work_Tm_{sam.get_temp_meter()}_P_{P}.png')
+    #print(sam.get_tls_state())
+    #couplings = [0.01, 0.1, 1.0, 10.0, 100.0]
+    #for P in couplings:
+    #    sam.set_P(P)
+    #    plot_work(sam, work_type='both', fname=f'../images/work_Tm_{sam.get_temp_meter()}_P_{P}.png')
     #plot_work_temp(sam, fname=f'../images/work_fun_of_temp.png')
-    
+    plot_Wmeas_vs_I_mutual(sam, fname=f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
     """ Plots the conditional probabilities as a function of time measuring in state n.
@@ -234,9 +235,11 @@ def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=Fa
     # Calculate the measurement work at each time
     work_meas = np.zeros_like(times)
     for i, t in enumerate(times):
-        sam.set_time(t)
+        sam.set_tau(t)
         work[i] = sam.work_extraction()
         work_meas[i] = sam.work_measurement()
+        if np.abs(work[i]) > np.abs(work_meas[i]):
+            print(f"Work extracted is greater than work measured at time {t}")
     if sep:
         for ax, w, typ in zip(axs, [work, work_meas], types):
             ax.plot(times, w, color='blue', label=f'{typ.capitalize()} Work')
@@ -315,7 +318,7 @@ def plot_quality_coupling(sam, coupling_strengths=[0.0, 1.0, 10.0]):
     sam.set_P(1.0)
     print("Quality plotted for different coupling strengths and P reset to 1.0")
 
-def plot_work_temp(sam, temps=np.linspace(1e-5,1.2,100), time=0.5, fname=None):
+def plot_work_temp(sam, temps=np.linspace(0.0,2.1,100), time=0.5, fname=None):
     """Plots the useful work, W_ext - W_meas, as a function of the normalized temperature x at
         a given normalized time.
 
@@ -325,9 +328,9 @@ def plot_work_temp(sam, temps=np.linspace(1e-5,1.2,100), time=0.5, fname=None):
         time (float, optional): The normalized time at which to evaluate the work. Defaults to 0.5.
         fname (str, optional): The file name for the plot. Defaults to None.
     """
-    old_time = sam.get_norm_time()
+    old_time = sam.get_tau()
     old_x = sam.get_x()
-    sam.set_norm_time(time)
+    sam.set_tau(time)
     W_ext = np.zeros_like(temps)
     W_meas = np.zeros_like(temps)
     for i,x in enumerate(temps):
@@ -335,22 +338,55 @@ def plot_work_temp(sam, temps=np.linspace(1e-5,1.2,100), time=0.5, fname=None):
         W_ext[i] = sam.work_extraction()
         W_meas[i] = sam.work_measurement()
     fig, ax = plt.subplots()
-    ax.plot(temps, W_ext + W_meas, color='green', label='W')
-    ax.plot(temps, W_ext, color='blue', label='W_ext')
-    ax.plot(temps, W_meas, color='red', label='W_meas')
+    ax.plot(temps, W_ext, color='blue', label=r'$W_{ext}$')
+    ax.plot(temps, W_meas, color='red', label=r'$W_{meas}$')
+    ax.plot(temps, W_ext-W_meas, color='green', label='$W_{ext} - W_{meas}$')
     ax.set_xlabel(r'Normalized Temperature, $T_{meter}/T_{system}$')
     ax.set_ylabel('Work [meV]')
-    ax.set_title(f'Work at {sam.get_norm_time()} period or the meter, system at T={sam.get_temp_system()}K')
+    ax.set_title(f'Work at {sam.get_tau()} period of the meter, system at T={sam.get_temp_system()}K')
     ax.legend()
     plt.tight_layout()
     if fname is None:
         plt.savefig(f'../images/work_temp_Tm_{sam.get_temp_meter()}_t_{time}.png')
     else:
         plt.savefig(fname)
-    sam.set_norm_time(old_time)
+    sam.set_tau(old_time)
     sam.set_x(old_x)
     print(f"W_ext and W_meas plotted at time {time}, and x reset to {old_x} and time reset to {old_time}")
 
+def plot_Wmeas_vs_I_mutual(sam, times=np.linspace(0.0, 2, 100), fname=None):
+    """Plots the measurement work versus the mutual information as a function of time.
+
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+        times (ndarray or list, optional): The times at which to evaluate the work and mutual information. Defaults to np.linspace(0.0, 2, 100).
+        fname (str, optional): The filename to save the plot. Defaults to None.
+    """
+    fig, ax = plt.subplots()
+    ax2 = ax.twiny()
+    W_meas = np.zeros_like(times)
+    I = np.zeros_like(times)
+    for i, t in enumerate(times):
+        sam.set_time(t)
+        W_meas[i] = sam.work_measurement()
+        I[i] = sam.mutual_information()
+    ax.plot(I, W_meas, color='blue', label=r'$W_{meas}$')
+    ax.set_xlabel(r'Mutual Information, $I(t)$')
+    ax.set_ylabel(r'$W_{meas}$ [meV]')
+    ax.set_title('Measurement work as a function of mutual information')
+    ax.legend()
+    ax2.set_xlim(ax.get_xlim())
+    time_ticks = np.array([0., 0.5, 1., 1.5, 2.])
+    ax2.set_xticks(max(I)/2* time_ticks)
+    ax2.set_xticklabels(time_ticks)
+    ax2.set_xlabel(r'Normalized time $\frac{2\pi t}{\omega}$')
+    plt.tight_layout()
+
+    if fname is not None:
+        plt.savefig(fname)
+    else:
+        plt.savefig(f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
+    print("W_meas plotted against I")
 
 if __name__=='__main__':
     main()
