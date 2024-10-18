@@ -43,7 +43,7 @@ def main():
     #    plot_work(sam, work_type='both', fname=f'../images/work_Tm_{sam.get_temp_meter()}_P_{P}.png')
     #plot_work_temp(sam, fname=f'../images/work_fun_of_temp.png')
     #plot_Wmeas_vs_I_mutual(sam, fname=f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
-    sam.set_Q_M(0.2)
+    sam.set_Q_M(0.1)
     positive_work_extraction(sam, times=[0.5])
 
 
@@ -399,6 +399,8 @@ def positive_work_extraction(sam, fname=None, times=[0.0, 0.25, 0.5, 0.75, 1.0, 
 
         Args:
             sam (SystemAndMeter): The coupled system and meter object.
+            fname (str, optional): The filename to save the plot. Saves to default location if None. Defaults to None.
+            times (ndarray or list, optional): The times at which to evaluate the conditional probabilities. Defaults to [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0].
     """ 
     temps = np.linspace(0.0, 2, 10)
     # Keep the coupling strength fixed to 1.0
@@ -467,7 +469,11 @@ def positive_work_extraction(sam, fname=None, times=[0.0, 0.25, 0.5, 0.75, 1.0, 
     num_cols = int(np.ceil(np.sqrt(num_plots)))
     num_rows = int(np.ceil(num_plots/num_cols))
     # Reorganize the subplots into 3 columns
-    fig.tight_layout()
+    fig.tight_layout()#
+#
+#
+#
+#
     gs = gridspec.GridSpec(num_rows, num_cols, figure=fig)
     for i, ax in enumerate(axs):
         row = i // num_cols
