@@ -85,12 +85,40 @@ class SystemAndMeter:
         mass = self.mass
         alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
         if n >= m:
-            return np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(m)/factorial(n))*\
-                          alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
+            #d =  np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(m)/factorial(n))*\
+            #              alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
+            d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(m,n))*\
+                            alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
         else:
-            return np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(n)/factorial(m))*\
-                          (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
+            #d =  np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(n)/factorial(m))*\
+            #              (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
+            d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(n,m))*\
+                            (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
+        return d
+    
+    def factorial_ratio(self, num, den):
+        """Calculates the ratio of two factorials assuming the denominator is greater than the numerator.
 
+        Args:
+            num (int): Numerator.
+            den (int): Denominator.
+
+        Returns:
+            float: n!/(m!)
+        """
+        ratio = 0
+        if num == den:
+            ratio = 1
+        else: 
+            # Calculate the ratio of factorials using the log
+            new_den = np.sum(np.log(np.arange(num+1, den+1), dtype=np.float64))
+            # Check if new_den is infinity or if it's greater than the log of the maximum float value
+            if new_den == np.inf or new_den > np.log(np.finfo(np.float64).max):
+                ratio = 0
+            else:
+                ratio = 1/np.exp(new_den)
+        return ratio
+    
     def joint_probability(self, n=None, t=None):
         """Returns the joint probabilities of the system and meter being in a certain state at time t.
 
