@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 from SystemAndMeter_v2 import SystemAndMeter
+import matplotlib.gridspec as gridspec
+from matplotlib.lines import Line2D
 
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
@@ -30,6 +32,7 @@ def main():
     #plot_entropy(sam)
     #plot_mutual_info(sam)
     #plot_observer_info(sam)
+    
     #plot_work(sam, work_type='both')
     #plot_quality(sam)
     #plot_quality_coupling(sam)
@@ -39,7 +42,10 @@ def main():
     #    sam.set_P(P)
     #    plot_work(sam, work_type='both', fname=f'../images/work_Tm_{sam.get_temp_meter()}_P_{P}.png')
     #plot_work_temp(sam, fname=f'../images/work_fun_of_temp.png')
-    plot_Wmeas_vs_I_mutual(sam, fname=f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
+    #plot_Wmeas_vs_I_mutual(sam, fname=f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
+    sam.set_Q_M(0.2)
+    positive_work_extraction(sam, times=[0.5])
+
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
     """ Plots the conditional probabilities as a function of time measuring in state n.
@@ -238,8 +244,6 @@ def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=Fa
         sam.set_tau(t)
         work[i] = sam.work_extraction()
         work_meas[i] = sam.work_measurement()
-        if np.abs(work[i]) > np.abs(work_meas[i]):
-            print(f"Work extracted is greater than work measured at time {t}")
     if sep:
         for ax, w, typ in zip(axs, [work, work_meas], types):
             ax.plot(times, w, color='blue', label=f'{typ.capitalize()} Work')
@@ -370,16 +374,16 @@ def plot_Wmeas_vs_I_mutual(sam, times=np.linspace(0.0, 2, 100), fname=None):
         sam.set_time(t)
         W_meas[i] = sam.work_measurement()
         I[i] = sam.mutual_information()
-    ax.plot(I, W_meas, color='blue', label=r'$W_{meas}$')
-    ax.set_xlabel(r'Mutual Information, $I(t)$')
-    ax.set_ylabel(r'$W_{meas}$ [meV]')
+    ax.plot(I, W_meas, color='blue', label=r'$W_{meas}(\tau)$')
+    ax.set_xlabel(r'Mutual Information, $I(\tau)$')
+    ax.set_ylabel(r'$W_{meas}(\tau)$ [meV]')
     ax.set_title('Measurement work as a function of mutual information')
-    ax.legend()
+    #ax.legend()
     ax2.set_xlim(ax.get_xlim())
     time_ticks = np.array([0., 0.5, 1., 1.5, 2.])
     ax2.set_xticks(max(I)/2* time_ticks)
     ax2.set_xticklabels(time_ticks)
-    ax2.set_xlabel(r'Normalized time $\frac{2\pi t}{\omega}$')
+    ax2.set_xlabel(r'Normalized time $\tau = \frac{2\pi t}{\omega}$')
     plt.tight_layout()
 
     if fname is not None:
@@ -387,6 +391,102 @@ def plot_Wmeas_vs_I_mutual(sam, times=np.linspace(0.0, 2, 100), fname=None):
     else:
         plt.savefig(f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
     print("W_meas plotted against I")
+
+def positive_work_extraction(sam, fname=None, times=[0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]):
+    """ Investigates whether positive work extraction is possible for the given system and meter.
+        By varying time, temperature, and coupling strength we can determine calculate
+        all the conditional probabilities p(1|n,t) and plot them.
+
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+    """ 
+    temps = np.linspace(0.0, 2, 10)
+    # Keep the coupling strength fixed to 1.0
+    sam.set_P(1.0)
+    # Compute the conditional probabilities at t=0 for each temperature
+    sam.set_tau(0.0)
+    cond_probs_t0 = {}
+    for T in temps:
+        sam.set_x(T)
+        cond_probs_t0[T] = np.zeros(sam.get_total_levels(), dtype=np.float64)
+        for n in range(sam.get_total_levels()):
+            sam.set_n(n)
+            cond_probs_t0[T][n] = sam.conditional_probability(n, 0.0)[1]
+    # Make plots for each time with the conditional probabilities
+    fig, axs = plt.subplots(len(times), 1, figsize=(16, 16))
+    axs = np.atleast_1d(axs)
+    all_lines = []
+    all_labels = []
+    extra_ticks = []
+    for i,t in enumerate(times):
+        sam.set_tau(t) # Set the normalized time
+        for T in temps:
+            sam.set_x(T) # Set the normalized temperature
+            cond_probs = np.zeros(sam.get_total_levels(), dtype=np.float64) # Initialize the conditional probabilities
+            #cond_probs_t0 = np.zeros(sam.get_total_levels(), dtype=np.float64)
+            for n in range(sam.get_total_levels()):
+                sam.set_n(n) # Set the meter level
+                cond_probs[n] = sam.conditional_probability(n, t)[1] # Select the probability of the meter being in state 1
+            #    cond_probs_t0[n] = sam.conditional_probability(n, 0.0)[1]
+
+            # Just some plotting stuff that allows me to have a single legend for the entire figure
+            #line, = axs[i].plot(np.arange(0, sam.get_total_levels()), cond_probs-cond_probs_t0, label=f'T = {T:.2f}')
+            diff = cond_probs-cond_probs_t0[T]
+            line, = axs[i].plot(np.arange(0, sam.get_total_levels()), diff, label=f'T = {T:.2f}')
+            if i == 0:
+                all_lines.append(line)
+                all_labels.append(r'$T_{M}$ = '+f'{T:.2f}'+r'$T_{S}$')
+
+            #axs[i].plot(np.arange(0, sam.get_total_levels()), cond_probs, label=f'T = {T:.2f}')
+            # Find the first meter level where positive work extraction is possible
+            positive_n = np.argmax(diff > 0)
+            if (diff[positive_n] > 0):
+                axs[i].plot(positive_n, diff[positive_n], 'x', color=line.get_color())
+                extra_ticks = np.unique(np.concatenate((extra_ticks, [positive_n])))
+        
+        # Plotting setup
+        axs[i].set_xlabel('Meter Level, $n$')
+        axs[i].set_ylabel(r'$P(1|n,t)-P(1|n,t=0)$')
+        axs[i].set_title(r'Time $\tau$ ='+f' {t}')
+        axs[i].hlines(sam.get_tls_state()[1], 0, sam.get_total_levels(), color='black', linestyle='--', label=r'P(1, t=0)')
+        if i == 0:
+            hline_legend = Line2D([0], [0], color='black', linestyle='--', label=r'$P(1, t=0)=b$')
+            all_lines.append(hline_legend)
+            all_labels.append(r'$P(1, t=0)=b$')
+
+        # Combine existing ticks with new ticks up to the highest meter level where positive work extraction is possible
+        current_ticks = axs[i].get_xticks()
+        new_ticks = np.unique(np.concatenate((current_ticks, extra_ticks)))
+        axs[i].set_xticks(new_ticks)
+
+        # Fix the x limits to be more appropriate
+        axs[i].set_xlim(-0.1, sam.get_total_levels()+0.1)
+
+    # Calculate the number of rows and columns for the subplots
+    num_plots = len(times)
+    num_cols = int(np.ceil(np.sqrt(num_plots)))
+    num_rows = int(np.ceil(num_plots/num_cols))
+    # Reorganize the subplots into 3 columns
+    fig.tight_layout()
+    gs = gridspec.GridSpec(num_rows, num_cols, figure=fig)
+    for i, ax in enumerate(axs):
+        row = i // num_cols
+        col = i % num_cols
+        ax.set_position(gs[row, col].get_position(fig))
+        ax.set_subplotspec(gs[row, col])
+
+    # Add a single legend for the entire figure
+    fig.legend(all_lines, all_labels)
+
+    # Add a supertitle to the entire figure
+    fig.suptitle(r'Cond. prob. $P(1|n,t)$ for different $T_{M}$ at different times with system temp $T_{S}$ ='+f' {sam.get_temp_system()}K. Ticks mark where $P(1|n,t)-P(1|n,t=0) > 0$')
+    plt.tight_layout(rect=[0, 0, 1, 0.96]) # Adjust the layout to make room for the supertitle
+
+    if fname is None:
+        plt.savefig(f'../images/positive_work_extraction_QM={sam.get_Q_M()}_QS={sam.get_Q_S()}.png')
+    else:
+        plt.savefig(fname)
+
 
 if __name__=='__main__':
     main()

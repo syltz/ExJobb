@@ -6,29 +6,29 @@ kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Bolt
 hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 class SystemAndMeter:
-    def __init__(self, temp_system=300, x=1, Q_S=1, Q_M=1, P=1, norm_time = 0.5, msmt_state=0):
+    def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0):
         """Initializes the system and meter with the given parameters.
         Ideally, we use the dimensionless parameters Q_S, Q_M, and P to set the energy scales of the system and meter.
         However, you can set the parameters directly if you want via the seter functions, but this requires
         a bit more care.
 
         Args:
-            temp_system (float): The temperature of the system, T_S. Default is 300 K.
+            T_S (float): The temperature of the system, T_S. Default is 300 K.
             x (float): The normalized temperature of the meter, T_M = x*T_S. Default is 1.
             Q_S (float): Dimensionless scaling parameter for the TLS energy, delta_E = Q_S*kB*T_S. Default is 1.
             Q_M (float): Dimensionless scaling parameter for the meter energy, hbar*omega = Q_M*delta_E. Default is 1.
             P (float): Dimensionless parameter that sets coupling strength and mass, g^2*m/2 = P*delta_E. Default is 1.
-            norm_time (float): The normalized time of interaction between the system and meter, t = norm_time*2*pi/omega. Default is 0.5.
+            tau (float): The normalized time of interaction between the system and meter, t = tau*2*pi/omega. Default is 0.5.
             msm_state (int): The energy level of the meter to measure. Default is 0.
 
         """        
-        self.temp_system = temp_system
+        self.T_S = T_S
         self.x = x
         self.Q_S = Q_S
         self.Q_M = Q_M
         self.P = P
         self.n = msmt_state
-        self.norm_time = norm_time
+        self.tau = tau
         self.update_params()
         self.update_total_levels()
         
@@ -53,11 +53,17 @@ class SystemAndMeter:
         Returns:
             float or ndarray: The probability of the meter being in energy level n.
         """
+        # If T_m = 0 then beta = inf which is not a number, so we need to check for this.
+        if self.T_m == 0 and n > 0:
+            # lim p(n) = 0 as beta -> inf for n > 0 and N > 0.
+            return 0
+        elif self.T_m == 0 and n == 0:
+            # lim p(0) = 1 as beta -> inf for n = 0 and N > 0.
+            return 1
         beta = self.beta
-        gamma = self.gamma
-        # Actually Z = np.exp(-beta*gamma*0.5)*1/(1-np.exp(-beta*gamma)) but the 0.5 cancels out later
-        Z_prime = 1/(1-np.exp(-beta*gamma))
-        p_n = np.exp(-beta*gamma*n)/Z_prime
+        omega = self.omega_meter
+        Z_prime = 1/(1-np.exp(-hbar*omega/(kB*self.T_m)))
+        p_n = np.exp(-beta*hbar*omega*n)/Z_prime
         return p_n
     
     def shift_factor(self, n, m, t):
@@ -76,9 +82,8 @@ class SystemAndMeter:
 
         g = self.g
         omega = self.omega_meter
-        gamma = self.gamma
         mass = self.mass
-        alpha = g*np.sqrt(mass/(2*gamma))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
+        alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
         if n >= m:
             return np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(m)/factorial(n))*\
                           alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
@@ -129,10 +134,16 @@ class SystemAndMeter:
         p0_n, p1_n = self.joint_probability(n=n, t=t)
         # The conditional probability of the system being in state 0 given the meter is in state n
         # at time t
-        p0_n_given = p0_n/(p0_n + p1_n)
+        if p0_n == 0:
+            p0_n_given = 0
+        else:
+            p0_n_given = p0_n/(p0_n + p1_n)
         # The conditional probability of the system being in state 1 given the meter is in state n
         # at time t
-        p1_n_given = p1_n/(p0_n + p1_n)
+        if p1_n == 0:
+            p1_n_given = 0
+        else:
+            p1_n_given = p1_n/(p0_n + p1_n)
         return p0_n_given, p1_n_given
 
     def prob_evol(self):
@@ -272,13 +283,19 @@ class SystemAndMeter:
         if (time==None):
             time = self.time
         delta_E = self.delta_E
+        a, b = self.tls_state
         N = self.total_levels
         W = 0
-        for i in range(0, N+1):
-            p0_n, p1_n = self.joint_probability(n=i, t=time) # P(0,n,t) and P(1,n,t)
-            p_1_cond_t = p1_n/(p0_n + p1_n) # P(1|n,t)
-            p1_cond_t0 = self.conditional_probability(n=i, t=0)[1] # P(1|n,0)
-            W += (p0_n + p1_n)*delta_E*(p_1_cond_t - p1_cond_t0) # P(n,t)*(P(1|n,t) - P(1|n,0))
+        r = 10
+        #for i in range(0, N):
+        #    p0_n, p1_n = self.joint_probability(n=i, t=time) # P(0,n,t) and P(1,n,t)
+        #    p_1_cond_t = p1_n/(p0_n + p1_n) # P(1|n,t)
+        #    p1_cond_t0 = self.conditional_probability(n=i, t=0)[1] # P(1|n,0)
+        #    W += (p0_n + p1_n)*delta_E*(p_1_cond_t - p1_cond_t0) # P(n,t)*(P(1|n,t) - P(1|n,0))
+        for n in range(0, 2):
+            p0_n, p1_n = self.joint_probability(n=n, t=time)
+            W+=a*p1_n - b*p0_n
+        W *= delta_E
         return W
 
     def work_measurement(self, time=None):
@@ -294,7 +311,7 @@ class SystemAndMeter:
             time = self.time
         g = self.g
         omega = self.omega_meter
-        m = self.mass
+        m = self.mass   
         b = self.tls_state[1]
         return b*m*g**2*(1-np.cos(omega*time))
 
@@ -348,7 +365,8 @@ class SystemAndMeter:
             Q_M (float): Dimensionless scaling parameter for the meter energy.
         """
         self.Q_M = Q_M
-        self.update_params()
+        self.full_update()
+        #self.update_params()
     def set_P(self, P):
         """Setter function for the dimensionless parameter that sets coupling strength and mass.
 
@@ -365,21 +383,22 @@ class SystemAndMeter:
         """
         self.x = x
         self.update_params()
-    def set_norm_time(self, norm_time):
+        self.update_total_levels()
+    def set_tau(self, tau):
         """Setter function for the normalized time of interaction between the system and meter.
 
         Args:
-            norm_time (float): Normalized time of interaction between the system and meter.
+            tau (float): Normalized time of interaction between the system and meter.
         """
-        self.norm_time = norm_time
+        self.tau = tau
         self.update_params()
-    def set_temp_system(self, temp_system):
+    def set_T_S(self, T_S):
         """Setter function for the temperature of the system.
 
         Args:
-            temp_system (float): Temperature of the system.
+            T_S (float): Temperature of the system.
         """
-        self.temp_system = temp_system
+        self.T_S = T_S
     def set_temp_meter(self, temp_meter):
         """Setter function for the temperature of the meter.
 
@@ -394,14 +413,14 @@ class SystemAndMeter:
             coupling (float): Coupling strength between the system and meter.
         """
         self.g = coupling
-    def set_time(self, norm_time):
+    def set_time(self, tau):
         """Setter function for the interaction time between the system and meter.
 
         Args:
             time_norm (float): Normalized time of interaction between the system and meter.
-                                t = norm_time*2*pi/omega
+                                t = tau*2*pi/omega
         """
-        self.time = norm_time*2*np.pi/self.omega_meter
+        self.time = tau*2*np.pi/self.omega_meter
     def set_omega(self, omega_meter):
         """Setter function for the angular frequency of the meter.
 
@@ -439,19 +458,30 @@ class SystemAndMeter:
         self.delta_E = delta_E
     def update_params(self):
         """
-            Updates the hidden parameters of the system and meter. I.e. the beta and gamma values.
+            Updates the hidden parameters of the system and meter.
+            The only parameters that we should set directly are the system temperature,
+            the scaling parameters Q_S, Q_M, and P, the normalized temperature of the meter x,
+            and the normalized time of interaction tau.
+            The rest of the parameters are calculated from these, so we should not set them directly 
+            even though we can. But this is up to the user, I'm not the boss of you.
         """
-        self.T_m = self.x*self.temp_system # T_M = x*T_S
-        self.delta_E = self.Q_S*kB*self.temp_system # Q_S*kB*T_S
-        self.mass = 1 # Always set to 1 for now
-        self.omega_meter = self.Q_M*self.T_m*kB/hbar # Q_M*T_M*kB/hbar
-        self.time = self.norm_time*2*np.pi/self.omega_meter # t = norm_time*2*pi/omega
-        self.g = self.P*np.sqrt(2*self.delta_E/self.mass) # P*sqrt(2*delta_E/m)
-        a = 1/(1+np.exp(-self.Q_S))
-        b = np.exp(-self.Q_S)/(1+np.exp(-self.Q_S)) 
-        self.tls_state = (a,b) # Initial state of the system, a+b=1
-        self.beta = 1/(self.T_m*kB) # Thermodynamic beta for the meter
-        self.gamma = hbar*self.omega_meter # hbar*omega
+        self.mass = 1 # Mass of the meter, m = 1
+        self.delta_E = self.Q_S*kB*self.T_S # Energy diff in the TLS, delta_E = Q_S*kB*T_S
+        self.omega_meter = self.Q_M*kB*self.T_S/hbar # Angular frequency of the meter, omega = Q_M*kB*T_S/hbar
+        self.T_m = self.x*self.T_S # Temperature of the meter, T_M = x*T_S 
+        self.g = self.P*np.sqrt(kB*self.T_S/self.mass) # Coupling strength, g = P*sqrt(kB*T_S/m) but m = 1
+        self.time = self.tau*2*np.pi/self.omega_meter # Interaction time, t = tau*2*pi/omega
+        a = 1/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) )
+        b = np.exp(-self.delta_E/(kB*self.T_S))/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) )
+        self.tls_state = (a,b)
+        if self.T_m == 0:
+            self.beta = np.inf
+        else:
+            self.beta = 1/(kB*self.T_m) # Beta value
+
+
+
+
 
     
     #--------- Functions to update the hidden parameters of the system and meter ------------
@@ -459,7 +489,7 @@ class SystemAndMeter:
         """
             Updates the total number of energy levels in the meter.
         """
-        self.total_levels = int(10*np.ceil(1/(self.beta*self.gamma))+1)
+        self.total_levels = int(10*np.ceil(kB*self.T_m/(hbar*self.omega_meter))+1)
         T_M = self.get_temp_meter()
         omega = self.get_omega()
         self.total_levels = int(10*np.ceil(kB*T_M/(hbar*omega))+1)
@@ -479,7 +509,7 @@ class SystemAndMeter:
         Returns:
             float: Temperature of the system.
         """
-        return self.temp_system
+        return self.T_S
     def get_temp_meter(self):
         """Getter function for the temperature of the meter.
 
@@ -537,13 +567,6 @@ class SystemAndMeter:
             float: Beta value.
         """
         return self.beta
-    def get_gamma(self):
-        """Getter function for the gamma value.
-
-        Returns:
-            float: Gamma value.
-        """
-        return self.gamma
     def get_delta_E(self):
         """Getter function for the energy difference between the two states of the system.
 
@@ -579,13 +602,13 @@ class SystemAndMeter:
             float: Normalized temperature of the meter.
         """
         return self.x
-    def get_norm_time(self):
+    def get_tau(self):
         """Getter function for the normalized time of interaction between the system and meter.
 
         Returns:
             float: Normalized time of interaction between the system and meter.
         """
-        return self.norm_time
+        return self.tau
     # ----------------------------------------------------------------------------------------
     # --------------- Functions for testing the SystemAndMeter class --------------------------
 
