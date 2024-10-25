@@ -6,7 +6,7 @@ kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Bolt
 hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 class SystemAndMeter:
-    def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0):
+    def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0, n_upper_limit=None):
         """Initializes the system and meter with the given parameters.
         Ideally, we use the dimensionless parameters Q_S, Q_M, and P to set the energy scales of the system and meter.
         However, you can set the parameters directly if you want via the seter functions, but this requires
@@ -31,6 +31,10 @@ class SystemAndMeter:
         self.tau = tau
         self.update_params()
         self.update_total_levels()
+        if n_upper_limit == None:
+            self.n_upper_limit = self.get_total_levels()
+        else:
+            self.n_upper_limit = n_upper_limit
         
     def calc_meter_state(self):
         """Generates the Gibbs-Boltzmann distribution of the meter.
@@ -220,7 +224,9 @@ class SystemAndMeter:
         for i,t in enumerate(time):
             # Compute the joint probabilities at time t
             p0, p1 = self.joint_probability(n=n, t=t)
-            p0_n[i] = p0
+            p0_n[i] = p0#
+#
+#
             p1_n[i] = p1
         return p0_n, p1_n
 
@@ -231,6 +237,7 @@ class SystemAndMeter:
             n (int, optional): The energy level of the meter to condition on. Defaults to self.n if not set.
             time (float, optional): The time to calculate the conditional entropy at. Defaults to self.time if not set.
 
+            int: The first meter level where positive work extraction is possible.""
         Returns:
             float: The conditional entropy of the system given the meter at time t.
         """
@@ -242,7 +249,14 @@ class SystemAndMeter:
         # Get the conditional probabilities P(0|n,t) and P(1|n,t)
         p0, p1 = self.conditional_probability(n=n, t=time)
         # Calculate the conditional entropy
-        S_n = -(p0*np.log(p0) + p1*np.log(p1))
+        if p0 == 0 and p1 == 0: # If both probabilities are zero, then the conditional entropy is zero
+            S_n = 0
+        elif p0 == 0: # If P(0|n,t) = 0, then the conditional entropy is just +p1*log(p1)
+            S_n = p1*np.log(p1)
+        elif p1 == 0: # If P(1|n,t) = 0, then the conditional entropy is just -p0*log(p0)
+            S_n = -p0*np.log(p0)
+        else: # Otherwise, we calculate the conditional entropy as usual
+            S_n = -(p0*np.log(p0) + p1*np.log(p1))
         return S_n
     
     def entropy(self, time=None):
@@ -280,7 +294,7 @@ class SystemAndMeter:
         S_t = self.entropy(time)
         return S_0 - S_t
     
-    def observer_information(self, time=None, n=None):
+    def observer_information(self, time=None, n=None, n_upper_limit=None):
         """Calculates the observers information about the system after measurement in n at time t.
 
         Args:
@@ -294,9 +308,17 @@ class SystemAndMeter:
             time = self.time
         if (n==None):
             n = self.n
-        p0_n, p1_n = self.joint_probability(n=n, t=time)
-        p_n = p0_n + p1_n
-        I_O = -kB*(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
+        if (n_upper_limit==None):
+            n_upper_limit = self.n_upper_limit
+        #p0_n, p1_n = self.joint_probability(n=n, t=time)
+        #p_n = p0_n + p1_n
+        #I_O = -kB*(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
+        I_O = 0
+        for m in range(n, n_upper_limit):
+            p0_n, p1_n = self.joint_probability(n=m, t=time)
+            p_n = p0_n + p1_n
+            I_O += -(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
+        I_O *= kB
         return I_O
 
     def work_extraction(self, time=None):
@@ -312,15 +334,10 @@ class SystemAndMeter:
             time = self.time
         delta_E = self.delta_E
         a, b = self.tls_state
-        N = self.total_levels
         W = 0
-        r = 10
-        #for i in range(0, N):
-        #    p0_n, p1_n = self.joint_probability(n=i, t=time) # P(0,n,t) and P(1,n,t)
-        #    p_1_cond_t = p1_n/(p0_n + p1_n) # P(1|n,t)
-        #    p1_cond_t0 = self.conditional_probability(n=i, t=0)[1] # P(1|n,0)
-        #    W += (p0_n + p1_n)*delta_E*(p_1_cond_t - p1_cond_t0) # P(n,t)*(P(1|n,t) - P(1|n,0))
-        for n in range(0, 2):
+        lower_limit = self.n
+        upper_limit = self.n_upper_limit
+        for n in range(lower_limit, upper_limit+1):
             p0_n, p1_n = self.joint_probability(n=n, t=time)
             W+=a*p1_n - b*p0_n
         W *= delta_E
@@ -378,6 +395,13 @@ class SystemAndMeter:
 
 
     # Functions to set the parameters of the system and meter
+    def set_n_upper_limit(self, n_upper_limit):
+        """Setter function for the upper limit of the energy levels of the meter to measure.
+
+        Args:
+            n_upper_limit (int): Upper limit of the energy levels of the meter to measure.
+        """
+        self.n_upper_limit = n_upper_limit
     def set_Q_S(self, Q_S):
         """Setter function for the dimensionless scaling parameter for the TLS energy.
 
@@ -394,7 +418,6 @@ class SystemAndMeter:
         """
         self.Q_M = Q_M
         self.full_update()
-        #self.update_params()
     def set_P(self, P):
         """Setter function for the dimensionless parameter that sets coupling strength and mass.
 
@@ -410,8 +433,7 @@ class SystemAndMeter:
             x (float): Normalized temperature of the meter.
         """
         self.x = x
-        self.update_params()
-        self.update_total_levels()
+        self.full_update()
     def set_tau(self, tau):
         """Setter function for the normalized time of interaction between the system and meter.
 
@@ -484,6 +506,9 @@ class SystemAndMeter:
             delta_E (float): Energy difference between the two states of the system.
         """
         self.delta_E = delta_E
+
+
+    #--------- Functions to update the hidden parameters ofthe system and meter ------------
     def update_params(self):
         """
             Updates the hidden parameters of the system and meter.
@@ -507,12 +532,6 @@ class SystemAndMeter:
         else:
             self.beta = 1/(kB*self.T_m) # Beta value
 
-
-
-
-
-    
-    #--------- Functions to update the hidden parameters of the system and meter ------------
     def update_total_levels(self):
         """
             Updates the total number of energy levels in the meter.
@@ -637,6 +656,13 @@ class SystemAndMeter:
             float: Normalized time of interaction between the system and meter.
         """
         return self.tau
+    def get_n_upper_limit(self):
+        """Getter function for the upper limit of the energy levels of the meter to measure.
+
+        Returns:
+            int: Upper limit of the energy levels of the meter to measure.
+        """
+        return self.n_upper_limit
     # ----------------------------------------------------------------------------------------
     # --------------- Functions for testing the SystemAndMeter class --------------------------
 

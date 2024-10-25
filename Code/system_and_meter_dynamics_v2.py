@@ -4,6 +4,7 @@ import scipy as sp
 from SystemAndMeter_v2 import SystemAndMeter
 import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
+import pandas as pd
 
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
@@ -23,28 +24,24 @@ def main():
     P = 1.0
     msmt_state = 0
     sam = SystemAndMeter(T_S=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
-    # Plot the joint probabilities
-    #plot_joint_probabilities(sam, time=0.9)
-    # Plot the conditional probabilities
-    sam.set_n(0)
-    #plot_cond_prob(sam)
-    #plot_cond_entropy(sam)
-    #plot_entropy(sam)
-    #plot_mutual_info(sam)
-    #plot_observer_info(sam)
-    
-    #plot_work(sam, work_type='both')
-    #plot_quality(sam)
-    #plot_quality_coupling(sam)
-    #print(sam.get_tls_state())
-    #couplings = [0.01, 0.1, 1.0, 10.0, 100.0]
-    #for P in couplings:
-    #    sam.set_P(P)
-    #    plot_work(sam, work_type='both', fname=f'../images/work_Tm_{sam.get_temp_meter()}_P_{P}.png')
-    #plot_work_temp(sam, fname=f'../images/work_fun_of_temp.png')
-    #plot_Wmeas_vs_I_mutual(sam, fname=f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
-    sam.set_Q_M(0.1)
-    positive_work_extraction(sam, times=[0.5])
+    #sam.set_Q_S(2.25)
+    #sam.set_P(0.72)
+    #sam.set_Q_M(0.2)
+    #sam.set_tau(0.31)
+    fix_n = None
+    file_ending = ''
+    params_vs_temp(sam, temp_range=np.linspace(0.0, 5.0, 100),\
+                    fname=f"data/params_vs_temp{file_ending}.csv", fixed=fix_n)
+    sam.set_x(1.0)
+    params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, 2.0, 100),\
+                                 fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
+    sam.set_Q_M(1.0)
+    params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100),\
+                    fname=f"data/params_vs_time{file_ending}.csv")
+    sam.set_tau(0.5)
+    params_vs_coupling(sam, g_range=np.linspace(0.0, 5.0, 100),\
+                        fname=f"data/params_vs_coupling{file_ending}.csv")
+
 
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
@@ -176,7 +173,10 @@ def plot_mutual_info(sam, times=np.linspace(0.0, 2, 100), fname=None):
     mut_info = np.zeros_like(times)
     fig, ax = plt.subplots()
     for i, t in enumerate(times):
-        sam.set_time(t)
+        sam.set_tau(t)
+        sam.full_update()
+        sam.set_n(first_positive_W_ext(sam))
+        sam.set_n_upper_limit(sam.get_total_levels())
         mut_info[i] = sam.mutual_information(time = t)
     ax.plot(times, mut_info, color='blue', label='Mutual Information')
     ax.set_xlabel('Time')
@@ -210,6 +210,34 @@ def plot_observer_info(sam, times=[0.9], fname=None):
         ax.set_title('Observer Information as a function of meter level')
     if fname is None:
         plt.savefig(f'../images/observer_information_Tm_{sam.get_temp_meter()}.png')
+    else:
+        plt.savefig(fname)
+    print("Observer information plotted")
+
+def plot_observer_info_vs_time(sam, times=np.linspace(0.0, 2, 100), fname=None):
+    """Plots the observer information as a function of time.
+
+    Args:
+        sam (SystemAndMeter): The system and meter object.
+        times (ndarray or list, optional): The times at which to evaluate the observer information. Defaults to np.linspace(0.0, 2, 100).
+        fname (str, optional): The filename to save the plot. Defaults to None.
+    """
+    fig, ax = plt.subplots()
+    obs_info = np.zeros_like(times)
+    for i, t in enumerate(times):
+        sam.set_tau(t)
+        sam.full_update()
+        sam.set_n(first_positive_W_ext(sam))
+        sam.set_n(first_positive_W_ext(sam))
+        sam.set_n_upper_limit(sam.get_total_levels())
+        obs_info[i] = sam.observer_information()
+    ax.plot(times, obs_info, color='blue', label='Observer Information')
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Observer Information')
+    ax.set_title('Observer Information as a function of time')
+    plt.tight_layout()
+    if fname is None:
+        plt.savefig(f'../images/observer_information_vs_time_Tm_{sam.get_temp_meter()}.png')
     else:
         plt.savefig(fname)
     print("Observer information plotted")
@@ -367,23 +395,25 @@ def plot_Wmeas_vs_I_mutual(sam, times=np.linspace(0.0, 2, 100), fname=None):
         fname (str, optional): The filename to save the plot. Defaults to None.
     """
     fig, ax = plt.subplots()
-    ax2 = ax.twiny()
+
     W_meas = np.zeros_like(times)
     I = np.zeros_like(times)
     for i, t in enumerate(times):
         sam.set_time(t)
         W_meas[i] = sam.work_measurement()
         I[i] = sam.mutual_information()
-    ax.plot(I, W_meas, color='blue', label=r'$W_{meas}(\tau)$')
+
+    # Rescale times to show the extracted work
+    ax.plot(I[len(I)//2:], W_meas[len(W_meas)//2:], color='blue', label=r'$I$')
     ax.set_xlabel(r'Mutual Information, $I(\tau)$')
     ax.set_ylabel(r'$W_{meas}(\tau)$ [meV]')
     ax.set_title('Measurement work as a function of mutual information')
-    #ax.legend()
-    ax2.set_xlim(ax.get_xlim())
-    time_ticks = np.array([0., 0.5, 1., 1.5, 2.])
-    ax2.set_xticks(max(I)/2* time_ticks)
-    ax2.set_xticklabels(time_ticks)
-    ax2.set_xlabel(r'Normalized time $\tau = \frac{2\pi t}{\omega}$')
+
+    # Set the y-ticks to the times points and the y-tick labels to the corresponding measurement work
+    #y_ticks = ax.get_yticks()
+    #y_tick_labels = [f'{W_meas[np.abs(times - yt).argmin()]:.2f}' for yt in y_ticks]
+    #ax.set_yticklabels(y_tick_labels)  
+    
     plt.tight_layout()
 
     if fname is not None:
@@ -468,12 +498,9 @@ def positive_work_extraction(sam, fname=None, times=[0.0, 0.25, 0.5, 0.75, 1.0, 
     num_plots = len(times)
     num_cols = int(np.ceil(np.sqrt(num_plots)))
     num_rows = int(np.ceil(num_plots/num_cols))
-    # Reorganize the subplots into 3 columns
+
+    # Reorganize the subplots into appropriate rows and columns
     fig.tight_layout()#
-#
-#
-#
-#
     gs = gridspec.GridSpec(num_rows, num_cols, figure=fig)
     for i, ax in enumerate(axs):
         row = i // num_cols
@@ -493,6 +520,280 @@ def positive_work_extraction(sam, fname=None, times=[0.0, 0.25, 0.5, 0.75, 1.0, 
     else:
         plt.savefig(fname)
 
+def first_positive_W_ext(sam):
+    """ Find the first level n where positive work extraction is possible at whatever time and temperature
+        the system and meter are currently at.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+        
+        Returns:
+            int: The first meter level where positive work extraction is possible."""
+    cond_probs_t0 = np.zeros(sam.get_total_levels(), dtype=np.float64)
+
+    cond_probs = np.zeros(sam.get_total_levels(), dtype=np.float64)
+    for n in range(sam.get_total_levels()):
+        sam.set_n(n)
+        cond_probs[n] = sam.conditional_probability()[1]
+        cond_probs_t0[n] = sam.conditional_probability(n=n, t=0.0)[1]
+    diff = cond_probs-cond_probs_t0
+    positive_n = np.argmax(diff > 0)
+    return positive_n
+
+def work_minimizer(x, sam):
+    """ Calculate the net work done on the system by the meter.
+
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+
+    Returns:
+        float: The net work done on the system by the meter."""
+    Q_S, P, Q_M, T_M, tau = x
+    sam.set_Q_S(Q_S)
+    sam.set_P(P)
+    sam.set_Q_M(Q_M)
+    sam.set_x(T_M)
+    sam.set_tau(tau)
+    sam.full_update()
+    W_ext = sam.work_extraction()
+    W_meas = sam.work_measurement()
+    return -(W_ext - W_meas)
+def find_pos_net_work(sam):
+    """ Find the maximum net work extraction possible for the given system and meter.
+
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+
+    Returns:
+        float: The maximum net work extraction possible."""
+    from scipy.optimize import minimize
+    # Set the initial guess for the minimizer and bounds that are non-zero and positive
+    x0 = [sam.get_Q_S(), sam.get_P(), sam.get_Q_M(), sam.get_x(), sam.get_tau()]
+    sam.set_n(first_positive_W_ext(sam))
+    # Add some small random noise to the initial guess to avoid getting stuck in local minima
+    x0 = [x + np.random.normal(-0.1, 0.1) for x in x0]
+    res = minimize(work_minimizer, x0, args=(sam), bounds=[(1e-2, None), (1e-2, None), (0.2, None), (1e-2, None), (0,1)], method='L-BFGS-B')
+    return -res.fun, res.x
+
+def params_vs_temp(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_temp.csv", fixed=None):
+    """ Investigate how the various system parameters vary with temperature.
+        The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
+        Saves the data to a csv file.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            temp_range (ndarray or list, optional): The temperature range to evaluate the parameters at. Defaults to np.linspace(0.0, 2.0, 100).
+            fname (str, optional): The filename to save the data to. Defaults to "data/params_vs_temp.csv".
+    """
+    results = {
+        'Temperature': [],
+        "Work": [],
+        "System Heat": [],
+        "Meter Heat": [],
+        "Observer Information": [],
+        "Mutual Information": [],
+        "Information": []
+    }
+    for T in temp_range:
+        sam.set_x(T)
+        sam.full_update()
+        if fixed is None:
+            n = first_positive_W_ext(sam)
+        else:
+            n = fixed
+        sam.set_n(n)
+        sam.set_n_upper_limit(sam.get_total_levels())   
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
+        W = W_ext - W_meas
+        Q_S = -W_ext
+        Q_M = W_meas
+        I_obs = sam.observer_information()
+        I_m = sam.mutual_information()
+        I = I_obs + I_m
+        results['Temperature'].append(T)
+        results['Work'].append(W)
+        results['System Heat'].append(Q_S)
+        results['Meter Heat'].append(Q_M)
+        results['Observer Information'].append(I_obs)
+        results['Mutual Information'].append(I_m)
+        results['Information'].append(I)
+    df = pd.DataFrame(results)
+
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system()},\
+                    Coupling strength: {sam.get_P()}, \
+                         Delta_E: {sam.get_Q_S()}, Omega: {sam.get_Q_M()}, \
+                            Period: {sam.get_tau()}\n")
+    # Append the data to the file
+    df.to_csv(fname, mode='a', index=False)
+    print(f"Parameters vs temperature saved to {fname}")
+
+def params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_omega_per_delta_E.csv", fixed=None):
+    """ Investigate how the various system parameters vary with the ratio of the meter frequency to the system energy splitting.
+        The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
+        Saves the data to a csv file.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            omega_range (ndarray or list, optional): The omega/delta_E range to evaluate the parameters at. Defaults to np.linspace(0.0, 2.0, 100).
+            fname (str, optional): The filename to save the data to. Defaults to "data/params_vs_omega_per_delta_E.csv".
+    """
+    results = {
+        'hw/dE': [],
+        "Work": [],
+        "System Heat": [],
+        "Meter Heat": [],
+        "Observer Information": [],
+        "Mutual Information": [],
+        "Information": []
+    }
+    hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+    for omega in omega_range:
+        sam.set_Q_M(omega)
+        sam.full_update()
+        if fixed is None:
+            n = first_positive_W_ext(sam)
+        else:
+            n = fixed
+        sam.set_n(n)
+        sam.set_n_upper_limit(sam.get_total_levels())
+        hw_per_delta_E = hbar*sam.get_omega()/sam.get_delta_E()
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
+        W = W_ext - W_meas
+        Q_S = -W_meas
+        Q_M = W_ext
+        I_obs = sam.observer_information()
+        I_m = sam.mutual_information()
+        I = I_obs + I_m
+        results['hw/dE'].append(hw_per_delta_E)
+        results['Work'].append(W)
+        results['System Heat'].append(Q_S)
+        results['Meter Heat'].append(Q_M)
+        results['Observer Information'].append(I_obs)
+        results['Mutual Information'].append(I_m)
+        results['Information'].append(I)
+    df = pd.DataFrame(results)
+
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system()},\
+                    Coupling strength: {sam.get_P()}, \
+                        Period: {sam.get_tau()}\n")
+    # Append the data to the file
+    df.to_csv(fname, mode='a', index=False)
+    print(f"Parameters vs omega/delta_E saved to {fname}")
+
+def params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_time.csv", fixed=None):
+    """ Investigate how the various system parameters vary with time.
+        The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
+        Saves the data to a csv file.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            tau_range (ndarray or list, optional): The time range to evaluate the parameters at. Defaults to np.linspace(0.0, 2.0, 100).
+            fname (str, optional): The filename to save the data to. Defaults to "data/params_vs_time.csv".
+    """
+    results = {
+        'Time': [],
+        "Work": [],
+        "System Heat": [],
+        "Meter Heat": [],
+        "Observer Information": [],
+        "Mutual Information": [],
+        "Information": []
+    }
+    for tau in tau_range:
+        sam.set_tau(tau)
+        sam.full_update()
+        if fixed is None:
+            n = first_positive_W_ext(sam)
+        else:
+            n = fixed
+        sam.set_n(n)
+        sam.set_n_upper_limit(sam.get_total_levels())
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
+        W = W_ext - W_meas
+        Q_S = -W_meas
+        Q_M = W_ext
+        I_obs = sam.observer_information()
+        I_m = sam.mutual_information()
+        I = I_obs + I_m
+        results['Time'].append(tau)
+        results['Work'].append(W)
+        results['System Heat'].append(Q_S)
+        results['Meter Heat'].append(Q_M)
+        results['Observer Information'].append(I_obs)
+        results['Mutual Information'].append(I_m)
+        results['Information'].append(I)
+    df = pd.DataFrame(results)
+
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system()},\
+                    Coupling strength: {sam.get_P()}, \
+                        Delta_E: {sam.get_Q_S()}, Omega: {sam.get_Q_M()}\n")
+    # Append the data to the file
+    df.to_csv(fname, mode='a', index=False)
+    print(f"Parameters vs time saved to {fname}")
+
+def params_vs_coupling(sam, g_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_coupling.csv", fixed=None):
+    """ Investigate how the various system parameters vary with the coupling strength.
+        The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
+        Saves the data to a csv file.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            g_range (ndarray or list, optional): The coupling strength range to evaluate the parameters at. Defaults to np.linspace(0.0, 2.0, 100).
+            fname (str, optional): The filename to save the data to. Defaults to "data/params_vs_coupling.csv".
+    """
+    results = {
+        'Coupling Strength': [],
+        "Work": [],
+        "System Heat": [],
+        "Meter Heat": [],
+        "Observer Information": [],
+        "Mutual Information": [],
+        "Information": []
+    }
+    for g in g_range:
+        sam.set_P(g)
+        sam.full_update()
+
+        if fixed is None:
+            n = first_positive_W_ext(sam)
+        else:
+            n = fixed
+        sam.set_n(n)
+        sam.set_n_upper_limit(sam.get_total_levels())
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
+        W = W_ext - W_meas
+        Q_S = -W_meas
+        Q_M = W_ext
+        I_obs = sam.observer_information()
+        I_m = sam.mutual_information()
+        I = I_obs + I_m
+        results['Coupling Strength'].append(g)
+        results['Work'].append(W)
+        results['System Heat'].append(Q_S)
+        results['Meter Heat'].append(Q_M)
+        results['Observer Information'].append(I_obs)
+        results['Mutual Information'].append(I_m)
+        results['Information'].append(I)
+
+    df = pd.DataFrame(results)
+    #Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system()},\
+                    Delta_E: {sam.get_Q_S()}, Omega: {sam.get_Q_M()}, \
+                        Period: {sam.get_tau()}\n")
+    # Append the data to the file
+    df.to_csv(fname, mode='a', index=False)
+    print(f"Parameters vs coupling saved to {fname}")
 
 if __name__=='__main__':
     main()
