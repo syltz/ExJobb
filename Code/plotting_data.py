@@ -3,60 +3,188 @@ import seaborn as sns
 import pandas as pd
 import scipy as sp
 import os
+import re
 
-# Set the style of the plot
+# Set the style of the plots
 sns.set_style(style='white')
-sns.set_context(context='paper', font_scale=2.0)
+sns.set_context(context='paper', font_scale=1.5)
 sns.set_palette(palette='colorblind')
+lw = 1.75 # Line width
 
-symbol_dict = {'temperature': r'$T$', 'hw/de': r'$\hbar\omega/\Delta E$',\
-                'time': r'$\tau$', 'coupling strength': r'$g$', "work": r'$W$',\
-                    "system heat": r'$Q_{\text{sys}}$', "meter heat": r'$Q_{meter}$',\
+symbol_dict = {'temperature': r'$T_M/T_S$', 'hw/de': r'$\hbar\omega/\Delta E$',\
+                'time': r'$\tau=\frac{\omega t}{2\pi}$', 'coupling strength': r'$g$', "work": r'$W$ [meV]',\
+                    "system heat": r'$Q_{\text{sys}}$ [meV]', "meter heat": r'$Q_{\text{meter}}$ [meV]',\
                     "information": r'$I$', "observer information": r'$I_{\text{obs}}$',\
-                    "mutual information": r'$I_{\text{mut}}$', "entropy": r'$S$'}
+                    "mutual information": r'$I_{\text{mut}}$', "entropy": r'$S$',\
+                    "measurement work": r'$W_{\text{meas}}$', 'extracted work': r'$W_{\text{ext}}$'}
 
 x_axes = ['Temperature', 'hw/dE', 'Time', 'Coupling Strength']
 file_endings = ['temp', 'omega_per_delta_E', 'time', 'coupling']
 
-for x_axis, file_ending in zip(x_axes, file_endings):
-    # Check if the directory exists
-    if not os.path.exists(f'images/param_vs_{file_ending}'):
-        os.makedirs(f'images/param_vs_{file_ending}')
-    # Import data from csv file
-    sim_run = "_fixed"
-    try:
-        data = pd.read_csv(f'data/params_vs_{file_ending}{sim_run}.csv', skiprows=1)
-    except FileNotFoundError:
-        print(f"File {file_ending}{sim_run} not found")
-        continue
-    fixed_params = pd.read_csv(f'data/params_vs_{file_ending}{sim_run}.csv', nrows=1)
-    title_string = ', '.join([str(x).strip() for x in fixed_params.columns])
+# Defining colors
+dark_navy_blue = "#00008B"
+deep_forest_green = '#006400'
+dark_brown = '#663300'
+dark_grey = '#333333'
+dark_purple = '#4B0082'
+light_grey = '#D3D3D3'
+orange = '#FFA500'
+dark_red = '#8B0000'
 
-    for param in data.columns[1:]:
-        plt.figure(figsize=(12, 8))
-        sns.lineplot(x=x_axis, y=param, data=data)
+# Color dictionary to be consistent with the colors. Only needs to be used when plotting multiple lines
+color_dict = {'Work': dark_navy_blue, 'System Heat': deep_forest_green, 'Meter Heat': dark_brown,\
+              'Information': dark_grey, 'Observer Information': dark_purple,\
+                  'Mutual Information': light_grey, 'Measurement Work': dark_red}
+
+
+def main():
+    for x_axis, file_ending in zip(x_axes, file_endings):
+        # Check if the directory exists
+        if not os.path.exists(f'images/param_vs_{file_ending}'):
+            os.makedirs(f'images/param_vs_{file_ending}')
+        # Import data from csv file
+        sim_run = "_naive"
+        # Check if the file exists
+        try:
+            data = pd.read_csv(f'data/params_vs_{file_ending}{sim_run}.csv', skiprows=1)
+        except FileNotFoundError:
+            print(f"File {file_ending}{sim_run} not found")
+            continue
+        # Import the fixed parameters and set the figure title
+        fixed_params = pd.read_csv(f'data/params_vs_{file_ending}{sim_run}.csv', nrows=1)
+        title_string = ', '.join([str(x).strip() for x in fixed_params.columns])
+        
+        # Plot the parameters against the x-axis
+        for param in data.columns[1:]:
+            plt.figure(figsize=(12, 8))
+            sns.lineplot(x=x_axis, y=param, data=data, linewidth=lw)
+            plt.title(title_string)
+            # Set x and y labels with the correct symbols
+            plt.xlabel(f'{symbol_dict[x_axis.lower()]}')
+            plt.ylabel(f'{symbol_dict[param.lower()]}')
+            sns.despine()
+            plt.savefig(f'images/param_vs_{file_ending}/{param}{sim_run}.png')
+            plt.close()
+            print(f"Plotted {param} vs {x_axis}")
+
+        # We would like the work comparison to be plotted only against temperature
+        if x_axis.lower() == 'temperature':
+            plot_work_comparison(data, file_ending, sim_run, x_axis, title_string)
+            plot_heat_over_temp(data, file_ending, sim_run, x_axis, title_string)
+        # We would like to plot the Q-factor for all columns that contain the word "information"
+        plot_q_factor(data, file_ending, sim_run, x_axis, title_string)
+        if x_axis.lower() == 'time':
+            plot_w_meas_vs_mutual_info(data, file_ending, sim_run, x_axis, title_string)
+
+def plot_work_comparison(data, file_ending, sim_run, x_axis, title_string):
+        # Work = W_meas + W_ext but also stored in the data
+        Work = data['Work']
+        fig, ax = plt.subplots(figsize=(12, 8))
+        sns.lineplot(x=x_axis, y='Work', data=data, label=r'$W$', color=color_dict['Work'], linewidth=lw)
+        sns.lineplot(x=x_axis, y='System Heat', data=data, label=r'$Q_{S}$', color=color_dict['System Heat'], linewidth=lw)
+        sns.lineplot(x=x_axis, y='Meter Heat', data=data, label=r'$Q_{M}$', color=color_dict['Meter Heat'], linewidth=lw)
+        # Color the region 0 to 1 in the x-axis red
+        plt.axvspan(0, 1, color='red', alpha=0.3)
+        # Color the region 1 to 2 in the x-axis blue
+        plt.axvspan(1, 2, color='blue', alpha=0.3)
+        # Limit the x-axis to 0 to 2
+        plt.xlim(0, 2)
+        plt.legend()
         plt.title(title_string)
-        # Set x and y labels with the correct symbols
         plt.xlabel(f'{symbol_dict[x_axis.lower()]}')
-        plt.ylabel(f'{symbol_dict[param.lower()]}')
+        plt.ylabel('Energy [meV]')
         sns.despine()
-        plt.savefig(f'images/param_vs_{file_ending}/{param}{sim_run}.png')
+        plt.savefig(f'images/param_vs_{file_ending}/work__comparison_{sim_run}.png')
         plt.close()
+
+def plot_zeno_crossover():
+    data = 'data/zeno_cross_over_zeno.csv'
+    data = pd.read_csv(data, skiprows=1)
+    fig, ax = plt.subplots(figsize=(12, 8))
+    sns.lineplot(x='Temperature Ratio', y='Work condition', data=data,\
+                  label=r'$f(T_M)$', color=color_dict['Work'], linewidth=lw)
+    sns.lineplot(x='Temperature Ratio', y='Constant limit', data=data,\
+                  label=r'$\frac{2\hbar\omega}{a\Delta E}$', color=color_dict['Measurement Work'], \
+                    linewidth=lw)
+    # Color the region 0 to 1 in the x-axis red and 1 to the maximum temperature ratio blue
+    plt.axvspan(0, 1, color='red', alpha=0.3)
+    plt.axvspan(1, data['Temperature Ratio'].max(), color='blue', alpha=0.3)
+    plt.legend()
+    plt.title('Zeno Limit Cross Over')
+    plt.xlabel(f'{symbol_dict["temperature"]}')
+    plt.ylabel('Condition for net positive work')
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig(f'images/zeno_cross_over.png')
+    plt.close()
+
+def plot_q_factor(data, file_ending, sim_run, x_axis, title_string):
     # Select all columns that contain the word "information"
     info_cols = [col for col in data.columns if 'information' in col.lower()]
     # Plot Work / Information for all columns that contain the word "information"
     if info_cols:
         plt.figure(figsize=(12, 8))
         for i, info_col in enumerate(info_cols):
-            data[f'Work/{info_col}'] = data['Work'] / data[info_col]
+            data[f'{info_col}/Measurement Work'] = data[info_col]/(-data['Meter Heat'])
             plt.subplot(len(info_cols), 1, i + 1)
-            sns.lineplot(x=x_axis, y=info_col, data=data)
+            sns.lineplot(x=x_axis, y=f'{info_col}/Measurement Work', data=data, linewidth=lw)
             # Set x and y labels with the correct symbols
             plt.xlabel(f'{symbol_dict[x_axis.lower()]}')
-            plt.ylabel(f'{symbol_dict["work"]} / {symbol_dict[info_col.lower()]}')
+            plt.ylabel(f'{symbol_dict[info_col.lower()]} / {symbol_dict["measurement work"]}')
             plt.title(title_string)
             plt.xlabel(f'{x_axis}')
             sns.despine()
         plt.tight_layout()
         plt.savefig(f'images/param_vs_{file_ending}/Q_{info_col}{sim_run}.png')
         plt.close()
+        print(f"Plotted {info_col} vs {x_axis}")
+
+def plot_heat_over_temp(data, file_ending, sim_run, x_axis, title_string):
+    # First extract the system temperature T_S from the title string
+    pattern = r"System temperature: (\d+\.\d+)"
+    T_S = float(re.search(pattern, title_string).group(1))
+    # The x-axis is T_M/T_S so x_axis* T_S = T_M
+    data['Meter temperature'] = data[x_axis]*T_S
+    # Create vectors for the system and meter heat divided by the system and meter temperature
+    data['System Heat / System Temperature'] = data['System Heat']/T_S
+    data['Meter Heat / Meter Temperature'] = data['Meter Heat']/data['Meter temperature']
+    # Next plot system heat over system temperature and meter heat over meter temperature
+    plt.figure(figsize=(12, 8))
+    sns.lineplot(x=x_axis, y='System Heat / System Temperature', data=data,\
+                  label=r'$\frac{Q_S}{T_S}$', linewidth=lw, color=color_dict['System Heat'])
+    sns.lineplot(x=x_axis, y='Meter Heat / Meter Temperature', data=data,\
+                  label=r'$\frac{Q_M}{T_M}$', linewidth=lw, color=color_dict['Meter Heat'])
+    # Also plot the different informationsf
+ 
+ 
+    sns.lineplot(x=x_axis, y='Information', data=data, label=r'$I$',\
+                  linewidth=lw, color=color_dict['Information'])
+    sns.lineplot(x=x_axis, y='Observer Information', data=data, label=r'$I_{\text{obs}}$',\
+                  linewidth=lw, color=color_dict['Observer Information'])
+    sns.lineplot(x=x_axis, y='Mutual Information', data=data, label=r'$I_{\text{mut}}$',\
+                  linewidth=lw, color=color_dict['Mutual Information'])
+    # Plot the sum of system heat/system temperature and the mutual information
+    data['Total entropy'] = data['System Heat / System Temperature'] + data['Mutual Information']
+    sns.lineplot(x=x_axis, y='Total entropy', data=data, label=r'$\frac{Q_S}{T_S} + I_{\text{mut}}$',\
+                  linewidth=lw, color="black", linestyle='--')
+    plt.title(title_string)
+    plt.xlabel(f'{symbol_dict[x_axis.lower()]}')
+    plt.ylabel('Entropy [meV/K]')
+    plt.legend()
+    sns.despine()
+    plt.savefig(f'images/param_vs_{file_ending}/heat_over_temp{sim_run}.png')
+    plt.close()
+
+def plot_w_meas_vs_mutual_info(data, file_ending, sim_run, x_axis, title_string):
+    # Plot the measurement work against the mutual information
+    plt.figure(figsize=(12, 8))
+    sns.lineplot(y=-data['System Heat'], x='Mutual Information', data=data, linewidth=lw)
+    plt.title(title_string)
+    plt.xlabel(f'{symbol_dict["measurement work"]}')
+    plt.ylabel(f'{symbol_dict["mutual information"]}')
+    sns.despine()
+    plt.savefig(f'images/param_vs_{file_ending}/W_meas_vs_I_{sim_run}.png')
+    plt.close()
+
+if __name__ == "__main__":
+    main()

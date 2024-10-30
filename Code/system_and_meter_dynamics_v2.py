@@ -13,8 +13,8 @@ import pandas as pd
 # in the equations for clarity and so that they can be easily changed if needed.
 # It's mostly to avoid any potential numerical issues that may arise from the
 # small values of hbar and kB.
-hbar = 1.0 # sp.constants.hbar
-kB = 1.0 # sp.constants.k
+kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 def main():
     temp_system = 300.0
@@ -24,23 +24,33 @@ def main():
     P = 1.0
     msmt_state = 0
     sam = SystemAndMeter(T_S=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
-    #sam.set_Q_S(2.25)
-    #sam.set_P(0.72)
-    #sam.set_Q_M(0.2)
-    #sam.set_tau(0.31)
-    fix_n = None
-    file_ending = ''
-    params_vs_temp(sam, temp_range=np.linspace(0.0, 5.0, 100),\
+    # Dictionaries of parameters to test. They are here to ensure consistency in the parameters.
+    # Just uncomment the one you want to test and comment the others.
+    #params = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31, 'file_ending': '_opt'} # Optimal parameters
+    #params = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5, 'file_ending': '_naive'} # Naive parameters
+    params ={'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9, 'file_ending': '_zeno'} # Zeno parameters
+
+    # Set the parameters
+    sam.set_Q_S(params['Q_S'])
+    sam.set_P(params['P'])
+    sam.set_Q_M(params['Q_M'])
+    sam.set_tau(params['tau'])
+    fix_n = 1 # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
+    file_ending = params['file_ending'] # The file ending for the data files
+    x_max = 2.0 # The maximum value of x to test
+    params_vs_temp(sam, temp_range=np.linspace(1e-2, x_max, 100),\
                     fname=f"data/params_vs_temp{file_ending}.csv", fixed=fix_n)
-    sam.set_x(1.0)
-    params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, 2.0, 100),\
+    sam.set_x(params['x'])
+    params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, x_max*sam.get_Q_S(), 100),\
                                  fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
-    sam.set_Q_M(1.0)
+    sam.set_Q_M(params['Q_M'])
     params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100),\
-                    fname=f"data/params_vs_time{file_ending}.csv")
-    sam.set_tau(0.5)
-    params_vs_coupling(sam, g_range=np.linspace(0.0, 5.0, 100),\
-                        fname=f"data/params_vs_coupling{file_ending}.csv")
+                    fname=f"data/params_vs_time{file_ending}.csv", fixed=fix_n)
+    sam.set_tau(params['tau'])
+    params_vs_coupling(sam, g_range=np.linspace(0.0, x_max, 100),\
+                        fname=f"data/params_vs_coupling{file_ending}.csv", fixed=fix_n)
+            
+
 
 
 
@@ -551,7 +561,9 @@ def work_minimizer(x, sam):
     Q_S, P, Q_M, T_M, tau = x
     sam.set_Q_S(Q_S)
     sam.set_P(P)
-    sam.set_Q_M(Q_M)
+    sam.set_Q_M(Q_M)#
+#
+#
     sam.set_x(T_M)
     sam.set_tau(tau)
     sam.full_update()
@@ -622,10 +634,10 @@ def params_vs_temp(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/param
 
     # Write the header lines manually
     with open(fname, mode="w") as file:
-        file.write(f"System temperature: {sam.get_temp_system()},\
-                    Coupling strength: {sam.get_P()}, \
-                         Delta_E: {sam.get_Q_S()}, Omega: {sam.get_Q_M()}, \
-                            Period: {sam.get_tau()}\n")
+        file.write(f"System temperature: {sam.get_temp_system():.3f},\
+                    Coupling strength: {sam.get_P():.3f}, \
+                         Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
+                            Period: {sam.get_tau():.3f}\n")
     # Append the data to the file
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs temperature saved to {fname}")
@@ -663,8 +675,8 @@ def params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.0, 2.0, 100), fna
         W_ext = sam.work_extraction()
         W_meas = sam.work_measurement()
         W = W_ext - W_meas
-        Q_S = -W_meas
-        Q_M = W_ext
+        Q_S = -W_ext
+        Q_M = W_meas
         I_obs = sam.observer_information()
         I_m = sam.mutual_information()
         I = I_obs + I_m
@@ -679,9 +691,10 @@ def params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.0, 2.0, 100), fna
 
     # Write the header lines manually
     with open(fname, mode="w") as file:
-        file.write(f"System temperature: {sam.get_temp_system()},\
-                    Coupling strength: {sam.get_P()}, \
-                        Period: {sam.get_tau()}\n")
+        file.write(f"System temperature: {sam.get_temp_system():.3f},\
+                    Coupling strength: {sam.get_P():.3f}, \
+                        Period: {sam.get_tau():.3f}, \
+                            Temperature: {sam.get_x():.3f}\n")
     # Append the data to the file
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs omega/delta_E saved to {fname}")
@@ -717,8 +730,8 @@ def params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params
         W_ext = sam.work_extraction()
         W_meas = sam.work_measurement()
         W = W_ext - W_meas
-        Q_S = -W_meas
-        Q_M = W_ext
+        Q_S = -W_ext
+        Q_M = W_meas
         I_obs = sam.observer_information()
         I_m = sam.mutual_information()
         I = I_obs + I_m
@@ -733,9 +746,10 @@ def params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params
 
     # Write the header lines manually
     with open(fname, mode="w") as file:
-        file.write(f"System temperature: {sam.get_temp_system()},\
-                    Coupling strength: {sam.get_P()}, \
-                        Delta_E: {sam.get_Q_S()}, Omega: {sam.get_Q_M()}\n")
+        file.write(f"System temperature: {sam.get_temp_system():.3f}, \
+                    Coupling strength: {sam.get_P():.3f}, \
+                        Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
+                            Temperature: {sam.get_x():.3f}\n")
     # Append the data to the file
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs time saved to {fname}")
@@ -772,8 +786,8 @@ def params_vs_coupling(sam, g_range=np.linspace(0.0, 2.0, 100), fname="data/para
         W_ext = sam.work_extraction()
         W_meas = sam.work_measurement()
         W = W_ext - W_meas
-        Q_S = -W_meas
-        Q_M = W_ext
+        Q_S = -W_ext
+        Q_M = W_meas
         I_obs = sam.observer_information()
         I_m = sam.mutual_information()
         I = I_obs + I_m
@@ -788,12 +802,116 @@ def params_vs_coupling(sam, g_range=np.linspace(0.0, 2.0, 100), fname="data/para
     df = pd.DataFrame(results)
     #Write the header lines manually
     with open(fname, mode="w") as file:
-        file.write(f"System temperature: {sam.get_temp_system()},\
-                    Delta_E: {sam.get_Q_S()}, Omega: {sam.get_Q_M()}, \
-                        Period: {sam.get_tau()}\n")
+        file.write(f"System temperature: {sam.get_temp_system():.3f},\
+                    Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
+                        Period: {sam.get_tau():.3f}, \
+                            Temperature: {sam.get_x():.3f}\n")
     # Append the data to the file
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs coupling saved to {fname}")
+
+
+def zeno_cross_over(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/zeno_cross_over.csv", fixed = None):
+    """ Investigate the positive net work condition for the Zeno limit as a function of temperature ratio.
+    Assumes a fixed system temperature, coupling strength, period, omega, and delta_E.
+    
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+        temp_range (ndarray or list, optional): The temperature range to evaluate the Zeno cross over at. Defaults to np.linspace(0.0, 2.0, 100).
+        fname (str, optional): The filename to save the data to. Defaults to "data/zeno_cross_over.csv".
+        fixed (int, optional): The meter level to fix the system to. Defaults to None.
+    """
+    if fixed == None:
+        n = first_positive_W_ext(sam)
+    else:
+        n = fixed
+    sam.set_n(n) # Set the meter level to measure from
+    hw = hbar*sam.get_omega() # Constant hbar*omega, the level spacing of the meter
+    C = 2*hw/(sam.get_tls_state()[0]*sam.get_delta_E()) # C = 2*hw/(a*delta_E), a constant that appears in the Zeno limit
+    results = {
+        'Temperature Ratio': [],
+        "Work condition": [],
+        "Constant limit": []
+    }
+    for x in temp_range:
+        sam.set_x(x) # Set the temperature ratio
+        sam.full_update() # Update the system and meter
+        beta = sam.get_beta() # The inverse temperature of the system
+        # Calculate the condition for positive net work in the Zeno limit
+        exp_term = np.exp(-beta*hw*(n+1))
+        with np.errstate(over='ignore'):
+            cosh_term = np.cosh(beta*hw)
+        if exp_term == 0 and np.isinf(cosh_term):
+            cond=0
+        elif exp_term != 0 and np.isinf(cosh_term):
+            print("We have a problem")
+        else:
+            cond = exp_term *( 1 +2*cosh_term*(n*np.exp(beta*hw) + 1/(1-np.exp(-beta*hw))) )
+        # Append the results to the dictionary
+        results['Temperature Ratio'].append(x)
+        results['Work condition'].append(cond)
+        results['Constant limit'].append(C)
+    df = pd.DataFrame(results)
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system():.3f},\
+                    Coupling strength: {sam.get_P():.3f}, \
+                        Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
+                            Period: {sam.get_tau():.3f}\n")
+    # Append the data to the file
+    df.to_csv(fname, mode='a', index=False)
+    print(f"Zeno cross over saved to {fname}") 
+
+
+def params_vs_nprime(sam, nprime_range=np.arange(0,10), fname='data/params_vs_nprime.csv'):
+    """ Investigate how the various system parameters vary with the meter level nprime.
+        The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
+        Saves the data to a csv file.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            nprime_range (ndarray or list, optional): The meter level range to evaluate the parameters at. Defaults to np.arange(0,10).
+            fname (str, optional): The filename to save the data to. Defaults to "data/params_vs_nprime.csv".
+    """
+    results = {
+        'Meter Level': [],
+        "Work": [],
+        "System Heat": [],
+        "Meter Heat": [],
+        "Observer Information": [],
+        "Mutual Information": [],
+        "Information": []
+    }
+    for n in nprime_range:
+        sam.set_n(n)
+        sam.set_n_upper_limit(sam.get_total_levels())
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
+        W = W_ext - W_meas
+        Q_S = -W_ext
+        Q_M = W_meas
+        I_obs = sam.observer_information()
+        I_m = sam.mutual_information()
+        I = I_obs + I_m
+        results['Meter Level'].append(n)
+        results['Work'].append(W)
+        results['System Heat'].append(Q_S)
+        results['Meter Heat'].append(Q_M)
+        results['Observer Information'].append(I_obs)
+        results['Mutual Information'].append(I_m)
+        results['Information'].append(I)
+    df = pd.DataFrame(results)
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system():.3f},\
+                    Coupling strength: {sam.get_P():.3f}, \
+                        Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
+                            Period: {sam.get_tau():.3f}, \
+                                Temperature: {sam.get_x():.3f}\n")
+    # Append the data to the file
+    df.to_csv(fname, mode='a', index=False)
+    print(f"Parameters vs nprime saved to {fname}")
+
 
 if __name__=='__main__':
     main()

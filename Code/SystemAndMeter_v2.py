@@ -84,18 +84,20 @@ class SystemAndMeter:
             float: <n|D(t)|m>
         """
 
-        g = self.g
-        omega = self.omega_meter
-        mass = self.mass
-        alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
+        g = self.g # Coupling strength
+        omega = self.omega_meter # Angular frequency of the meter
+        mass = self.mass # Mass of the meter
+        # For numerical stability reasons, use Taylor expansion to first order for small values of omega*t 
+        if omega*t < 1e-4: 
+            alpha = g*np.sqrt(mass/(2*hbar*omega))*(omega*t - 1j)
+        else:
+            alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
+
+        # Have to check two cases since the assoc_laguerre function is only defined for non-negative integers
         if n >= m:
-            #d =  np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(m)/factorial(n))*\
-            #              alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
             d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(m,n))*\
                             alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
         else:
-            #d =  np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(factorial(n)/factorial(m))*\
-            #              (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
             d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(n,m))*\
                             (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
         return d
@@ -139,12 +141,14 @@ class SystemAndMeter:
             n = self.n
         if (t==None):
             t = self.time
+
         p0_n = self.tls_state[0]*self.population_distribution(n)
+
         p1_n = 0
         for m in range(0, self.total_levels+1):
             p1_n += self.population_distribution(m)*self.shift_factor(n=n, m=m, t=t)
-
         p1_n *= self.tls_state[1]
+
         return p0_n, p1_n
         
     def conditional_probability(self, n=None, t=None):
@@ -164,18 +168,21 @@ class SystemAndMeter:
             t = self.time
         # First get the joint probabilities
         p0_n, p1_n = self.joint_probability(n=n, t=t)
+
         # The conditional probability of the system being in state 0 given the meter is in state n
         # at time t
         if p0_n == 0:
             p0_n_given = 0
         else:
             p0_n_given = p0_n/(p0_n + p1_n)
+
         # The conditional probability of the system being in state 1 given the meter is in state n
         # at time t
         if p1_n == 0:
             p1_n_given = 0
         else:
             p1_n_given = p1_n/(p0_n + p1_n)
+
         return p0_n_given, p1_n_given
 
     def prob_evol(self):
@@ -190,17 +197,20 @@ class SystemAndMeter:
         # Initialize the system and meter states
         # Time step
         dt = self.time/100
+
         # Time array
         time = np.arange(0, self.time, dt)
         # Initialize the probability arrays
         p0_n_given = np.zeros(len(time))
         p1_n_given = np.zeros(len(time))
+
         # Loop through time
         for i,t in enumerate(time):
             # Compute the conditional probabilities at time t
             p0, p1 = self.conditional_probability(n=n, t=t)
             p0_n_given[i] = p0
             p1_n_given[i] = p1
+
         return p0_n_given, p1_n_given
 
     def joint_prob_evol(self):
@@ -220,14 +230,14 @@ class SystemAndMeter:
         # Initialize the probability arrays
         p0_n = np.zeros(len(time))
         p1_n = np.zeros(len(time))
+
         # Loop through time
         for i,t in enumerate(time):
             # Compute the joint probabilities at time t
             p0, p1 = self.joint_probability(n=n, t=t)
             p0_n[i] = p0#
-#
-#
             p1_n[i] = p1
+
         return p0_n, p1_n
 
     def conditional_entropy(self, n=None, time=None):
@@ -246,18 +256,26 @@ class SystemAndMeter:
         # Eigenstate of the meter to measure in
         if (n==None):
             n = self.n
+
+        # If time is zero this is actually an easy calculation to do analytically
+        if time == 0:
+            return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
+
         # Get the conditional probabilities P(0|n,t) and P(1|n,t)
         p0, p1 = self.conditional_probability(n=n, t=time)
+
         # Calculate the conditional entropy
+        #There are a lot of potential edge cases to consider here so we need to be careful.
+        # These are fine to do because lim x->0 x*log(x) = 0
         if p0 == 0 and p1 == 0: # If both probabilities are zero, then the conditional entropy is zero
             S_n = 0
-        elif p0 == 0: # If P(0|n,t) = 0, then the conditional entropy is just +p1*log(p1)
+        elif p0 == 0: # If P(0|n,t) = 0, then the conditional entropy is just p1*log(p1)
             S_n = p1*np.log(p1)
-        elif p1 == 0: # If P(1|n,t) = 0, then the conditional entropy is just -p0*log(p0)
-            S_n = -p0*np.log(p0)
+        elif p1 == 0: # If P(1|n,t) = 0, then the conditional entropy is just p0*log(p0)
+            S_n = p0*np.log(p0)
         else: # Otherwise, we calculate the conditional entropy as usual
-            S_n = -(p0*np.log(p0) + p1*np.log(p1))
-        return S_n
+            S_n = (p0*np.log(p0) + p1*np.log(p1))
+        return -kB*S_n
     
     def entropy(self, time=None):
         """Calculates the entropy of the system at time t.
@@ -270,6 +288,11 @@ class SystemAndMeter:
         """
         if (time==None):
             time = self.time
+
+        # If time is zero this is actually an easy calculation to do analytically
+        if time == 0:
+            return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
+
         N = self.total_levels
         S = 0
         for n in range(0, N+1):
@@ -306,19 +329,26 @@ class SystemAndMeter:
         """
         if (time==None):
             time = self.time
+        #if time == 0: # If time is zero, then the observer information is zero
+        #    return 0
         if (n==None):
             n = self.n
         if (n_upper_limit==None):
             n_upper_limit = self.n_upper_limit
-        #p0_n, p1_n = self.joint_probability(n=n, t=time)
-        #p_n = p0_n + p1_n
-        #I_O = -kB*(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
-        I_O = 0
-        for m in range(n, n_upper_limit):
-            p0_n, p1_n = self.joint_probability(n=m, t=time)
-            p_n = p0_n + p1_n
-            I_O += -(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
-        I_O *= kB
+        p_n = 0
+        if time == 0:
+            p_n = np.exp(-self.beta*hbar*self.omega_meter*n)
+        else:
+            for m in range(n, n_upper_limit+1):
+                p0_n, p1_n = self.joint_probability(n=m, t=time)
+                p_n += (p0_n + p1_n)
+        I_O = -kB * (p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
+        #I_O = 0
+        #for m in range(n, n_upper_limit):
+        #    p0_n, p1_n = self.joint_probability(n=m, t=time)
+        #    p_n = p0_n + p1_n
+        #    I_O += -(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
+        #I_O *= kB
         return I_O
 
     def work_extraction(self, time=None):
@@ -377,8 +407,10 @@ class SystemAndMeter:
             return 0
         else:
             return W_ext/W_msmt
-    def quality_factor_info(self, time=None):
 
+    def quality_factor_info(self, time=None):
+        """ I don't think I actually need this function but I'm keeping it here just in case.
+            Probably don't ude this without thorough testing."""
         if time == None:
             time = self.time
         mutual_info = self.mutual_information(time)
@@ -391,8 +423,6 @@ class SystemAndMeter:
             return 0.0, 0.0
         else: 
             return mutual_info/W_ext, mutual_info/W_msmt
-
-
 
     # Functions to set the parameters of the system and meter
     def set_n_upper_limit(self, n_upper_limit):
@@ -663,6 +693,3 @@ class SystemAndMeter:
             int: Upper limit of the energy levels of the meter to measure.
         """
         return self.n_upper_limit
-    # ----------------------------------------------------------------------------------------
-    # --------------- Functions for testing the SystemAndMeter class --------------------------
-
