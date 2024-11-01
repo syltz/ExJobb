@@ -26,33 +26,72 @@ def main():
     sam = SystemAndMeter(T_S=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
     # Dictionaries of parameters to test. They are here to ensure consistency in the parameters.
     # Just uncomment the one you want to test and comment the others.
-    #params = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31, 'file_ending': '_opt'} # Optimal parameters
-    #params = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5, 'file_ending': '_naive'} # Naive parameters
-    params ={'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9, 'file_ending': '_zeno'} # Zeno parameters
+    params_opt = {'Q_S': 2.25, 'P': 0.73, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
+    params_naive = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_naive'} # Naive parameters
+    params_zeno = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno'} # Zeno parameters
+    params_opt_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.25,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_eq_temp'} # Optimal parameters but with equal temperatures
+    params_opt_uneq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 0.01, 'tau': 0.25,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
+    params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-9,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
+    # Dictionary of the dictionaries of parameters to test
+    param_sets = {'opt': params_opt, 'naive': params_naive, 'zeno': params_zeno,\
+                   'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
+                      'opt_uneq_temp': params_opt_uneq_temp}
 
-    # Set the parameters
-    sam.set_Q_S(params['Q_S'])
-    sam.set_P(params['P'])
-    sam.set_Q_M(params['Q_M'])
-    sam.set_tau(params['tau'])
-    fix_n = 1 # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
-    file_ending = params['file_ending'] # The file ending for the data files
-    x_max = 2.0 # The maximum value of x to test
-    params_vs_temp(sam, temp_range=np.linspace(1e-2, x_max, 100),\
-                    fname=f"data/params_vs_temp{file_ending}.csv", fixed=fix_n)
-    sam.set_x(params['x'])
-    params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, x_max*sam.get_Q_S(), 100),\
-                                 fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
-    sam.set_Q_M(params['Q_M'])
-    params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100),\
-                    fname=f"data/params_vs_time{file_ending}.csv", fixed=fix_n)
-    sam.set_tau(params['tau'])
-    params_vs_coupling(sam, g_range=np.linspace(0.0, x_max, 100),\
-                        fname=f"data/params_vs_coupling{file_ending}.csv", fixed=fix_n)
-            
+    #fun, x = find_pos_net_work(sam)
+    #print(f"Maximum net work extraction possible: {fun:.2f} meV")
+    #print(f"Optimal parameters: Q_S = {x[0]:.2f}, P = {x[1]:.2f}, Q_M = {x[2]:.2f}, T_M = {x[3]:.2f}, tau = {x[4]:.2f}")
+    #fun, x = find_pos_net_work_fixed_temps(sam)
+    #print(f"Maximum net work extraction possible with fixed temperatures: {fun:.2f} meV")
+    #print(f"Optimal parameters with fixed temperatures: Q_S = {x[0]:.2f}, P = {x[1]:.2f}, Q_M = {x[2]:.2f}, tau = {x[3]:.2f}")
 
+    #params = param_sets['zeno']
+    #sam.set_Q_S(params['Q_S'])
+    #sam.set_P(params['P'])
+    #sam.set_Q_M(params['Q_M'])
+    #sam.set_tau(params['tau'])
+    #fix_n = params['n_prime'] # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
+    #file_ending = params['file_ending'] # The file ending for the data files
+    #x_max = 2.0 # The maximum value of x to test
+    #temp_range = np.linspace(1e-2, x_max, 100)
+    #results = {'Temperature': [], 'System Heat': [], 'Meter Heat': [], 'Work': []}
+    #for T_M in temp_range:
+    #    sam.set_x(T_M)
+    #    W_meas = sam.zeno_limit_work_measurement()
+    #    W_ext = sam.zeno_limit_work_extraction()
+    #    results['Temperature'].append(T_M)
+    #    results['Meter Heat'].append(W_meas)
+    #    results['System Heat'].append(-W_ext)
+    #    results['Work'].append(W_ext-W_meas)
+    #df = pd.DataFrame(results)
+    #df.to_csv(f"data/zeno_limit_work{file_ending}_testing.csv", index=False)
 
-
+    for params in param_sets.values():
+        sam.set_Q_S(params['Q_S'])
+        sam.set_P(params['P'])
+        sam.set_Q_M(params['Q_M'])
+        sam.set_tau(params['tau'])
+        fix_n = params['n_prime'] # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
+        file_ending = params['file_ending'] # The file ending for the data files
+        x_max = 2.0 # The maximum value of x to test
+        params_vs_temp(sam, temp_range=np.linspace(1e-2, x_max, 100),\
+                        fname=f"data/params_vs_temp{file_ending}.csv", fixed=fix_n)
+        sam.set_x(params['x'])
+        params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, x_max*sam.get_Q_S(), 100),\
+                                     fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
+        sam.set_Q_M(params['Q_M'])
+        params_vs_time(sam, tau_range=np.linspace(1e-4, 2.0, 100),\
+                        fname=f"data/params_vs_time{file_ending}.csv", fixed=fix_n)
+        sam.set_tau(params['tau'])
+        params_vs_coupling(sam, g_range=np.linspace(0.0, x_max, 100),\
+                            fname=f"data/params_vs_coupling{file_ending}.csv", fixed=fix_n)
+        params_vs_nprime(sam, nprime_range=np.arange(0, sam.get_total_levels()),\
+                        fname=f"data/params_vs_nprime{file_ending}.csv")
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
     """ Plots the conditional probabilities as a function of time measuring in state n.
@@ -562,8 +601,6 @@ def work_minimizer(x, sam):
     sam.set_Q_S(Q_S)
     sam.set_P(P)
     sam.set_Q_M(Q_M)#
-#
-#
     sam.set_x(T_M)
     sam.set_tau(tau)
     sam.full_update()
@@ -587,7 +624,36 @@ def find_pos_net_work(sam):
     res = minimize(work_minimizer, x0, args=(sam), bounds=[(1e-2, None), (1e-2, None), (0.2, None), (1e-2, None), (0,1)], method='L-BFGS-B')
     return -res.fun, res.x
 
-def params_vs_temp(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_temp.csv", fixed=None):
+def work_minimizer_fixed_temps(x, sam: SystemAndMeter):
+    """ Calculate the net work done on the system by the meter with fixed temperatures.
+
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+
+    Returns:
+        float: The net work done on the system by the meter.
+        list: The system parameters."""
+    Q_S, P, Q_M, tau = x
+    sam.set_Q_S(Q_S)
+    sam.set_P(P)
+    sam.set_Q_M(Q_M)
+    sam.set_tau(tau)
+    sam.full_update()
+    W_ext = sam.work_extraction()
+    W_meas = sam.work_measurement()
+    return -(W_ext - W_meas)
+def find_pos_net_work_fixed_temps(sam: SystemAndMeter):
+    from scipy.optimize import minimize
+    # Set the initial guess for the minimizer and bounds that are non-zero and positive
+    sam.set_x(1.0)
+    sam.set_n(1)
+    x0 = [sam.get_Q_S(), sam.get_P(), sam.get_Q_M(), sam.get_tau()]
+    # Add some small random noise to the initial guess to avoid getting stuck in local minima
+    x0 = [x + np.random.normal(-0.1, 0.1) for x in x0]
+    res = minimize(work_minimizer_fixed_temps, x0, args=(sam), bounds=[(1e-2, None), (1e-2, None), (1e-2, None), (0, 1)], method='L-BFGS-B')
+    return -res.fun, res.x
+
+def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_temp.csv", fixed=None, n_upper_limit=None):
     """ Investigate how the various system parameters vary with temperature.
         The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
         Saves the data to a csv file.
@@ -611,12 +677,20 @@ def params_vs_temp(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/param
         sam.full_update()
         if fixed is None:
             n = first_positive_W_ext(sam)
+            sam.set_n(n)
         else:
-            n = fixed
-        sam.set_n(n)
-        sam.set_n_upper_limit(sam.get_total_levels())   
-        W_ext = sam.work_extraction()
-        W_meas = sam.work_measurement()
+            sam.set_n(fixed)
+        if n_upper_limit is not None:
+            sam.set_n_upper_limit(n_upper_limit)
+        else:
+            sam.set_n_upper_limit(sam.get_total_levels())
+        # Check if we're in the Zeno regime
+        if sam.get_tau() < 1e-5:
+            W_ext = sam.zeno_limit_work_extraction()
+            W_meas = sam.zeno_limit_work_measurement()
+        else:
+            W_ext = sam.work_extraction()
+            W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
         Q_M = W_meas
@@ -642,7 +716,7 @@ def params_vs_temp(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/param
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs temperature saved to {fname}")
 
-def params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_omega_per_delta_E.csv", fixed=None):
+def params_vs_omega_per_delta_E(sam: SystemAndMeter, omega_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_omega_per_delta_E.csv", fixed=None):
     """ Investigate how the various system parameters vary with the ratio of the meter frequency to the system energy splitting.
         The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
         Saves the data to a csv file.
@@ -672,8 +746,13 @@ def params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.0, 2.0, 100), fna
         sam.set_n(n)
         sam.set_n_upper_limit(sam.get_total_levels())
         hw_per_delta_E = hbar*sam.get_omega()/sam.get_delta_E()
-        W_ext = sam.work_extraction()
-        W_meas = sam.work_measurement()
+        # Check if we're in the Zeno regime
+        if sam.get_tau() < 1e-5:
+            W_ext = sam.zeno_limit_work_extraction()
+            W_meas = sam.zeno_limit_work_measurement()
+        else:
+            W_ext = sam.work_extraction()
+            W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
         Q_M = W_meas
@@ -699,7 +778,7 @@ def params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.0, 2.0, 100), fna
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs omega/delta_E saved to {fname}")
 
-def params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_time.csv", fixed=None):
+def params_vs_time(sam: SystemAndMeter, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_time.csv", fixed=None):
     """ Investigate how the various system parameters vary with time.
         The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
         Saves the data to a csv file.
@@ -727,8 +806,13 @@ def params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params
             n = fixed
         sam.set_n(n)
         sam.set_n_upper_limit(sam.get_total_levels())
-        W_ext = sam.work_extraction()
-        W_meas = sam.work_measurement()
+        # Check if we're in the Zeno regime
+        if sam.get_tau() < 1e-5:
+            W_ext = sam.zeno_limit_work_extraction()
+            W_meas = sam.zeno_limit_work_measurement()
+        else:
+            W_ext = sam.work_extraction()
+            W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
         Q_M = W_meas
@@ -754,7 +838,7 @@ def params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs time saved to {fname}")
 
-def params_vs_coupling(sam, g_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_coupling.csv", fixed=None):
+def params_vs_coupling(sam: SystemAndMeter, g_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_coupling.csv", fixed=None):
     """ Investigate how the various system parameters vary with the coupling strength.
         The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
         Saves the data to a csv file.
@@ -783,8 +867,13 @@ def params_vs_coupling(sam, g_range=np.linspace(0.0, 2.0, 100), fname="data/para
             n = fixed
         sam.set_n(n)
         sam.set_n_upper_limit(sam.get_total_levels())
-        W_ext = sam.work_extraction()
-        W_meas = sam.work_measurement()
+        # Check if we're in the Zeno regime
+        if sam.get_tau() < 1e-5:
+            W_ext = sam.zeno_limit_work_extraction()
+            W_meas = sam.zeno_limit_work_measurement()
+        else:
+            W_ext = sam.work_extraction()
+            W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
         Q_M = W_meas
@@ -811,7 +900,7 @@ def params_vs_coupling(sam, g_range=np.linspace(0.0, 2.0, 100), fname="data/para
     print(f"Parameters vs coupling saved to {fname}")
 
 
-def zeno_cross_over(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/zeno_cross_over.csv", fixed = None):
+def zeno_cross_over(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/zeno_cross_over.csv", fixed = None):
     """ Investigate the positive net work condition for the Zeno limit as a function of temperature ratio.
     Assumes a fixed system temperature, coupling strength, period, omega, and delta_E.
     
@@ -863,7 +952,7 @@ def zeno_cross_over(sam, temp_range=np.linspace(0.0, 2.0, 100), fname="data/zeno
     print(f"Zeno cross over saved to {fname}") 
 
 
-def params_vs_nprime(sam, nprime_range=np.arange(0,10), fname='data/params_vs_nprime.csv'):
+def params_vs_nprime(sam: SystemAndMeter, nprime_range=np.arange(0,10), fname='data/params_vs_nprime.csv'):
     """ Investigate how the various system parameters vary with the meter level nprime.
         The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
         Saves the data to a csv file.
@@ -885,8 +974,13 @@ def params_vs_nprime(sam, nprime_range=np.arange(0,10), fname='data/params_vs_np
     for n in nprime_range:
         sam.set_n(n)
         sam.set_n_upper_limit(sam.get_total_levels())
-        W_ext = sam.work_extraction()
-        W_meas = sam.work_measurement()
+        # Check if we're in the Zeno regime
+        if sam.get_tau() < 1e-5:
+            W_ext = sam.zeno_limit_work_extraction()
+            W_meas = sam.zeno_limit_work_measurement()
+        else:
+            W_ext = sam.work_extraction()
+            W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
         Q_M = W_meas

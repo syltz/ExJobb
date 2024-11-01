@@ -89,11 +89,9 @@ class SystemAndMeter:
         mass = self.mass # Mass of the meter
         # For numerical stability reasons, use Taylor expansion to first order for small values of omega*t 
         if omega*t < 1e-4: 
-            alpha = g*np.sqrt(mass/(2*hbar*omega))*(omega*t - 1j)
+            alpha = g*np.sqrt(mass*omega/(2*hbar))*(t)
         else:
             alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
-
-        # Have to check two cases since the assoc_laguerre function is only defined for non-negative integers
         if n >= m:
             d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(m,n))*\
                             alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
@@ -258,8 +256,8 @@ class SystemAndMeter:
             n = self.n
 
         # If time is zero this is actually an easy calculation to do analytically
-        if time == 0:
-            return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
+        #if time == 0:
+        #    return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
 
         # Get the conditional probabilities P(0|n,t) and P(1|n,t)
         p0, p1 = self.conditional_probability(n=n, t=time)
@@ -290,8 +288,8 @@ class SystemAndMeter:
             time = self.time
 
         # If time is zero this is actually an easy calculation to do analytically
-        if time == 0:
-            return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
+        #if time == 0:
+        #    return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
 
         N = self.total_levels
         S = 0
@@ -336,7 +334,8 @@ class SystemAndMeter:
         if (n_upper_limit==None):
             n_upper_limit = self.n_upper_limit
         p_n = 0
-        if time == 0:
+        #if time == 0:
+        if False:
             p_n = np.exp(-self.beta*hbar*self.omega_meter*n)
         else:
             for m in range(n, n_upper_limit+1):
@@ -423,6 +422,43 @@ class SystemAndMeter:
             return 0.0, 0.0
         else: 
             return mutual_info/W_ext, mutual_info/W_msmt
+
+    def zeno_limit_work_measurement(self):
+        """Calculates the work required to measure the meter in the Zeno limit.
+
+        Returns:
+            float: The work required to measure the meter in the Zeno limit.
+        """
+        g = self.g
+        omega = self.omega_meter
+        m = self.mass
+        b = self.tls_state[1]
+        wt = 2*np.pi*self.tau # t = tau*2*pi/omega
+        W_meas = b*m*g**2 * wt**2
+        return W_meas
+    def zeno_limit_work_extraction(self):
+        """Calculates the work extracted from the system in the Zeno limit.
+
+        Returns:
+            float: The work extracted from the system in the Zeno limit.
+        """
+        a, b = self.tls_state
+        delta_E = self.delta_E
+        g = self.g
+        m = self.mass
+        wt = 2*np.pi*self.tau # t = tau*2*pi/omega
+        t = self.time
+        beta = self.beta
+        omega = self.omega_meter
+        # Note that wt*t = omega*t^2
+        K = a*b*delta_E*m*g**2*wt*t/(2*hbar) # Constant prefactor
+        norm_factor = np.exp(beta*hbar*omega/2) * (1-np.exp(-beta*hbar*omega))
+        sum_probs = 0
+        for n in range(self.n, self.n_upper_limit+1):
+            sum_probs += n*np.exp(-beta*hbar*omega*(n+1/2)) + (n+1)*np.exp(-beta*hbar*omega*(n+3/2))
+        sum_probs *= norm_factor
+        W = K*sum_probs
+        return W
 
     # Functions to set the parameters of the system and meter
     def set_n_upper_limit(self, n_upper_limit):
