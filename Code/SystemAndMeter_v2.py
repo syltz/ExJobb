@@ -92,13 +92,27 @@ class SystemAndMeter:
             alpha = g*np.sqrt(mass*omega/(2*hbar))*(t)
         else:
             alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
-        if n >= m:
-            d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(m,n))*\
-                            alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
-        else:
-            d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(n,m))*\
-                            (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
-        return d
+        #if alpha == 0:
+        #    return 0
+        try:
+            if n >= m:
+                # Check if the factorial ratio is zero and if either the real or imaginary part
+                # of alpha**(n-m) is inf or infj
+                if self.factorial_ratio(m,n) == 0 and np.abs(alpha)>0 and (n-m) >= np.log(np.finfo(np.float64).max)/np.log(np.abs(alpha)):
+                    d = 0
+                else:
+                    d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(m,n))*\
+                               alpha**(n-m)*assoc_laguerre(np.abs(alpha)**2, m, np.abs(m-n)))**2
+            else:
+                if self.factorial_ratio(n,m) == 0 and np.abs(alpha)>0 and (m-n) >= np.log(np.finfo(np.float64).max)/np.log(np.abs(alpha)):
+                    d = 0
+                else:
+                    d = np.abs(np.exp(-np.abs(alpha)**2/2)*np.sqrt(self.factorial_ratio(n,m))*\
+                               (-np.conjugate(alpha))**(m-n)*assoc_laguerre(np.abs(alpha)**2, n, np.abs(m-n)))**2
+            return d
+        except RuntimeWarning:
+            print(f"Warning: n = {n}, m = {m}, t = {t}, alpha = {alpha}")
+            exit()
     
     def factorial_ratio(self, num, den):
         """Calculates the ratio of two factorials assuming the denominator is greater than the numerator.
@@ -335,12 +349,9 @@ class SystemAndMeter:
             n_upper_limit = self.n_upper_limit
         p_n = 0
         #if time == 0:
-        if False:
-            p_n = np.exp(-self.beta*hbar*self.omega_meter*n)
-        else:
-            for m in range(n, n_upper_limit+1):
-                p0_n, p1_n = self.joint_probability(n=m, t=time)
-                p_n += (p0_n + p1_n)
+        for m in range(n, n_upper_limit+1):
+            p0_n, p1_n = self.joint_probability(n=m, t=time)
+            p_n += (p0_n + p1_n)
         I_O = -kB * (p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
         #I_O = 0
         #for m in range(n, n_upper_limit):

@@ -4,12 +4,13 @@ import pandas as pd
 import scipy as sp
 import os
 import re
+import numpy as np
 
 # Set the style of the plots
 sns.set_style(style='white')
-sns.set_context(context='paper', font_scale=1.5)
+sns.set_context(context='poster')
 sns.set_palette(palette='colorblind')
-lw = 1.#75 # Line width
+lw = 1.75 # Line width
 
 symbol_dict = {'temperature': r'$T_M/T_S$', 'hw/de': r'$\hbar\omega/\Delta E$',\
                 'time': r'$\tau=\frac{\omega t}{2\pi}$', 'coupling strength': r'$g$', "work": r'$W$ [meV]',\
@@ -17,7 +18,7 @@ symbol_dict = {'temperature': r'$T_M/T_S$', 'hw/de': r'$\hbar\omega/\Delta E$',\
                     "information": r'$I$', "observer information": r'$I_{\text{obs}}$',\
                     "mutual information": r'$I_{\text{mut}}$', "entropy": r'$S$',\
                     "measurement work": r'$W_{\text{meas}}$', 'extracted work': r'$W_{\text{ext}}$',\
-                    "meter level": r'$n$', "q-factor": r'$Q$', "total entropy": r'$S_{\text{tot}}$'}
+                    "meter level": r'$n$', "q-factor": r'$Q = \frac{I_m}{W_{meas}}$', "total entropy": r'$S_{\text{tot}}$'}
 
 x_axes = ['Temperature', 'hw/dE', 'Time', 'Coupling Strength', 'Meter Level']
 file_endings = ['temp', 'omega_per_delta_E', 'time', 'coupling', 'nprime']
@@ -38,30 +39,27 @@ color_dict = {'Work': dark_navy_blue, 'System Heat': deep_forest_green, 'Meter H
                   'Mutual Information': light_grey, 'Measurement Work': dark_red}
 
 
-run_dict = {'opt': '_opt', 'opt_eq_temp': '_opt_eq_temp', 'zeno_eq_temp': '_zeno_eq_temp', 'uneq_temp': '_opt_uneq_temp'}
+run_dict = {'opt': '_opt', 'opt_eq_temp': '_opt_eq_temp', 'zeno_eq_temp': '_zeno_eq_temp', \
+            'uneq_temp': '_opt_uneq_temp', 'naive': '_naive', 'zeno':'_zeno'}
 
 def main():
-    data = pd.read_csv('data/zeno_limit_work_zeno_testing.csv')
-    fig, ax = plt.subplots(figsize=(12, 8))
-    sns.lineplot(x='Temperature', y='Work', data=data, label=r'$W$', color=color_dict['Work'], linewidth=lw)
-    sns.lineplot(x='Temperature', y='System Heat', data=data, label=r'$Q_{S}$', color=color_dict['System Heat'], linewidth=lw)
-    sns.lineplot(x='Temperature', y='Meter Heat', data=data, label=r'$Q_{M}$', color=color_dict['Meter Heat'], linewidth=lw)
-    # Color the region 0 to 1 in the x-axis red
-    plt.axvspan(0, 1, color='red', alpha=0.3)
-    # Color the region 1 to 2 in the x-axis blue
-    plt.axvspan(1, 2, color='blue', alpha=0.3)
-    plt.axhline(0, color='black', linewidth=lw, linestyle='--')
-    plt.legend()
-    plt.title('Zeno Limit Work')
-    plt.xlabel(f'{symbol_dict["temperature"]}')
-    plt.ylabel(f'{symbol_dict["work"]}')
-    sns.despine()
-    plt.tight_layout()
-    plt.savefig('images/zeno_limit_work.png')
-    #for sim_run in run_dict:
-    #    individual_plots_all(run_dict[sim_run])
-    #poster_plotting()
+    #data = pd.read_csv('data/params_vs_temp_zeno.csv', skiprows=1)
+    #fig, ax = plt.subplots(figsize=(12, 8))
+    #sns.lineplot(x='Temperature', y='Work', data=data, label=symbol_dict['observer information'], color=color_dict['Observer Information'], linewidth=lw)
+    #sns.lineplot(x='Temperature', y='System Heat', data=data, label=symbol_dict['system heat'], color=color_dict['System Heat'], linewidth=lw)
+    #sns.lineplot(x='Temperature', y='Meter Heat', data=data, label=symbol_dict['meter heat'], color=color_dict['Meter Heat'], linewidth=lw)
+    #plt.axhline(0, color='black',  linestyle='--')
+    #plt.xlabel(f'{symbol_dict["temperature"]}')
+    #plt.ylabel(f'{symbol_dict["work"]}')
+    #sns.despine()
+    #plt.tight_layout()
+    #plt.savefig('images/obs_info_test.png')
+    poster_plotting()
+    #plot_all()
 
+def plot_all():
+    for sim_run in run_dict:
+        individual_plots_all(run_dict[sim_run])
 
 def individual_plots_all(sim_run):
     for x_axis, file_ending in zip(x_axes, file_endings):
@@ -178,23 +176,23 @@ def plot_entropy(data, file_ending, sim_run, x_axis, title_string):
     # Next plot system heat over system temperature and meter heat over meter temperature
     plt.figure(figsize=(12, 8))
     sns.lineplot(x=x_axis, y='System Heat / System Temperature', data=data,\
-                  label=r'$\frac{Q_S}{T_S}$', linewidth=lw, color=color_dict['System Heat'])
+                  label=r'$\frac{Q_S}{T_S}$',  color=color_dict['System Heat'])
     sns.lineplot(x=x_axis, y='Meter Heat / Meter Temperature', data=data,\
-                  label=r'$\frac{Q_M}{T_M}$', linewidth=lw, color=color_dict['Meter Heat'])
+                  label=r'$\frac{Q_M}{T_M}$',  color=color_dict['Meter Heat'])
     # Also plot the different informationsf
     sns.lineplot(x=x_axis, y='Information', data=data, label=r'$I$',\
-                  linewidth=lw, color=color_dict['Information'])
+                   color=color_dict['Information'])
     sns.lineplot(x=x_axis, y='Observer Information', data=data, label=r'$I_{\text{obs}}$',\
-                  linewidth=lw, color=color_dict['Observer Information'])
+                   color=color_dict['Observer Information'])
     sns.lineplot(x=x_axis, y='Mutual Information', data=data, label=r'$I_{\text{mut}}$',\
-                  linewidth=lw, color=color_dict['Mutual Information'])
+                   color=color_dict['Mutual Information'])
     # Plot the sum of system heat/system temperature and the mutual information
     data['Total entropy'] = data['System Heat / System Temperature'] + data['Information']
     data['S+I_m']= data['System Heat / System Temperature'] + data['Mutual Information']
     sns.lineplot(x=x_axis, y='Total entropy', data=data, label=r'$\frac{Q_S}{T_S} + I_{mut} + I_{obs}$',\
-                  linewidth=lw, color="black", linestyle='--')
+                   color="black", linestyle='--')
     sns.lineplot(x=x_axis, y='S+I_m', data=data, label=r'$\frac{Q_S}{T_S} + I_{mut}$',\
-                    linewidth=lw, color="black", linestyle='dotted')
+                     color="black", linestyle='dotted')
     # Add horizontal line at 0
     plt.axhline(0, color='black', linewidth=lw)
     plt.ylim(-0.01, 0.02)
@@ -222,24 +220,141 @@ def poster_plotting():
     data_opt = pd.read_csv('data/params_vs_time_opt.csv', skiprows=1)
     data_opt_eq_temp = pd.read_csv('data/params_vs_time_opt_eq_temp.csv', skiprows=1)
     data_zeno_eq_temp = pd.read_csv('data/params_vs_time_zeno_eq_temp.csv', skiprows=1)
+    color1 = sns.color_palette("colorblind")[0]
+    color2 = sns.color_palette("colorblind")[1]
+    color3 = sns.color_palette("colorblind")[2]
+
+
     # Plot information and work for the three different cases with the y-axis for information
     # on the left and the y-axis for work on the right
     fig, ax1 = plt.subplots(figsize=(12, 8))
     ax2 = ax1.twinx()
-    sns.lineplot(x='Time', y='Information', data=data_opt, label=r'$I(T_M\ll T_S)$', ax=ax1, color=dark_navy_blue, linewidth=lw)
-    sns.lineplot(x='Time', y='Work', data=data_opt, label=r'$W_{meas}(T_M \ll T_S)$', ax=ax2, color=dark_navy_blue, linewidth=lw, linestyle='--')
-    sns.lineplot(x='Time', y='Information', data=data_opt_eq_temp, label=f'$I(T_M=T_S)$', ax=ax1, color=deep_forest_green, linewidth=lw)
-    sns.lineplot(x='Time', y='Work', data=data_opt_eq_temp, label=r'$W_{meas}(T_M=T_S)$', ax=ax2, color=deep_forest_green, linewidth=lw, linestyle='--')
+    sns.lineplot(x='Time', y='Information', data=data_opt, label=r'$I(T_M\ll T_S)$', ax=ax1, color=color1)
+    sns.lineplot(x='Time', y='Work', data=data_opt, label=r'$W_{meas}(T_M \ll T_S)$', ax=ax2, color=color1,  linestyle='--')
+    sns.lineplot(x='Time', y='Information', data=data_opt_eq_temp, label=f'$I(T_M=T_S)$', ax=ax1, color=color2)
+    sns.lineplot(x='Time', y='Work', data=data_opt_eq_temp, label=r'$W_{meas}(T_M=T_S)$', ax=ax2, color=color2,  linestyle='--')
     ax1.set_ylabel(f'{symbol_dict["information"]}')
     ax2.set_ylabel(f'{symbol_dict["work"]}')
     ax1.set_xlabel(f'{symbol_dict["time"]}')
     fig.tight_layout()
-    ax1.legend(loc='upper left')
-    ax2.legend(loc='upper right')
+    ax2.legend().set_bbox_to_anchor((0.52, 0.1))
+    legend1 = ax1.legend()
+    legend1.set_bbox_to_anchor((0.435, 0.3))
+    #ax1.legend(loc='upper left')
+    #ax2.legend(loc='upper right')
     sns.despine()
-    plt.savefig('images/poster_plots/poster_info_work.png')
+    plt.savefig('images/poster_plots/poster_info_work.pdf', format='pdf', dpi=300)
+    plt.close()
+    fig,ax = plt.subplots(figsize=(12, 8))
+    info_per_Wmsmt_opt = (data_opt['Information']/(data_opt['Meter Heat']))[1:-1]
+    info_per_Wmsmt_opt /= info_per_Wmsmt_opt.max()
+    info_per_Wmsm_opt_eq_temp = (data_opt_eq_temp['Information']/(data_opt_eq_temp['Meter Heat']))[1:-1]
+    info_per_Wmsm_opt_eq_temp /= info_per_Wmsm_opt_eq_temp.max()
+    sns.lineplot(x='Time', y=info_per_Wmsmt_opt, data=data_opt, label=r'$\frac{I}{W_{meas}}(T_M\ll T_S)$', color=color1)
+    sns.lineplot(x='Time', y=info_per_Wmsm_opt_eq_temp, data=data_opt_eq_temp, label=r'$\frac{I}{W_{meas}}(T_M=T_S)$', color=color2)
+    plt.title('Information per Measurement Work')
+    plt.xlabel(f'{symbol_dict["time"]}')
+    plt.ylabel(f'{symbol_dict["information"]} / {symbol_dict["measurement work"]}')
+    plt.legend()
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig('images/poster_plots/poster_info_per_Wmsmt.pdf', format='pdf', dpi=300)
+    plt.close()
 
+    # Next plot Q-factor I_mutual/W_measurement for all but the zeno case
+    data_opt = pd.read_csv('data/params_vs_omega_per_delta_E_opt.csv', skiprows=1)
+    data_opt_eq_temp = pd.read_csv('data/params_vs_omega_per_delta_E_opt_eq_temp.csv', skiprows=1)
+    #data_big_temp = pd.read_csv('data/params_vs_omega_per_delta_E_big_temp.csv', skiprows=1)
+    fig, ax = plt.subplots(figsize=(12, 8))
+    # Add to the dataframe the Q-factor I_mutual/W_measurement
+    data_opt['Q-factor'] = data_opt['Mutual Information'] / (data_opt['Meter Heat'])
+    Q_fact = data_opt['Q-factor'] / data_opt['Q-factor'].max()
+    data_opt_eq_temp['Q-factor'] = data_opt_eq_temp['Mutual Information'] / (data_opt_eq_temp['Meter Heat'])
+    Q_fact_eq_temp = data_opt_eq_temp['Q-factor'] / data_opt_eq_temp['Q-factor'].max()
+    #data_big_temp['Q-factor'] = (data_big_temp['Mutual Information'] / (data_big_temp['Meter Heat']))[1:-1]
+    sns.lineplot(x='hw/dE', y=Q_fact, data=data_opt, label=r'$Q(T_M\ll T_S)$', color=color1)
+    sns.lineplot(x='hw/dE', y=Q_fact_eq_temp, data=data_opt_eq_temp, label=r'$Q(T_M=T_S)$', color=color2)
+    #sns.lineplot(x='hw/dE', y='Q-factor', data=data_big_temp, label=r'$Q(T_M\gg T_S)$', color=color3)
+    plt.title('Q-factor')
+    plt.xlabel(f'{symbol_dict["hw/de"]}')
+    plt.ylabel(f'{symbol_dict["q-factor"]}')
+    plt.legend()
+    plt.tight_layout()
+    sns.despine()
+    plt.savefig('images/poster_plots/poster_q_factor.pdf', format='pdf', dpi=300)
+    plt.close()
 
+    # Next plot work and heat comparisons for three different cases, opt, opt_eq_temp and zeno_eq_temp
+    data_opt = pd.read_csv('data/params_vs_temp_opt_eq_temp.csv', skiprows=1)
+    data_zeno = pd.read_csv('data/params_vs_temp_zeno_eq_temp.csv', skiprows=1)
+    fig, axs = plt.subplots(2,1, figsize=(12, 8), gridspec_kw={'hspace': 0.1})
+    sns.lineplot(x='Temperature', y='Work', data=data_opt, color=color1, label=r"$W$",  ax=axs[0])
+    sns.lineplot(x='Temperature', y=1e17*data_zeno['Work'], data=data_zeno, color=color1, label=r"$W^{Zeno}$",  ax=axs[1])
+    sns.lineplot(x='Temperature', y='System Heat', data=data_opt, color=color2, label=r"$Q_S$",  ax=axs[0])
+    sns.lineplot(x='Temperature', y=1e17*data_zeno['System Heat'], data=data_zeno, label=r"$Q^{Zeno}_S$", color=color2,  ax=axs[1])
+    sns.lineplot(x='Temperature', y='Meter Heat', data=data_opt, label=r"$Q_M$", color=color3,  ax=axs[0])
+    sns.lineplot(x='Temperature', y=1e17*data_zeno['Meter Heat'], data=data_zeno, label=r"$Q^{Zeno}_M$", color=color3,  ax=axs[1])
+    # Create efficiencies for the two cases
+    data_opt['Efficiency'] = np.abs(data_opt['Work']) / (np.abs(data_opt['System Heat']) + np.abs(data_opt['Meter Heat']))
+    data_zeno['Efficiency'] = np.abs(data_zeno['Work']) / (np.abs(data_zeno['System Heat']) + np.abs(data_zeno['Meter Heat']))
+    sns.lineplot(x='Temperature', y='Efficiency', data=data_opt, label=r"$\eta$", color='black', linestyle='--', ax=axs[0])
+    sns.lineplot(x='Temperature', y='Efficiency', data=data_zeno, label=r"$\eta^{Zeno}$", color='black', linestyle='--', ax=axs[1])
+    # Color the region 0 to 1 in the x-axis red and 1 to the maximum temperature ratio blue for both subplots
+    axs[0].axvspan(0, 1, color='red', alpha=0.3)
+    axs[0].axvspan(1, 2, color='blue', alpha=0.3)
+    axs[1].axvspan(0, 1, color='red', alpha=0.3)
+    axs[1].axvspan(1, 2, color='blue', alpha=0.3)
+    axs[0].axhline(0, color='black', linewidth=lw)
+    axs[1].axhline(0, color='black', linewidth=lw)
+    # Make them share the same x-axis
+    plt.setp(axs[0].get_xticklabels(), visible=False)
+    # For both axes set y-tick
+    ax_0_y_ticks = np.round(np.array([min(data_opt['Work'].min(), data_opt['System Heat'].min(), data_opt['Meter Heat'].min()),\
+                    max(data_opt['Work'].max(), data_opt['System Heat'].max(), data_opt['Meter Heat'].max()), 0]),1)
+    ax_1_y_ticks = np.round(1e17*np.array([ min(data_zeno['Work'].min(), data_zeno['System Heat'].min(), data_zeno['Meter Heat'].min()),\
+                    max(data_zeno['Work'].max(), data_zeno['System Heat'].max(), data_zeno['Meter Heat'].max()), 0]),1)
+    axs[0].set_yticks(ax_0_y_ticks)
+    axs[1].set_yticks(ax_1_y_ticks)
+    axs[0].set_ylabel('Work [meV]')
+    axs[1].set_ylabel(r'Work [$10^{-17}$meV]')
+    plt.tight_layout()
+    plt.legend()
+    sns.despine()
+    plt.savefig('images/poster_plots/poster_work_heat_comparison.pdf', format='pdf', dpi=300)
+
+    # Next plot the entropy for the opt_eq_temp case
+    data_opt_eq_temp = pd.read_csv('data/params_vs_temp_opt_eq_temp.csv', skiprows=1)
+    fig, ax = plt.subplots(figsize=(12, 8))
+    # First extract the system temperature T_S from the title string
+    title_string = pd.read_csv('data/params_vs_temp_opt_eq_temp.csv', nrows=1)
+    pattern = r"System temperature: (\d+\.\d+)"
+    T_S = float(re.search(pattern, title_string.columns[0]).group(1))
+    # The x-axis is T_M/T_S so x_axis* T_S = T_M
+    data_opt_eq_temp['Meter temperature'] = data_opt_eq_temp['Temperature']*T_S
+    # Create vectors for the system and meter heat divided by the system and meter temperature
+    data_opt_eq_temp['System Heat / System Temperature'] = data_opt_eq_temp['System Heat']/T_S
+    data_opt_eq_temp['Meter Heat / Meter Temperature'] = data_opt_eq_temp['Meter Heat']/data_opt_eq_temp['Meter temperature']
+    # Next plot system heat over system temperature and meter heat over meter temperature
+    sns.lineplot(x='Temperature', y='System Heat / System Temperature', data=data_opt_eq_temp,\
+                  label=r'$\frac{Q_S}{T_S}$')
+    sns.lineplot(x='Temperature', y='Meter Heat / Meter Temperature', data=data_opt_eq_temp,\
+                    label=r'$\frac{Q_M}{T_M}$')
+    # Plot the sum of system heat/system temperature and the mutual information
+    data_opt_eq_temp['Total entropy'] = data_opt_eq_temp['System Heat / System Temperature'] + data_opt_eq_temp['Information']
+    data_opt_eq_temp['S+I_m']= data_opt_eq_temp['System Heat / System Temperature'] + data_opt_eq_temp['Mutual Information']
+    sns.lineplot(x='Temperature', y='Total entropy', data=data_opt_eq_temp, label=r'$\frac{Q_S}{T_S} + I$',\
+                   color="black", linestyle='--')
+    sns.lineplot(x='Temperature', y='S+I_m', data=data_opt_eq_temp, label=r'$\frac{Q_S}{T_S} + I_{mut}$',\
+                     color="black", linestyle='dotted')
+    # Add horizontal line at 0
+    plt.axhline(0, color='black', linewidth=1.0)
+    plt.ylim(-0.005, 0.06)
+    plt.xlabel(f'{symbol_dict["temperature"]}')
+    plt.ylabel('Entropy [meV/K]')
+    plt.legend()
+    plt.tight_layout()
+    sns.despine()
+    plt.savefig('images/poster_plots/poster_entropy.pdf', format='pdf', dpi=300)
 
 if __name__ == "__main__":
     main()

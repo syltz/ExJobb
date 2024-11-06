@@ -1,11 +1,12 @@
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+#import matplotlib.gridspec as gridspec
+#from matplotlib.lines import Line2D
 import scipy as sp
 from SystemAndMeter_v2 import SystemAndMeter
-import matplotlib.gridspec as gridspec
-from matplotlib.lines import Line2D
 import pandas as pd
-
+import warnings
+warnings.filterwarnings("error")
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
 # and the system is assumed to be a two-level system.
@@ -38,10 +39,12 @@ def main():
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
     params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-9,\
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
+    params_big_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 10.0, 'tau': 0.25,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_big_temp'} #  The above parameters but with T_M >> T_S
     # Dictionary of the dictionaries of parameters to test
     param_sets = {'opt': params_opt, 'naive': params_naive, 'zeno': params_zeno,\
                    'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
-                      'opt_uneq_temp': params_opt_uneq_temp}
+                   'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
 
     #fun, x = find_pos_net_work(sam)
     #print(f"Maximum net work extraction possible: {fun:.2f} meV")
@@ -50,27 +53,19 @@ def main():
     #print(f"Maximum net work extraction possible with fixed temperatures: {fun:.2f} meV")
     #print(f"Optimal parameters with fixed temperatures: Q_S = {x[0]:.2f}, P = {x[1]:.2f}, Q_M = {x[2]:.2f}, tau = {x[3]:.2f}")
 
-    #params = param_sets['zeno']
+    #params = param_sets['opt_eq_temp']
     #sam.set_Q_S(params['Q_S'])
     #sam.set_P(params['P'])
     #sam.set_Q_M(params['Q_M'])
     #sam.set_tau(params['tau'])
+    #sam.set_x(params['x'])
     #fix_n = params['n_prime'] # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
-    #file_ending = params['file_ending'] # The file ending for the data files
-    #x_max = 2.0 # The maximum value of x to test
-    #temp_range = np.linspace(1e-2, x_max, 100)
-    #results = {'Temperature': [], 'System Heat': [], 'Meter Heat': [], 'Work': []}
-    #for T_M in temp_range:
-    #    sam.set_x(T_M)
-    #    W_meas = sam.zeno_limit_work_measurement()
-    #    W_ext = sam.zeno_limit_work_extraction()
-    #    results['Temperature'].append(T_M)
-    #    results['Meter Heat'].append(W_meas)
-    #    results['System Heat'].append(-W_ext)
-    #    results['Work'].append(W_ext-W_meas)
-    #df = pd.DataFrame(results)
-    #df.to_csv(f"data/zeno_limit_work{file_ending}_testing.csv", index=False)
+    #file_ending = params['file_ending']+'_test' # The file ending for the data files
+    #x_max = 2 # The maximum value of x to test
+    #params_vs_temp(sam, temp_range=np.linspace(0, x_max, 100),\
+    #                             fname=f"data/params_vs_temp{file_ending}.csv", fixed=fix_n)
 
+    #param_sets = {'opt': params_opt, 'opt_eq_temp': params_opt_eq_temp}
     for params in param_sets.values():
         sam.set_Q_S(params['Q_S'])
         sam.set_P(params['P'])
@@ -85,13 +80,13 @@ def main():
         params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, x_max*sam.get_Q_S(), 100),\
                                      fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
         sam.set_Q_M(params['Q_M'])
-        params_vs_time(sam, tau_range=np.linspace(1e-4, 2.0, 100),\
+        params_vs_time(sam, tau_range=np.linspace(0, 2.0, 100),\
                         fname=f"data/params_vs_time{file_ending}.csv", fixed=fix_n)
         sam.set_tau(params['tau'])
-        params_vs_coupling(sam, g_range=np.linspace(0.0, x_max, 100),\
-                            fname=f"data/params_vs_coupling{file_ending}.csv", fixed=fix_n)
-        params_vs_nprime(sam, nprime_range=np.arange(0, sam.get_total_levels()),\
-                        fname=f"data/params_vs_nprime{file_ending}.csv")
+        #params_vs_coupling(sam, g_range=np.linspace(0.0, x_max, 100),\
+        #                    fname=f"data/params_vs_coupling{file_ending}.csv", fixed=fix_n)
+        #params_vs_nprime(sam, nprime_range=np.arange(0, sam.get_total_levels()),\
+        #                fname=f"data/params_vs_nprime{file_ending}.csv")
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
     """ Plots the conditional probabilities as a function of time measuring in state n.
