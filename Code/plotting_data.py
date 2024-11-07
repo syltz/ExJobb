@@ -223,6 +223,9 @@ def poster_plotting():
     color1 = sns.color_palette("colorblind")[0]
     color2 = sns.color_palette("colorblind")[1]
     color3 = sns.color_palette("colorblind")[2]
+    color4 = sns.color_palette("colorblind")[3]
+    color5 = sns.color_palette("colorblind")[4]
+    color6 = sns.color_palette("colorblind")[5]
 
 
     # Plot information and work for the three different cases with the y-axis for information
@@ -302,9 +305,13 @@ def poster_plotting():
     # Add a second axis for the efficiency in both subplots
     ax0_eff = axs[0].twinx()
     ax1_eff = axs[1].twinx()
-    sns.lineplot(x='Temperature', y='Efficiency', data=data_opt, label=r"$\eta$", color='black', linestyle='--', ax=ax0_eff)
-    sns.lineplot(x='Temperature', y='Efficiency', data=data_zeno, label=r"$\eta^{Zeno}$", color='black', linestyle='--', ax=ax1_eff)
+    plot_colored_segments(ax0_eff, data_opt['Temperature'], data_opt['Efficiency'], data_opt['Temperature'] <1, data_opt['Work'] > 0, color4, color5, color6)
+    plot_colored_segments(ax1_eff, data_zeno['Temperature'], data_zeno['Efficiency'], data_zeno['Temperature'] < 1, data_zeno['Work']> 0, color4, color5, color6)
+    #sns.lineplot(x='Temperature', y='Efficiency', data=data_opt, label=r"$\eta$", color='black', linestyle='--', ax=ax0_eff)
+    #sns.lineplot(x='Temperature', y='Efficiency', data=data_zeno, label=r"$\eta^{Zeno}$", color='black', linestyle='--', ax=ax1_eff)
+    # Color code the efficiency lines so that for TM < TS and W > 0 it is color4, for TM > TS and W > 0 it is color5, else color6
     
+    plt.tight_layout()
     # Set y-axis for the efficiency axes
     ax0_eff.set_ylabel(r'$\eta$')
     ax1_eff.set_ylabel(r'$\eta^{Zeno}$')
@@ -328,13 +335,12 @@ def poster_plotting():
                     max(data_zeno['Work'].max(), data_zeno['System Heat'].max(), data_zeno['Meter Heat'].max()), 0]),1)
     axs[0].set_yticks(ax_0_y_ticks)
     axs[1].set_yticks(ax_1_y_ticks)
-    axs[0].set_ylabel('Work [meV]')
-    axs[1].set_ylabel(r'Work [$10^{-17}$meV]')
+    axs[0].set_ylabel('meV')
+    axs[1].set_ylabel(r'$10^{-17}$meV')
 
     # Have no x-label for the first subplot
     axs[0].set_xlabel('')
     axs[1].set_xlabel(f'{symbol_dict["temperature"]}')
-    plt.tight_layout()
     plt.legend()
     # Move the legends to the right and make them not overlap
     ax1_eff.legend().set_bbox_to_anchor((0.5, 1.05))
@@ -406,6 +412,24 @@ def zeno_crossover_plot(Q_S, x, mu_range):
     plt.savefig('images/poster_plots/zeno_cross_over.pdf', format='pdf', dpi=300)
     plt.close()
 
+def plot_colored_segments(ax, x, y, condition1, condition2, color1, color2, color3):
+    # Save the points that belong to the same color in a list
+    x_red, y_red = [], []
+    x_blue, y_blue = [], []
+    x_green, y_green = [], []
+    for i in range(len(x) -1):
+        if condition1[i] and condition2[i]:
+            x_red.append(x[i])
+            y_red.append(y[i])
+        elif (not condition1[i]) and condition2[i]:
+            x_blue.append(x[i])
+            y_blue.append(y[i])
+        else:
+            x_green.append(x[i])
+            y_green.append(y[i])
+    ax.scatter(x_red, y_red, color='red', linewidth=lw, label=r'$\eta_{HE}$', s=10)
+    ax.scatter(x_blue, y_blue, color='blue', linewidth=lw, label=r'$\eta_{IE}$', s=10)
+    ax.scatter(x_green, y_green, color='green', linewidth=lw, label=r'$COP$', s=10)
 
 def calc_efficiency(row):
     T, W, Q_S, Q_M = row['Temperature'], row['Work'], row['System Heat'], row['Meter Heat']
