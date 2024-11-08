@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import scipy as sp
+import scipy.optimize as opt
 import os
 import re
 import numpy as np
@@ -56,6 +57,7 @@ def main():
     #plt.savefig('images/obs_info_test.png')
     poster_plotting()
     zeno_crossover_plot(Q_S=4.33, x=1, mu_range=np.linspace(1e-5, 2, 100))
+    zeno_crossover_intersection(Q_S_vals=[1], x_vals=np.linspace(0.05, 10, 500))
 
 def plot_all():
     for sim_run in run_dict:
@@ -121,27 +123,6 @@ def plot_work_comparison(data, file_ending, sim_run, x_axis, title_string):
         sns.despine()
         plt.savefig(f'images/param_vs_{file_ending}/work__comparison_{sim_run}.png')
         plt.close()
-
-def plot_zeno_crossover():
-    data = 'data/zeno_cross_over_zeno.csv'
-    data = pd.read_csv(data, skiprows=1)
-    fig, ax = plt.subplots(figsize=(12, 8))
-    sns.lineplot(x='Temperature Ratio', y='Work condition', data=data,\
-                  label=r'$f(T_M)$', color=color_dict['Work'], linewidth=lw)
-    sns.lineplot(x='Temperature Ratio', y='Constant limit', data=data,\
-                  label=r'$\frac{2\hbar\omega}{a\Delta E}$', color=color_dict['Measurement Work'], \
-                    linewidth=lw)
-    # Color the region 0 to 1 in the x-axis red and 1 to the maximum temperature ratio blue
-    plt.axvspan(0, 1, color='red', alpha=0.3)
-    plt.axvspan(1, data['Temperature Ratio'].max(), color='blue', alpha=0.3)
-    plt.legend()
-    plt.title('Zeno Limit Cross Over')
-    plt.xlabel(f'{symbol_dict["temperature"]}')
-    plt.ylabel('Condition for net positive work')
-    sns.despine()
-    plt.tight_layout()
-    plt.savefig(f'images/zeno_cross_over.png')
-    plt.close()
 
 def plot_q_factor(data, file_ending, sim_run, x_axis, title_string):
     # Select all columns that contain the word "information"
@@ -267,20 +248,18 @@ def poster_plotting():
     # Next plot Q-factor I_mutual/W_measurement for all but the zeno case
     data_opt = pd.read_csv('data/params_vs_omega_per_delta_E_opt.csv', skiprows=1)
     data_opt_eq_temp = pd.read_csv('data/params_vs_omega_per_delta_E_opt_eq_temp.csv', skiprows=1)
-    #data_big_temp = pd.read_csv('data/params_vs_omega_per_delta_E_big_temp.csv', skiprows=1)
     fig, ax = plt.subplots(figsize=(12, 8))
     # Add to the dataframe the Q-factor I_mutual/W_measurement
     data_opt['Q-factor'] = data_opt['Mutual Information'] / (data_opt['Meter Heat'])
     Q_fact = data_opt['Q-factor'] / data_opt['Q-factor'].max()
     data_opt_eq_temp['Q-factor'] = data_opt_eq_temp['Mutual Information'] / (data_opt_eq_temp['Meter Heat'])
     Q_fact_eq_temp = data_opt_eq_temp['Q-factor'] / data_opt_eq_temp['Q-factor'].max()
-    #data_big_temp['Q-factor'] = (data_big_temp['Mutual Information'] / (data_big_temp['Meter Heat']))[1:-1]
     sns.lineplot(x='hw/dE', y=Q_fact, data=data_opt, label=r'$Q(T_M\ll T_S)$', color=color1)
     sns.lineplot(x='hw/dE', y=Q_fact_eq_temp, data=data_opt_eq_temp, label=r'$Q(T_M=T_S)$', color=color2)
-    #sns.lineplot(x='hw/dE', y='Q-factor', data=data_big_temp, label=r'$Q(T_M\gg T_S)$', color=color3)
     plt.title('Normalized Q-factor')
     plt.xlabel(f'{symbol_dict["hw/de"]}')
-    plt.ylabel(f'{symbol_dict["q-factor"]}'+r'$/Q_{max}$')
+    plt.ylabel(r'$Q / Q_{max}$')
+    plt.ylim(0, plt.ylim()[1])
     plt.legend()
     plt.tight_layout()
     sns.despine()
@@ -290,41 +269,53 @@ def poster_plotting():
     # Next plot work and heat comparisons for three different cases, opt, opt_eq_temp and zeno_eq_temp
     data_opt = pd.read_csv('data/params_vs_temp_opt_eq_temp.csv', skiprows=1)
     data_zeno = pd.read_csv('data/params_vs_temp_zeno_eq_temp.csv', skiprows=1)
-    #data_zeno = pd.read_csv('data/params_vs_temp_zeno_eq_temp.csv', skiprows=1)
     zeno_corr_factor = 1e17
     fig, axs = plt.subplots(2,1, figsize=(12, 8), gridspec_kw={'hspace': 0.1})
+
+    
+
     sns.lineplot(x='Temperature', y='Work', data=data_opt, color=color1, label=r"$W$",  ax=axs[0])
     sns.lineplot(x='Temperature', y=zeno_corr_factor*data_zeno['Work'], data=data_zeno, color=color1, label=r"$W^{Zeno}$",  ax=axs[1])
     sns.lineplot(x='Temperature', y='System Heat', data=data_opt, color=color2, label=r"$Q_S$",  ax=axs[0])
     sns.lineplot(x='Temperature', y=zeno_corr_factor*data_zeno['System Heat'], data=data_zeno, label=r"$Q^{Zeno}_S$", color=color2,  ax=axs[1])
     sns.lineplot(x='Temperature', y='Meter Heat', data=data_opt, label=r"$Q_M$", color=color3,  ax=axs[0])
     sns.lineplot(x='Temperature', y=zeno_corr_factor*data_zeno['Meter Heat'], data=data_zeno, label=r"$Q^{Zeno}_M$", color=color3,  ax=axs[1])
+
     # Create efficiencies for the two cases
     data_opt['Efficiency'] = data_opt.apply(calc_efficiency, axis=1)
     data_zeno['Efficiency'] = data_zeno.apply(calc_efficiency, axis=1)
     # Add a second axis for the efficiency in both subplots
     ax0_eff = axs[0].twinx()
     ax1_eff = axs[1].twinx()
+    # Color code the efficiency lines so that for TM < TS and W > 0 it is color4, for TM > TS and W > 0 it is color5, else color6
     plot_colored_segments(ax0_eff, data_opt['Temperature'], data_opt['Efficiency'], data_opt['Temperature'] <1, data_opt['Work'] > 0, color4, color5, color6)
     plot_colored_segments(ax1_eff, data_zeno['Temperature'], data_zeno['Efficiency'], data_zeno['Temperature'] < 1, data_zeno['Work']> 0, color4, color5, color6)
-    #sns.lineplot(x='Temperature', y='Efficiency', data=data_opt, label=r"$\eta$", color='black', linestyle='--', ax=ax0_eff)
-    #sns.lineplot(x='Temperature', y='Efficiency', data=data_zeno, label=r"$\eta^{Zeno}$", color='black', linestyle='--', ax=ax1_eff)
-    # Color code the efficiency lines so that for TM < TS and W > 0 it is color4, for TM > TS and W > 0 it is color5, else color6
     
     plt.tight_layout()
     # Set y-axis for the efficiency axes
-    ax0_eff.set_ylabel(r'$\eta$')
-    ax1_eff.set_ylabel(r'$\eta^{Zeno}$')
+    ax0_eff.set_ylabel(r'$\eta,\, COP$')
+    ax1_eff.set_ylabel(r'$\eta^{Zeno},\, COP$')
     ax0_eff.set_ylim(0, 0.1*data_opt['Efficiency'].max())
     ax1_eff.set_ylim(0, 0.1*data_zeno['Efficiency'].max())
+    # Set y-axis for the work and heat axes
+    axs[0].set_ylabel('meV')
+    axs[1].set_ylabel(r'$10^{-17}$meV')
 
-    # Color the region 0 to 1 in the x-axis red and 1 to the maximum temperature ratio blue for both subplots
+    # Find first x-value when work is negative
+    first_neg_work = data_opt[data_opt['Work'] < 0]['Temperature'].values[0]
     axs[0].axvspan(0, 1, color='red', alpha=0.3)
-    axs[0].axvspan(1, 2, color='blue', alpha=0.3)
-    axs[1].axvspan(0, 1, color='red', alpha=0.3)
-    axs[1].axvspan(1, 2, color='blue', alpha=0.3)
+    axs[0].axvspan(1, first_neg_work, color='white', alpha=0.3)
+    axs[0].axvspan(first_neg_work, 2, color='blue', alpha=0.3)
     axs[0].axhline(0, color='black', linewidth=lw)
+
+    # Find first x-value when work is positive for zeno
+    first_pos_work = data_zeno[data_zeno['Work'] > 0]['Temperature'].values[0]
+    axs[1].axvspan(0, 1, color='yellow', alpha=0.3)
+    axs[1].axvspan(1, first_pos_work, color='blue', alpha=0.3)
+    axs[1].axvspan(first_pos_work, 2, color='white', alpha=0.3)
     axs[1].axhline(0, color='black', linewidth=lw)
+
+
     # Make them share the same x-axis
     plt.setp(axs[0].get_xticklabels(), visible=False)
 
@@ -335,8 +326,6 @@ def poster_plotting():
                     max(data_zeno['Work'].max(), data_zeno['System Heat'].max(), data_zeno['Meter Heat'].max()), 0]),1)
     axs[0].set_yticks(ax_0_y_ticks)
     axs[1].set_yticks(ax_1_y_ticks)
-    axs[0].set_ylabel('meV')
-    axs[1].set_ylabel(r'$10^{-17}$meV')
 
     # Have no x-label for the first subplot
     axs[0].set_xlabel('')
@@ -344,10 +333,9 @@ def poster_plotting():
     plt.legend()
     # Move the legends to the right and make them not overlap
     ax1_eff.legend().set_bbox_to_anchor((0.5, 1.05))
-
-    #sns.despine()
     plt.savefig('images/poster_plots/poster_work_heat_comparison.pdf', format='pdf', dpi=300)
 
+# ----------------------------------------------------------------------------------------------
     # Next plot the entropy for the opt_eq_temp case
     #data_opt_eq_temp = pd.read_csv('data/params_vs_temp_opt_eq_temp.csv', skiprows=1)
     entropy_plot_data = pd.read_csv('data/params_vs_temp_zeno.csv', skiprows=1)
@@ -385,14 +373,13 @@ def poster_plotting():
     plt.savefig('images/poster_plots/poster_entropy.pdf', format='pdf', dpi=300)
 
 def zeno_crossover_plot(Q_S, x, mu_range):
-    Q_S = 1.0
     x_vals = [1,1.5,2, 0.5]
     plt.figure(figsize=(12, 8))
     for x in x_vals:
         res = np.ones(len(mu_range))
         for i,mu in enumerate(mu_range):
             # Prefactor
-            res[i] = (1-np.exp(-mu*Q_S/x))/(1+np.exp(-Q_S))*np.exp(-mu*Q_S/x)*\
+            res[i] = (1-np.exp(-mu*Q_S/x))/(2*(1+np.exp(-Q_S)))*np.exp(-mu*Q_S/x)*\
             ( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) +\
              (1+np.exp(2*mu*Q_S/x)) *\
                 ( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) + np.exp(-2*mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)**2) ) )        
@@ -412,24 +399,61 @@ def zeno_crossover_plot(Q_S, x, mu_range):
     plt.savefig('images/poster_plots/zeno_cross_over.pdf', format='pdf', dpi=300)
     plt.close()
 
+def zeno_crossover_intersection(Q_S_vals, x_vals):
+    # Find the intersection point between the two lines for a few different x values
+    plt.figure(figsize=(12, 8))
+    for Q_S in Q_S_vals:
+        mu_intersection = np.zeros(len(x_vals))
+        for i,x in enumerate(x_vals):
+            mu_intersection[i] = sp.optimize.fsolve(lambda mu: (1-np.exp(-mu*Q_S/x))/(2*(1+np.exp(-Q_S)))*np.exp(-mu*Q_S/x)*\
+            ( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) +\
+             (1+np.exp(2*mu*Q_S/x)) *\
+                ( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) + np.exp(-2*mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)**2) ) ) - mu, 1)
+        sns.lineplot(x=x_vals, y=mu_intersection, linewidth=lw, label=r"$\frac{\Delta E}{k_B T_S}$"+f"={Q_S}", color='black')
+        # Fit an
+    plt.xlabel(f"{symbol_dict['temperature']}")
+    plt.ylabel(f"{symbol_dict['hw/de']}")
+    # Color the region above the curve blue, below the curve for x=0 to 1 red
+    plt.fill_between(x_vals, mu_intersection, max(mu_intersection), color='blue', alpha=0.3)
+    plt.fill_between(x_vals[x_vals<=1], mu_intersection[x_vals<=1], 0, color='red', alpha=0.3)
+
+    # Set lower y-limit to 0 and upper y-limit to the current upper y-limit
+    plt.ylim(0, plt.ylim()[1])
+    sns.despine()
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('images/poster_plots/zeno_cross_over_intersection.pdf', format='pdf', dpi=300)
+    plt.close()
+def crossover_function(mu, Q_S, x):
+    return (1-np.exp(-mu*Q_S/x))/(2*(1+np.exp(-Q_S)))*np.exp(-mu*Q_S/x)*\
+            ( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) +\
+             (1+np.exp(2*mu*Q_S/x)) *\
+                ( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) + np.exp(-2*mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)**2) ) )
+
 def plot_colored_segments(ax, x, y, condition1, condition2, color1, color2, color3):
     # Save the points that belong to the same color in a list
-    x_red, y_red = [], []
-    x_blue, y_blue = [], []
-    x_green, y_green = [], []
+    color_HE = 'blue'
+    color_IE = 'red'
+    color_HP = 'black'
+    x_HE, y_HE = [], []
+    x_IE, y_IE = [], []
+    x_HP, y_HP = [], []
     for i in range(len(x) -1):
         if condition1[i] and condition2[i]:
-            x_red.append(x[i])
-            y_red.append(y[i])
+            x_HE.append(x[i])
+            y_HE.append(y[i])
         elif (not condition1[i]) and condition2[i]:
-            x_blue.append(x[i])
-            y_blue.append(y[i])
+            x_IE.append(x[i])
+            y_IE.append(y[i])
         else:
-            x_green.append(x[i])
-            y_green.append(y[i])
-    ax.scatter(x_red, y_red, color='red', linewidth=lw, label=r'$\eta_{HE}$', s=10)
-    ax.scatter(x_blue, y_blue, color='blue', linewidth=lw, label=r'$\eta_{IE}$', s=10)
-    ax.scatter(x_green, y_green, color='green', linewidth=lw, label=r'$COP$', s=10)
+            x_HP.append(x[i])
+            y_HP.append(y[i])
+    ax.plot(x_HE, y_HE, color=color_HE, linewidth=lw, label=r'$\eta_{HE}$', linestyle='--')   
+    ax.plot(x_IE, y_IE, color=color_IE, linewidth=lw, label=r'$\eta_{IE}$', linestyle='--')
+    ax.plot(x_HP, y_HP, color=color_HP, linewidth=lw, label=r'$COP$', linestyle='--')
+    #ax.scatter(x_HE, y_HE, color=color_HE, linewidth=lw, label=r'$\eta_{HE}$', s=10)
+    #ax.scatter(x_IE, y_IE, color=color_IE, linewidth=lw, label=r'$\eta_{IE}$', s=10)
+    #ax.scatter(x_HP, y_HP, color=color_HP, linewidth=lw, label=r'$COP$', s=10)
 
 def calc_efficiency(row):
     T, W, Q_S, Q_M = row['Temperature'], row['Work'], row['System Heat'], row['Meter Heat']
