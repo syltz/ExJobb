@@ -1,21 +1,18 @@
 import numpy as np
-#import matplotlib.pyplot as plt
-#import matplotlib.gridspec as gridspec
-#from matplotlib.lines import Line2D
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib.lines import Line2D
 import scipy as sp
 from SystemAndMeter_v2 import SystemAndMeter
+#from testing import SystemAndMeter
 import pandas as pd
-import warnings
-warnings.filterwarnings("error")
+#import warnings
+#warnings.filterwarnings("error")
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
 # and the system is assumed to be a two-level system.
-# I also use mass = 1, hbar = 1, and kB = 1 for simplicity. I do however keep them
-# in the equations for clarity and so that they can be easily changed if needed.
-# It's mostly to avoid any potential numerical issues that may arise from the
-# small values of hbar and kB.
-kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 def main():
     temp_system = 300.0
@@ -27,7 +24,9 @@ def main():
     sam = SystemAndMeter(T_S=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
     # Dictionaries of parameters to test. They are here to ensure consistency in the parameters.
     # Just uncomment the one you want to test and comment the others.
-    params_opt = {'Q_S': 2.25, 'P': 0.73, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
+    #params_opt = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
+    params_opt = {'Q_S': 1.97, 'P': 0.77, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.21,\
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
     params_naive = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5,\
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_naive'} # Naive parameters
@@ -37,7 +36,7 @@ def main():
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_eq_temp'} # Optimal parameters but with equal temperatures
     params_opt_uneq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 0.01, 'tau': 0.25,\
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
-    params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-9,\
+    params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-6,\
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
     params_big_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 10.0, 'tau': 0.25,\
                    'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_big_temp'} #  The above parameters but with T_M >> T_S
@@ -46,27 +45,9 @@ def main():
                    'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
                    'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
 
-    #fun, x = find_pos_net_work(sam)
-    #print(f"Maximum net work extraction possible: {fun:.2f} meV")
-    #print(f"Optimal parameters: Q_S = {x[0]:.2f}, P = {x[1]:.2f}, Q_M = {x[2]:.2f}, T_M = {x[3]:.2f}, tau = {x[4]:.2f}")
-    #fun, x = find_pos_net_work_fixed_temps(sam)
-    #print(f"Maximum net work extraction possible with fixed temperatures: {fun:.2f} meV")
-    #print(f"Optimal parameters with fixed temperatures: Q_S = {x[0]:.2f}, P = {x[1]:.2f}, Q_M = {x[2]:.2f}, tau = {x[3]:.2f}")
-
-    #params = param_sets['opt_eq_temp']
-    #sam.set_Q_S(params['Q_S'])
-    #sam.set_P(params['P'])
-    #sam.set_Q_M(params['Q_M'])
-    #sam.set_tau(params['tau'])
-    #sam.set_x(params['x'])
-    #fix_n = params['n_prime'] # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
-    #file_ending = params['file_ending']+'_test' # The file ending for the data files
-    #x_max = 2 # The maximum value of x to test
-    #params_vs_temp(sam, temp_range=np.linspace(0, x_max, 100),\
-    #                             fname=f"data/params_vs_temp{file_ending}.csv", fixed=fix_n)
-
-    #param_sets = {'opt': params_opt, 'opt_eq_temp': params_opt_eq_temp}
+    param_sets = {'opt': params_opt}
     for params in param_sets.values():
+        R_vals = [0, 1e-1, 1e-2, 1e-3]
         sam.set_Q_S(params['Q_S'])
         sam.set_P(params['P'])
         sam.set_Q_M(params['Q_M'])
@@ -74,19 +55,22 @@ def main():
         fix_n = params['n_prime'] # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
         file_ending = params['file_ending'] # The file ending for the data files
         x_max = 2.0 # The maximum value of x to test
-        params_vs_temp(sam, temp_range=np.linspace(1e-2, x_max, 100),\
-                        fname=f"data/params_vs_temp{file_ending}.csv", fixed=fix_n)
-        sam.set_x(params['x'])
-        params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, x_max*sam.get_Q_S(), 100),\
-                                     fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
-        sam.set_Q_M(params['Q_M'])
-        params_vs_time(sam, tau_range=np.linspace(0, 2.0, 100),\
-                        fname=f"data/params_vs_time{file_ending}.csv", fixed=fix_n)
-        sam.set_tau(params['tau'])
+        for R in R_vals:
+            sam.set_R(R)
+            params_vs_time(sam, tau_range=np.linspace(0, 2.0, 500),\
+                            fname=f"data/params_vs_time{file_ending}_gamma_{R}.csv", fixed=fix_n)
+        #sam.set_x(params['x'])
+        #params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, x_max*sam.get_Q_S(), 100),\
+        #                             fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
+        #sam.set_Q_M(params['Q_M'])
+        #params_vs_time(sam, tau_range=np.linspace(0, 2.0, 100),\
+        #                fname=f"data/params_vs_time{file_ending}.csv", fixed=fix_n)
+        #sam.set_tau(params['tau'])
         #params_vs_coupling(sam, g_range=np.linspace(0.0, x_max, 100),\
         #                    fname=f"data/params_vs_coupling{file_ending}.csv", fixed=fix_n)
         #params_vs_nprime(sam, nprime_range=np.arange(0, sam.get_total_levels()),\
         #                fname=f"data/params_vs_nprime{file_ending}.csv")
+
 
 def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
     """ Plots the conditional probabilities as a function of time measuring in state n.
@@ -429,7 +413,7 @@ def plot_work_temp(sam, temps=np.linspace(0.0,2.1,100), time=0.5, fname=None):
     sam.set_tau(old_time)
     sam.set_x(old_x)
     print(f"W_ext and W_meas plotted at time {time}, and x reset to {old_x} and time reset to {old_time}")
-
+                                                                                                                     
 def plot_Wmeas_vs_I_mutual(sam, times=np.linspace(0.0, 2, 100), fname=None):
     """Plots the measurement work versus the mutual information as a function of time.
 
@@ -613,7 +597,7 @@ def find_pos_net_work(sam):
     from scipy.optimize import minimize
     # Set the initial guess for the minimizer and bounds that are non-zero and positive
     x0 = [sam.get_Q_S(), sam.get_P(), sam.get_Q_M(), sam.get_x(), sam.get_tau()]
-    sam.set_n(first_positive_W_ext(sam))
+    sam.set_n(1)
     # Add some small random noise to the initial guess to avoid getting stuck in local minima
     x0 = [x + np.random.normal(-0.1, 0.1) for x in x0]
     res = minimize(work_minimizer, x0, args=(sam), bounds=[(1e-2, None), (1e-2, None), (0.2, None), (1e-2, None), (0,1)], method='L-BFGS-B')
@@ -801,8 +785,9 @@ def params_vs_time(sam: SystemAndMeter, tau_range=np.linspace(0.0, 2.0, 100), fn
             n = fixed
         sam.set_n(n)
         sam.set_n_upper_limit(sam.get_total_levels())
-        # Check if we're in the Zeno regime
-        if sam.get_tau() < 1e-5:
+        # Check if we're in the Zeno regime, actually probably don't use this.
+        # The Zeno regime function might not be correct.
+        if False: #sam.get_tau() < 1e-5 :
             W_ext = sam.zeno_limit_work_extraction()
             W_meas = sam.zeno_limit_work_measurement()
         else:
@@ -1001,6 +986,31 @@ def params_vs_nprime(sam: SystemAndMeter, nprime_range=np.arange(0,10), fname='d
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs nprime saved to {fname}")
 
+
+def pareto_helper(args: tuple):
+    """Helper function for the Pareto optimization.
+        Creates a SystemAndMeter object with the parameters specified in args 
+        and returns the work, power, and mutual information of a cycle as a tuple.
+
+    Args:
+        args (tuple): The arguments to pass to the function.
+    """
+    pass
+
+def plot_joint_prob_of_time(sam, t_max=1, n=None):
+    """ Plots the joint probability P(1,n,t) as a function of time"""
+    sam.set_tau(0.001)
+    sam.set_n(1)
+    p0, p1 = sam.joint_prob_evol()
+    t = np.arange(0, sam.get_time(), sam.get_time()/100)
+    plt.plot(t, p1, label=f'P(1,{sam.get_n()},t)')
+    plt.plot(t, p0, label=f'P(0,{sam.get_n()},t)')
+    plt.plot(t, p1+p0, label=f'P({sam.get_n()},t)')
+    plt.legend()
+    plt.xlabel(r'Time ($\tau$)')
+    plt.ylabel('Probability')
+    plt.savefig(f'../images/joint_prob_t_{t_max}.png')
+        
 
 if __name__=='__main__':
     main()

@@ -2,11 +2,11 @@ import numpy as np
 import scipy as sp # Not currently used but can be uncommented if needed
 from scipy.special import factorial, assoc_laguerre
 
-kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 class SystemAndMeter:
-    def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0, n_upper_limit=None):
+    def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0, n_upper_limit=None, R=0):
         """Initializes the system and meter with the given parameters.
         Ideally, we use the dimensionless parameters Q_S, Q_M, and P to set the energy scales of the system and meter.
         However, you can set the parameters directly if you want via the seter functions, but this requires
@@ -20,6 +20,7 @@ class SystemAndMeter:
             P (float): Dimensionless parameter that sets coupling strength and mass, g^2*m/2 = P*delta_E. Default is 1.
             tau (float): The normalized time of interaction between the system and meter, t = tau*2*pi/omega. Default is 0.5.
             msm_state (int): The energy level of the meter to measure. Default is 0.
+            R (float): The dimensionless parameter that sets the dissipation rate of the meter, gamma = R*omega. Default is 0.
 
         """        
         self.T_S = T_S
@@ -29,6 +30,7 @@ class SystemAndMeter:
         self.P = P
         self.n = msmt_state
         self.tau = tau
+        self.R = R
         self.update_params()
         self.update_total_levels()
         if n_upper_limit == None:
@@ -87,13 +89,14 @@ class SystemAndMeter:
         g = self.g # Coupling strength
         omega = self.omega_meter # Angular frequency of the meter
         mass = self.mass # Mass of the meter
+        gamma = self.gamma # Dissipation rate of the meter
+        R = self.R # Dimensionless parameter that sets the dissipation rate of the meter
         # For numerical stability reasons, use Taylor expansion to first order for small values of omega*t 
-        if omega*t < 1e-4: 
-            alpha = g*np.sqrt(mass*omega/(2*hbar))*(t)
+        # Also, note that when R=gamma = 0 we recover the non-dissipative case.
+        if omega*t < 1e-5: 
+            alpha = g*np.sqrt(mass*omega/(2*hbar))*t*(1+1j*R/2)
         else:
-            alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.sin(omega*t) -1j*(np.cos(omega*t)-1))
-        #if alpha == 0:
-        #    return 0
+            alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.exp(-gamma*t/2)*np.sin(omega*t) -1j*(np.exp(-gamma*t/2)*np.cos(omega*t)-1))
         try:
             if n >= m:
                 # Check if the factorial ratio is zero and if either the real or imaginary part
@@ -301,10 +304,6 @@ class SystemAndMeter:
         if (time==None):
             time = self.time
 
-        # If time is zero this is actually an easy calculation to do analytically
-        #if time == 0:
-        #    return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
-
         N = self.total_levels
         S = 0
         for n in range(0, N+1):
@@ -325,7 +324,7 @@ class SystemAndMeter:
         """
         if (time==None):
             time = self.time
-        S_0 = self.entropy(time=0)
+        S_0 = self.entropy(0)
         S_t = self.entropy(time)
         return S_0 - S_t
     
@@ -341,24 +340,15 @@ class SystemAndMeter:
         """
         if (time==None):
             time = self.time
-        #if time == 0: # If time is zero, then the observer information is zero
-        #    return 0
         if (n==None):
             n = self.n
         if (n_upper_limit==None):
             n_upper_limit = self.n_upper_limit
         p_n = 0
-        #if time == 0:
         for m in range(n, n_upper_limit+1):
             p0_n, p1_n = self.joint_probability(n=m, t=time)
             p_n += (p0_n + p1_n)
         I_O = -kB * (p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
-        #I_O = 0
-        #for m in range(n, n_upper_limit):
-        #    p0_n, p1_n = self.joint_probability(n=m, t=time)
-        #    p_n = p0_n + p1_n
-        #    I_O += -(p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
-        #I_O *= kB
         return I_O
 
     def work_extraction(self, time=None):
@@ -445,10 +435,11 @@ class SystemAndMeter:
         m = self.mass
         b = self.tls_state[1]
         wt = 2*np.pi*self.tau # t = tau*2*pi/omega
-        W_meas = b*m*g**2 * wt**2
+        W_meas = b*m*g**2 * wt**2/2
         return W_meas
     def zeno_limit_work_extraction(self):
         """Calculates the work extracted from the system in the Zeno limit.
+        Probably don't use this, there still might be something off about this, I'm not convinced it's correct.
 
         Returns:
             float: The work extracted from the system in the Zeno limit.
@@ -461,14 +452,8 @@ class SystemAndMeter:
         t = self.time
         beta = self.beta
         omega = self.omega_meter
-        # Note that wt*t = omega*t^2
-        K = a*b*delta_E*m*g**2*wt*t/(2*hbar) # Constant prefactor
-        norm_factor = np.exp(beta*hbar*omega/2) * (1-np.exp(-beta*hbar*omega))
-        sum_probs = 0
-        for n in range(self.n, self.n_upper_limit+1):
-            sum_probs += n*np.exp(-beta*hbar*omega*(n+1/2)) + (n+1)*np.exp(-beta*hbar*omega*(n+3/2))
-        sum_probs *= norm_factor
-        W = K*sum_probs
+        n_prime = self.n
+        W = a*b*delta_E*(g**2*wt*t*m*hbar/2)*n_prime*(1-np.exp(beta*hbar*omega))**2*np.exp(-beta*hbar*omega*(n_prime+1))
         return W
 
     # Functions to set the parameters of the system and meter
@@ -511,6 +496,14 @@ class SystemAndMeter:
         """
         self.x = x
         self.full_update()
+    def set_R(self, R):
+        """Setter function for the dimensionless parameter that sets the dissipation rate of the meter.
+
+        Args:
+            R (float): Dimensionless parameter that sets the dissipation rate of the meter.
+        """
+        self.R = R
+        self.update_params()
     def set_tau(self, tau):
         """Setter function for the normalized time of interaction between the system and meter.
 
@@ -583,6 +576,13 @@ class SystemAndMeter:
             delta_E (float): Energy difference between the two states of the system.
         """
         self.delta_E = delta_E
+    def set_gamma(self, gamma):
+        """Setter function for the dissipation rate of the meter.
+
+        Args:
+            gamma (float): Dissipation rate of the meter.
+        """
+        self.gamma = gamma
 
 
     #--------- Functions to update the hidden parameters ofthe system and meter ------------
@@ -601,6 +601,7 @@ class SystemAndMeter:
         self.T_m = self.x*self.T_S # Temperature of the meter, T_M = x*T_S 
         self.g = self.P*np.sqrt(kB*self.T_S/self.mass) # Coupling strength, g = P*sqrt(kB*T_S/m) but m = 1
         self.time = self.tau*2*np.pi/self.omega_meter # Interaction time, t = tau*2*pi/omega
+        self.gamma = self.R*self.omega_meter # Dissipation rate of the meter, gamma = R*omega
         a = 1/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) )
         b = np.exp(-self.delta_E/(kB*self.T_S))/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) )
         self.tls_state = (a,b)
@@ -740,3 +741,17 @@ class SystemAndMeter:
             int: Upper limit of the energy levels of the meter to measure.
         """
         return self.n_upper_limit
+    def get_gamma(self):
+        """Getter function for the dissipation rate of the meter.
+
+        Returns:
+            float: Dissipation rate of the meter.
+        """
+        return self.gamma
+    def get_R(self):
+        """Getter function for the dimensionless parameter that sets the dissipation rate of the meter.
+
+        Returns:
+            float: Dimensionless parameter that sets the dissipation rate of the meter.
+        """
+        return self.R
