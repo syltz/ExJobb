@@ -410,7 +410,7 @@ class SystemAndMeter:
 
     def quality_factor_info(self, time=None):
         """ I don't think I actually need this function but I'm keeping it here just in case.
-            Probably don't ude this without thorough testing."""
+            Probably don't use this without thorough testing."""
         if time == None:
             time = self.time
         mutual_info = self.mutual_information(time)
