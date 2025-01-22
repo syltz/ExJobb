@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import seaborn as sns
 import pandas as pd
 import scipy as sp
@@ -6,10 +7,12 @@ import scipy.optimize as opt
 import os
 import re
 import numpy as np
+import ast
+from scipy.interpolate import UnivariateSpline
 
 # Set the style of the plots
 sns.set_style(style='white')
-sns.set_context(context='poster')
+sns.set_context(context='paper', font_scale=2)#, rc={"lines.linewidth": 5.0})
 sns.set_palette(palette='colorblind')
 lw = 1.75 # Line width
 
@@ -44,22 +47,46 @@ run_dict = {'opt': '_opt', 'opt_eq_temp': '_opt_eq_temp', 'zeno_eq_temp': '_zeno
             'uneq_temp': '_opt_uneq_temp', 'naive': '_naive', 'zeno':'_zeno'}
 
 def main():
-    data = pd.read_csv(f'data/params_vs_temp{run_dict["opt_eq_temp"]}.csv', skiprows=1)
-    #entropy_v2(data=data, fname='entropy_henning.png')
-    #first_law_quantities(data=data, fname='first_law_quantities_henning.png')
-    #zeno_work_plot(Q_S=0.1, Q_M=0.2, x_range=np.linspace(1e-3, 2, 1000), n_prime=4)
-    #zeno_crossover_intersection(Q_S_vals=[4.33], x_vals=np.linspace(0.05, 2, 500), n=1)
-    #poster_plotting()
-    df_list = []
-    base = 'data/params_vs_time_opt_eq_temp'
-    ending_list = ["_gamma_0", "_gamma_0.1", "_gamma_0.01", "_gamma_0.001"]
-    for ending in ending_list:
-        df_list.append(pd.read_csv(f'{base}{ending}.csv', skiprows=1))
-    labels = [r'$\gamma=0$', r'$\gamma=0.1$', r'$\gamma=0.01$', r'$\gamma=0.001$']
-    W_net_per_I_tot(df_list, labels=labels)
-    information_plot(df_list, labels=labels)
-    extracted_work_plot(df_list, labels=labels)
+    #main_data_list = ['data/phase_boundary_opt_eq_temp_tau=1e-06.csv', 'data/phase_boundary_opt_eq_temp_tau=0.125.csv', 'data/phase_boundary_opt_eq_temp_tau=0.25.csv', 'data/phase_boundary_opt_eq_temp_tau=0.5.csv']
+    #ending_data_list = ['data/phase_boundary_opt_eq_temp_tau=1e-06_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.125_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.25_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.5_ending.csv']
+    tau_labels = ['1e-06', '0.125', '0.25', '0.5']
+    taus = np.array([1e-06, 0.125, 0.25, 0.5])
+    dissipation_data = [f'data/phase_boundary_tau={tau}_gamma=0.01.csv' for tau in taus]
+    unitary_data = [f'data/phase_boundary_opt_eq_temp_tau={tau}.csv' for tau in taus]
+    unitary_data_ending = [f'data/phase_boundary_opt_eq_temp_tau={tau}_ending.csv' for tau in taus]
+    dissipation_data_list = phase_diagram_preprocessing(dissipation_data)
+    unitary_data_list = phase_diagram_preprocessing(unitary_data, ending_data_names=unitary_data_ending)
+    fnames = ['_gamma=0.01.pdf', '_unitary.pdf']
+    labels = [r'$\tau=10^{-6}$', r'$\tau=0.125$', r'$\tau=0.25$', r'$\tau=0.5$']
+    data_sets = [dissipation_data_list, unitary_data_list]
+    #for data_set, fname in zip(data_sets, fnames):
+    #    phase_diagram(data_set, labels=labels, fname=f"thesis_figures/phase_diagram{fname}")
+    #    phase_diagram_comparison(data_set[0], fname=f"thesis_figures/phase_diagram_comparison{fname}")
+    #df_1 = pd.read_csv('data/multidata_Work_tau=1e-06_gamma=0.01.csv', index_col=0)
+    #df_2 =  pd.read_csv('data/multidata_Work_tau=0.125_gamma=0.01.csv', index_col=0)
+    #df_3 =  pd.read_csv('data/multidata_Work_tau=0.25_gamma=0.01.csv', index_col=0)
+    #df_4 =  pd.read_csv('data/multidata_Work_tau=0.5_gamma=0.01.csv', index_col=0)
+    #df_list = [df_1, df_2, df_3, df_4]
+    #power_heatmap(indata=df_list, times=taus, labels=tau_labels, overlay=True, fname='thesis_figures/power_plot_dissipation.png')
+    gammas = [0, 0.001, 0.01]
+    df_list = [pd.read_csv(f'data/dissipation/params_vs_time_opt_eq_temp_gamma_{gamma}_extreme_long_run.csv', skiprows=1) for gamma in gammas]
+    plot_data_broken_x_axis(df_list, 'Time', 'Information', (0,2), (98,100), fname='thesis_figures/information_vs_time_broken_x_axis.png', labels=[r'$\gamma=0$', r'$\gamma=0.001$', r'$\gamma=0.01$'],\
+                             title='Information vs Time', xlabel=r'$\tau$', ylabel=r'$I_{tot}$', legend_pos=(-0.08, 0.7))
+    for df in df_list:
+        df['Q-factor'] = -df['System Heat'] / df['Information']
+    plot_data_broken_x_axis(df_list, 'Time', 'Q-factor', (0,2), (98, 100), fname='thesis_figures/Q_factor_vs_time.png', labels=[r'$\gamma=0$', r'$\gamma=0.001$', r'$\gamma=0.01$'],\
+                             title='Q-factor vs Time', xlabel=r'Time $\tau$', ylabel=r'$Q = \frac{W_{ext}}{I_{tot}}$', legend_pos=(-0.08, 0.7))
+    
 
+
+
+
+# Custom function to preprocess and convert the strings to lists of floats
+def convert_to_list(s):
+    # Remove the brackets
+    s = s.strip('[]')
+    # Split the string by spaces and convert to floats
+    return [float(x) for x in s.split()]
 def plot_all():
     for sim_run in run_dict:
         individual_plots_all(run_dict[sim_run])
@@ -471,6 +498,29 @@ def extracted_work_plot(df_list, normalize=False, labels=None):
     plt.tight_layout()
     plt.savefig('images/dissipation/extracted_work.pdf', dpi=300)
     plt.close()
+def net_work_plot(df_list, normalize=False, labels=None):
+    """Plot the net work as a function of time for the different cases
+
+    Args:
+        df_list (list): list of dataframes
+        normalize (bool, optional): Normalize the data? Defaults to False.
+        labels (list, optional): List of strings that label the dataframes. Defaults to None.
+    """
+    fig, ax = plt.subplots(figsize=(12, 8))
+    if labels is None or len(labels) != len(df_list):
+        labels = [f'Case {i}' for i in range(len(df_list))]
+    for df, label in zip(df_list, labels):
+        if normalize:
+            df['Work'] /= df['Work'].max()
+        sns.lineplot(x='Time', y='Work', data=df, label=label, ax=ax)
+    plt.title('Net work')
+    plt.xlabel(f'{symbol_dict["time"]}')
+    plt.ylabel(f'{symbol_dict["work"]}')
+    plt.legend()
+    sns.despine()
+    plt.tight_layout()
+    plt.savefig('images/dissipation/net_work.pdf', dpi=300)
+    plt.close()
 
 def zeno_crossover_plot(Q_S, x, mu_range):
     x_vals = [1,1.5,2, 0.5]
@@ -505,21 +555,15 @@ def zeno_crossover_intersection(Q_S_vals, x_vals, n):
     plt.figure(figsize=(12, 8))
     for Q_S in Q_S_vals:
         mu_intersection = np.zeros(len(x_vals))
+        mu_intersection_2 = np.zeros(len(x_vals))
         last_mu = 1
         for i,x in enumerate(x_vals):
-            #mu_intersection[i] = sp.optimize.fsolve(lambda mu: (1-np.exp(-mu*Q_S/x))/(2*(1+np.exp(-Q_S)))*np.exp(-mu*Q_S/x)*\
-            #( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) +\
-            # (1+np.exp(2*mu*Q_S/x)) *\
-            #    ( np.exp(-mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)) + np.exp(-2*mu*Q_S/x)/(1-np.exp(-mu*Q_S/x)**2) ) ) - mu, 1)
-            #mu_intersection[i] = sp.optimize.fsolve(lambda mu: n/(1+np.exp(-Q_S))*(1-np.exp(mu*Q_S/x))**2*np.exp(-mu*Q_S*(n+1)/x) - mu, min(1, 1/x), maxfev=10000)
-            mu_intersection[i] = sp.optimize.fsolve(lambda mu: n/(1+np.exp(-Q_S))*np.exp(-mu*Q_S/x)*4*np.cosh(mu*Q_S/(2*x))**2 -mu, 1)
-            #mu_intersection[i] = sp.optimize.root_scalar(lambda mu: n/(1+np.exp(-Q_S))*(1-np.exp(mu*Q_S/x))**2*np.exp(-mu*Q_S*(n+1)/x) - mu, x0 = 0.8, x1=0.2).root
-            #if last_mu == 0:
-            #    last_mu = 1
-            #mu_intersection[i] = sp.optimize.newton(lambda mu:  n/(1+np.exp(-Q_S))*(1-np.exp(mu*Q_S/x))**2*np.exp(-mu*Q_S*(n+1)/x)- mu, x0=1, maxiter=100000)
+            #mu_intersection[i] = sp.optimize.fsolve(lambda mu: n/(1+np.exp(-Q_S))*np.exp(-mu*Q_S/x)*4*np.cosh(mu*Q_S/(2*x))**2 -mu, 1)
+            mu_intersection[i] = sp.optimize.fsolve(lambda mu: 4/(1+np.exp(-Q_S))*np.exp(-mu*Q_S/x)*np.sinh(mu*Q_S/(2*x))**2 -mu, 1)
+            mu_intersection_2[i] = sp.optimize.fsolve(lambda mu: 4/(1+np.exp(-Q_S))*np.exp(-mu*Q_S/x)*np.sinh(mu*Q_S/(2*x))**2 -mu, 0.2)
             last_mu = mu_intersection[i]
-        #mu_intersection = n/(1+e^(-Q_S))*(1-e^(mu*Q_S/x))^2*e^(-mu*Q_S*(n+1)/x)
         sns.lineplot(x=x_vals, y=mu_intersection, linewidth=lw, label=r"$\frac{\Delta E}{k_B T_S}$"+f"={Q_S}", color='black')
+        sns.lineplot(x=x_vals, y=mu_intersection_2, linewidth=lw, color='black')
         # Fit an
     plt.xlabel(f"{symbol_dict['temperature']}")
     plt.ylabel(f"{symbol_dict['hw/de']}")
@@ -688,6 +732,383 @@ def first_law_quantities(data, fname='first_law.png', title=None, T_S=300):
     plt.ylabel('Energy (a.u.)')
     plt.legend()
     plt.title(title)
+    plt.tight_layout()
+    plt.savefig(f'images/{fname}', dpi=300)
+
+def phase_diagram_preprocessing(main_data_names, ending_data_names=None):
+    data_list = []
+    for main_data_name in main_data_names:
+        df = pd.read_csv(main_data_name, skiprows=1, header=None)
+        df.columns = ['Temperature', 'hw/dE']
+        
+        if ending_data_names:
+            ending_data_name = ending_data_names[main_data_names.index(main_data_name)]
+            df_ending = pd.read_csv(ending_data_name, skiprows=1, header=None)
+            df_ending.columns = ['Temperature', 'hw/dE']
+            # Merge the two dataframes
+            df = pd.concat([df, df_ending])
+        
+        # Sort the values by temperature
+        df = df.sort_values(by='Temperature')
+        # Apply the custom function to the 'hw/dE' column
+        df['hw/dE'] = df['hw/dE'].apply(convert_to_list)
+        # Separate the 'hw/dE' column into two columns
+        df['hw/dE_1'] = df['hw/dE'].apply(lambda x: x[-1] if len(x) > 0 else None)
+        df['hw/dE_2'] = df['hw/dE'].apply(lambda x: x[0] if len(x) > 1 else None)
+        data_list.append(df)
+    
+    return data_list
+    #for main_data_name, ending_data_name in zip(main_data_names, ending_data_names):
+    #    df = pd.read_csv(main_data_name, skiprows=1, header=None)
+    #    df.columns = ['Temperature', 'hw/dE']
+    #    df_ending = pd.read_csv(ending_data_name, skiprows=1, header=None)
+    #    df_ending.columns = ['Temperature', 'hw/dE']
+    #    # Merge the two dataframes
+    #    df = pd.concat([df, df_ending])
+    #    # Sort the values by temperature
+    #    df = df.sort_values(by='Temperature')
+    #    # Apply the custom function to the 'hw/dE' column
+    #    df['hw/dE'] = df['hw/dE'].apply(convert_to_list)
+    #    # Separate the 'hw/dE' column into two columns
+    #    df['hw/dE_1'] = df['hw/dE'].apply(lambda x: x[-1] if len(x) > 0 else None)
+    #    df['hw/dE_2'] = df['hw/dE'].apply(lambda x: x[0] if len(x) > 1 else None)
+    #    data_list.append(df)
+    #return data_list
+
+def phase_diagram(data_list, fname='phase_diagram.png', title=None, labels=None):
+    # Create a figure with 4 subplots in a 2x2 grid
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    # Loop over the dataframes and plot the data in the subplots
+    for i, df in enumerate(data_list):
+        df = df.dropna(how='any', subset=['hw/dE_1'])
+        df.loc[:, 'hw/dE_2'] = df['hw/dE_2'].fillna(0)
+        sns.lineplot(x='Temperature', y='hw/dE_1', data=df, ax=axs[i//2, i%2], color='black')
+        # Plot the phase boundary
+        sns.lineplot(x='Temperature', y='hw/dE_2', data=df, ax=axs[i//2, i%2], color='black')
+        # Change the limits of the subplot x-axis and y-axis to 0 and 2
+        axs[i//2, i%2].set_xlim(0, 2)
+        axs[i//2, i%2].set_ylim(0, 2)
+        # Change the x-axis and y-axis labels
+        axs[i//2, i%2].set_xlabel(f'{symbol_dict["temperature"]}')
+        axs[i//2, i%2].set_ylabel(f'{symbol_dict["hw/de"]}')
+        # If there is a label, print it in the upper right corner in a white box
+        if labels is not None:
+            axs[i//2, i%2].text(1.5, 1.5, labels[i], fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
+
+        # Fill with blue the entire region with temperature above 1 using axvspan
+        axs[i//2, i%2].axvspan(1, 2, facecolor='blue', alpha=0.3, edgecolor='none')
+        # Fill the region between the two phase boundaries and below temperature 1 with red
+        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], df['hw/dE_2'], where=df['Temperature'] < 1, facecolor='red', alpha=0.3, edgecolor='none')
+        # Fill the region below hw/dE_2 but above the x-axis with up to temperature 1 with yellow
+        axs[i//2, i%2].fill_between(df['Temperature'], 0, df['hw/dE_2'], where=(df['Temperature'] < 1), facecolor='yellow', alpha=0.3, edgecolor='none')
+        # Fill the region above hw/dE_1 below temperature 1 with yellow
+        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], 2, where=(df['Temperature'] < 1), facecolor='yellow', alpha=0.3, edgecolor='none')
+        # Fill the region between the two phase boundaries and above temperature 1 with white
+        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], df['hw/dE_2'], where=df['Temperature'] > 1, facecolor='white', alpha=1.0, edgecolor='none')
+
+    # Make each row share the same y-axis and each column share the same x-axis
+    for i in range(2):
+        axs[i, 1].set_ylabel('')
+        axs[0, i].set_xlabel('')
+        axs[i, 0].set_yticks([0, 0.5, 1, 1.5, 2])
+        axs[i, 1].set_yticks([0, 0.5, 1, 1.5, 2])
+        axs[0, i].set_xticks([0, 0.5, 1, 1.5, 2])
+        axs[1, i].set_xticks([0, 0.5, 1, 1.5, 2])
+    # Remove the padding between the subplots
+    plt.tight_layout()
+    # Set the title of the figure
+    fig.suptitle(title)
+    plt.savefig(f'images/{fname}', dpi=300)
+
+def phase_diagram_comparison(df, fname='phase_diagram_comparison.png'):
+    """ Comparing the numerica solution to the analytical solution for the phase diagram"""
+    df = df.dropna(how='any', subset=['hw/dE_1'])
+    df.loc[:, 'hw/dE_2'] = df['hw/dE_2'].fillna(0)
+    plt.figure(figsize=(12, 8))
+    # Plotting the numerical solution
+    sns.lineplot(x='Temperature', y='hw/dE_1', data=df, color=sns.color_palette('colorblind')[0], label='Numerical')
+    sns.lineplot(x='Temperature', y='hw/dE_2', data=df, color=sns.color_palette('colorblind')[0])
+    # Plotting the analytical solution
+    Q_S = 4.33
+    x_vals = np.linspace(0, 1.75, 10000)
+    mu_intersection = np.zeros(len(x_vals))
+    mu_intersection_2 = np.zeros(len(x_vals))
+    mu_1 = 0.99
+    mu_2 = 0.01
+    a1 = 0.49
+    b1 = 1.0
+    for i,x in enumerate(x_vals):
+        try:
+            # Find the first root in the interval [a1, b1]
+            mu_intersection[i] = sp.optimize.brentq(zeno_function, a1, b1, args=(x,))
+            
+        except ValueError as e:
+            print(f"Failed to find root at x={x}: {e}")
+            mu_intersection[i] = np.nan
+        try:
+            # Find the second root in the interval [a2, b2]
+            #mu_intersection_2[i] = sp.optimize.fsolve(lambda mu: 4/(1+np.exp(-Q_S))*np.exp(-mu*Q_S/x)*np.sinh(mu*Q_S/(2*x))**2 -mu, mu_2)
+            mu_intersection_2[i] = sp.optimize.brentq(zeno_function, 1e-8, 0.49, args=(x,))
+            mu_2 = mu_intersection_2[i]
+        except ValueError as e:
+            print(f"Failed to find root at x={x}: {e}")
+            mu_intersection_2[i] = np.nan
+    sns.lineplot(x=x_vals, y=mu_intersection, color=sns.color_palette('colorblind')[1], label='Analytical', linestyle='--')
+    sns.lineplot(x=x_vals, y=mu_intersection_2, color=sns.color_palette('colorblind')[1], linestyle='--')
+    plt.xlabel(f'{symbol_dict["temperature"]}')
+    plt.ylabel(f'{symbol_dict["hw/de"]}')
+    plt.legend()#
+#
+#
+#
+#
+    plt.tight_layout()
+    plt.savefig(f'images/{fname}', dpi=300)
+def boundary_one(mu, x):
+    Q_S = 4.33
+    return (mu*Q_S/x) + np.log( 1+np.sqrt((1+np.exp(-Q_S))*mu) )
+def boundary_two(mu, x):
+    Q_S = 4.33
+    if mu < 1/(1+np.exp(-Q_S)):
+        return (mu*Q_S/x) + np.log( 1-np.sqrt((1+np.exp(-Q_S))*mu) )
+    else:
+        return 0
+
+def power_heatmap(indata, times, fname='power_plot.png', title=None, labels=None, overlay=False):
+    """Takes work-data and time-data and plots the power as a heatmap
+
+    Args:
+        data (list): List of dataframes with the work data
+        times (list): The times corresponding to the work data
+        fname (str, optional): File name to save the plot. Defaults to 'power_plot.png'.
+        title (str, optional): Title of the plot if desired. Defaults to None.
+        labels (list/str, optional): Labels to set on each of the plots. Defaults to None.
+    """
+    # Create a custom colormap
+    colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]  # Blue -> White -> Red
+    n_bins = 1000  # Discretizes the interpolation into bins
+    cmap_name = 'custom_cmap'
+    cm = mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins)
+
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    for i, df in enumerate(indata):
+        df.columns = df.columns.astype(float)
+        df.index = df.index.astype(float)
+        norm =  mcolors.TwoSlopeNorm(vmin=df.min().min(), vcenter=0, vmax=df.max().max())
+        sns.heatmap(df/np.float64(times[i]), ax=axs[i//2, i%2], cmap='seismic', cbar_kws={'label': 'Power [a.u.]'}, norm=norm)
+        axs[i//2, i%2].set_xticks([0, 250, 500, 750, 1000])
+        axs[i//2, i%2].set_yticks([0, 125, 250, 375, 500])
+        axs[i//2, i%2].set_xticklabels([0, 0.5, 1, 1.5, 2])
+        axs[i//2, i%2].set_yticklabels([0, 0.5, 1, 1.5, 2])
+        axs[i//2, i%2].invert_yaxis()
+        axs[i//2, i%2].set_xlabel(f'{symbol_dict["temperature"]}')
+        axs[i//2, i%2].set_ylabel(f'{symbol_dict["hw/de"]}')
+        if overlay:
+            add_overlay(axs[i//2, i%2], df, times[i])
+        
+    plt.tight_layout()
+    if title:
+        fig.suptitle(title)
+    if overlay:
+        # If overlay is true then split fname at the dot and add _overlay before the dot
+        fname = fname.split('.')
+        fname = fname[0] + '_overlay.' + fname[1]
+    plt.savefig(f'images/{fname}', dpi=300)
+
+def zeno_function(mu,x):
+    Q_S = 4.33
+    return (4/(1+np.exp(-Q_S))*np.exp(-mu*Q_S/x)*np.sinh(mu*Q_S/(2*x))**2 -mu)
+
+def multidata_preprocessing(filenames):
+        # Ensure filenames is a list
+    if isinstance(filenames, str):
+        filenames = [filenames]
+    
+    df_lists = []  # To store lists of dataframes for each file
+
+    for filename in filenames:
+        # Open the file and read it line by line
+        with open(filename, 'r') as file:
+            # Skip the first line (supplementary information)
+            file.readline()
+            
+            # Extract x-values from the header (second line)
+            x_values = file.readline().strip().split(',')[0:-1]  # Skip the last element (empty string)
+
+            # Initialize empty lists for data
+            u_values = []
+            W_data = []
+            We_data = []
+            Wm_data = []
+
+            # Process each remaining line
+            for line in file:
+                # Clean and split the line into individual list elements
+                row = line.strip()[1:-2]  # Remove outer brackets
+                row = re.sub(r'np\.float64\((.*?)\)', r'\1', row)  # Replace np.float64
+                cleaned_row = row.split('],[')  # Split into individual cells
+
+                # Process the first element to extract the u value
+                first_cell = ast.literal_eval(f"[{cleaned_row[0]}]")  # Ensure valid list syntax
+                u_values.append(first_cell[0])  # Extract the u value
+
+                # Process the rest of the row
+                W_row, We_row, Wm_row = [], [], []
+                for cell in cleaned_row:
+                    values = ast.literal_eval(f"[{cell}]")  # Convert string to list
+                    W_row.append(values[1])
+                    We_row.append(values[2])
+                    Wm_row.append(values[3])
+                
+                # Append rows to respective lists
+                W_data.append(W_row)
+                We_data.append(We_row)
+                Wm_data.append(Wm_row)
+
+        # Create DataFrames
+        df_W = pd.DataFrame(W_data, index=u_values, columns=x_values)
+        df_We = pd.DataFrame(We_data, index=u_values, columns=x_values)
+        df_Wm = pd.DataFrame(Wm_data, index=u_values, columns=x_values)
+
+        # Append the list of dataframes for this file
+        df_lists.append([df_W, df_We, df_Wm])
+
+    # Return based on the number of files
+    if len(df_lists) == 1:
+        return df_lists[0]  # Return a single list of dataframes for one file
+    else:
+        return df_lists  # Return a list of lists of dataframes for multiple files
+
+def phase_diagram_2(data_list, fname='phase_diagram_2.png', title=None, labels=None):
+    # Phase diagram creator for the multidata files
+    for df in data_list:
+        df.columns = df.columns.astype(float)
+        df.index = df.index.astype(float)
+        # Look at column in the dataframe and find the indices where the values change sign
+        # This is the phase boundary, so then we save each of the points (column_name, index1), (column_name, index2) in a list
+        phase_boundaries = []
+        for column in df.columns:
+            # Find the indices where the values change sign
+            indices = np.where(np.diff(np.sign(df[column])))[0]
+            for index in indices:
+                phase_boundaries.append((column, index))
+        # Create a scatter plot with the phase boundaries
+        plt.figure(figsize=(12, 8))
+        plt.scatter([x[0] for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black')
+        plt.xlabel(f'{symbol_dict["temperature"]}')
+        plt.ylabel(f'{symbol_dict["hw/de"]}')
+        plt.title(title)
+        plt.tight_layout()
+    plt.show()
+def add_overlay(ax, df, time):
+    # Add an overlay of the phase boundaries
+    phase_boundaries=[]
+    for column in df.columns:
+        # Find the indices where the values change sign
+        indices = np.where(np.diff(np.sign(df[column])))[0]
+        for index in indices:
+            phase_boundaries.append((column, index))
+    # Create a scatter plot with the phase boundaries
+    ax.scatter([x[0]*500 for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
+
+    # Add the time in the upper right corner
+    ax.text(0.9, 0.9, fr'$\tau$={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
+    #ax.text(1.5, 1.5, f'time={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
+def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_x_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None):
+    """Creates a plot with the x-axis broken into two intervals. Uses seaborn to plot df[f'{xaxis}'] against df[f'{yaxis}'] for each dataframe in df_list. 
+    The x-axis is broken into two intervals defined by interval_1 and interval_2.
+
+    Args:
+        df_list (list of pandas.dataframe): List of pandas dataframes to plot.
+        xaxis (str): The quantity to plot on the x-axis.
+        yaxis (str): The quantity to plot on the y-axis.
+        interval_1 (tuple, list, numpy.ndarray): Interval of the left subplot. Should be a tuple, list or numpy.ndarray with two elements. Chooses the first and last element in the list or array.
+        interval_2 (tuple, list, numpy.ndarray): Interval of the right subplot. Should be a tuple, list or numpy.ndarray with two elements. Chooses the first and last element in the list or array.
+        fname (str, optional): Filename to save the figure, will save to f'images/{fname}'. Defaults to 'broken_x_axis.png'.
+        title (str, optional): Title of the plot. Defaults to None.
+        labels (list of str, optional): Labels to be added to the legend. Defaults to None.
+        xlabel (str, optional): Label for the x-axis. Defaults to None.
+        ylabel (str, optional): Label for the y-axis. Defaults to None.
+        legend_pos (tuple, str, optional): Position of the legend. Either takes a str in which case 'loc' is used or takes a tuple, in which case 'anchor_to_bbox' is used.  Defaults to None.
+    """
+    # Select only the values where Time < 2 and Time > 98 and plot those
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8), sharey=True)
+    fig.subplots_adjust(wspace=0.05)
+    #filter_df = df_gamma_0[(df_gamma_0['Time'] < 2) | (df_gamma_0['Time'] > 98)]
+    for ax in (ax1, ax2):
+        for i,df in enumerate(df_list):
+            if labels is not None:
+                sns.lineplot(x=xaxis, y=yaxis, data=df, ax=ax, label=labels[i])
+            else:
+                sns.lineplot(x=xaxis, y=yaxis, data=df, ax=ax)
+    ax1.set_xlim(interval_1[0], interval_1[1])
+    ax2.set_xlim(interval_2[0], interval_2[1])
+    plt.tight_layout()
+    ax1.spines['right'].set_visible(False)
+    ax2.spines['left'].set_visible(False)
+    ax1.set_ylabel('')
+    ax2.set_ylabel('')
+    ax1.set_xlabel('')
+    ax2.set_xlabel('')
+    ax1.legend().remove()
+    if isinstance(legend_pos, tuple):
+        ax2.legend(bbox_to_anchor=legend_pos)
+    elif isinstance(legend_pos, str):
+        ax2.legend(loc=legend_pos)
+    else:
+        ax2.legend()
+    #legend = ax2.legend(bbox_to_anchor=(-0.08, 0.7))
+    fig.supxlabel(xlabel)
+    fig.supylabel(ylabel)
+    d = 0.5
+    kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
+              linestyle="none", color='k', mec='k', mew=1, clip_on=False)
+    ax1.plot([1, 1], [1, 0], transform=ax1.transAxes, **kwargs)
+    ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)
+    plt.savefig(f'images/{fname}', dpi=300)
+
+def plot_data(df_list, xaxis, yaxis, fname='plot.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, xlim=None, ylim=None):
+    """Creates a plot with seaborn using df[f'{xaxis}'] against df[f'{yaxis}'] for each dataframe in df_list.
+
+    Args:
+        df_list (list of pandas.dataframe): List of pandas dataframes to plot.
+        xaxis (str): The quantity to plot on the x-axis.
+        yaxis (str): The quantity to plot on the y-axis.
+        fname (str, optional): Filename to save the figure, will save to f'images/{fname}'. Defaults to 'plot.png'.
+        title (str, optional): Title of the plot. Defaults to None.
+        labels (list of str, optional): Labels to be added to the legend. Defaults to None.
+        xlabel (str, optional): Label for the x-axis. Defaults to None.
+        ylabel (str, optional): Label for the y-axis. Defaults to None.
+        legend_pos (tuple, str, optional): Position of the legend. Either takes a str in which case 'loc' is used or takes a tuple, in which case 'anchor_to_bbox' is used.  Defaults to None.
+        xlim (tuple, list, optional): Limits for the x-axis. Defaults to None.
+        ylim (tuple, list, optional): Limits for the y-axis. Defaults to None.
+    """
+    if isinstance(df_list, pd.DataFrame):
+        df_list = [df_list]
+    if isinstance(labels, str):
+        labels = [labels]
+    plt.figure(figsize=(12, 8))
+    for i,df in enumerate(df_list):
+        if labels is not None:
+            sns.lineplot(x=xaxis, y=yaxis, data=df, label=labels[i])
+        else:
+            sns.lineplot(x=xaxis, y=yaxis, data=df)
+    if title is not None:
+        plt.title(title)
+    if isinstance(legend_pos, tuple):
+        plt.legend(bbox_to_anchor=legend_pos)
+    elif isinstance(legend_pos, str):
+        plt.legend(loc=legend_pos)
+    else:
+        plt.legend()
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+    if xlim is not None:
+        plt.xlim(xlim[0], xlim[1])
+    if ylim is not None:
+        plt.ylim(ylim[0], ylim[1])
     plt.tight_layout()
     plt.savefig(f'images/{fname}', dpi=300)
 
