@@ -11,8 +11,8 @@ import pandas as pd
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
 # and the system is assumed to be a two-level system.
-kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 def main():
     temp_system = 300.0
@@ -24,431 +24,144 @@ def main():
     sam = SystemAndMeter(T_S=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
     # Dictionaries of parameters to test. They are here to ensure consistency in the parameters.
     # Just uncomment the one you want to test and comment the others.
+
+    # These are all the parameters determined in the old W_ext funciton.
+    # PROBABLY DON'T USE THESE
     #params_opt = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
     #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
-    params_opt = {'Q_S': 1.97, 'P': 0.77, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.21,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
-    params_naive = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_naive'} # Naive parameters
-    params_zeno = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno'} # Zeno parameters
-    params_opt_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.25,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_eq_temp'} # Optimal parameters but with equal temperatures
-    params_opt_uneq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 0.01, 'tau': 0.25,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
-    params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-6,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
-    params_big_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 10.0, 'tau': 0.25,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_big_temp'} #  The above parameters but with T_M >> T_S
-    # Dictionary of the dictionaries of parameters to test
-    param_sets = {'opt': params_opt, 'naive': params_naive, 'zeno': params_zeno,\
-                   'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
-                   'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
+    #params_opt = {'Q_S': 1.97, 'P': 0.77, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.21,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
+    #params_naive = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_naive'} # Naive parameters
+    #params_zeno = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno'} # Zeno parameters
+    #params_opt_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.25,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_eq_temp'} # Optimal parameters but with equal temperatures
+    #params_opt_uneq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 0.01, 'tau': 0.25,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
+    #params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-6,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
+    #params_big_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 10.0, 'tau': 0.25,\
+    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_big_temp'} #  The above parameters but with T_M >> T_S
+    ## Dictionary of the dictionaries of parameters to test
+    #param_sets = {'opt': params_opt, 'naive': params_naive, 'zeno': params_zeno,\
+    #               'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
+    #               'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
 
-    param_sets = {'opt': params_opt}
-    for params in param_sets.values():
-        R_vals = [0, 1e-1, 1e-2, 1e-3]
-        sam.set_Q_S(params['Q_S'])
-        sam.set_P(params['P'])
-        sam.set_Q_M(params['Q_M'])
-        sam.set_tau(params['tau'])
-        fix_n = params['n_prime'] # The meter level to start measuring from. I.e. we measure states fix_n to total_levels
-        file_ending = params['file_ending'] # The file ending for the data files
-        x_max = 2.0 # The maximum value of x to test
-        for R in R_vals:
-            sam.set_R(R)
-            params_vs_time(sam, tau_range=np.linspace(0, 2.0, 500),\
-                            fname=f"data/params_vs_time{file_ending}_gamma_{R}.csv", fixed=fix_n)
-        #sam.set_x(params['x'])
-        #params_vs_omega_per_delta_E(sam, omega_range=np.linspace(1e-1, x_max*sam.get_Q_S(), 100),\
-        #                             fname=f"data/params_vs_omega_per_delta_E{file_ending}.csv", fixed=fix_n)
-        #sam.set_Q_M(params['Q_M'])
-        #params_vs_time(sam, tau_range=np.linspace(0, 2.0, 100),\
-        #                fname=f"data/params_vs_time{file_ending}.csv", fixed=fix_n)
-        #sam.set_tau(params['tau'])
-        #params_vs_coupling(sam, g_range=np.linspace(0.0, x_max, 100),\
-        #                    fname=f"data/params_vs_coupling{file_ending}.csv", fixed=fix_n)
-        #params_vs_nprime(sam, nprime_range=np.arange(0, sam.get_total_levels()),\
-        #                fname=f"data/params_vs_nprime{file_ending}.csv")
+    ### New parameters with the new W_ext function
+    params_eq_temp = {'Q_S': 4.33, 'P': 0.95, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.27,\
+                      'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_eq_temp'} # Equal temperatures
+    params_eq_temp_zeno = {'Q_S': 0.955, 'P': 1e7, 'Q_M': 5.638, 'x': 1.0, 'tau': 1e-9,\
+                            'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_eq_temp_zeno'} # Equal temperatures and Zeno limit
+    params_uneq_temp = {'Q_S': 2.503, 'P': 2.139, 'Q_M': 1.032, 'x': 0.2, 'tau': 0.10,\
+                        'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_uneq_temp'} # Unequal temperatures
+    params_uneq_temp_zeno = {'Q_S': 1.97, 'P': 0.61, 'Q_M': 0.2, 'x': 0.2, 'tau': 1e-6,\
+                                'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_uneq_temp_zeno'} # Unequal temperatures and Zeno limit
 
-
-def plot_cond_prob(sam, times=[0.5, 0.75, 1.0], fname=None):
-    """ Plots the conditional probabilities as a function of time measuring in state n.
-        Here n is the measurement state of the meter.
-        
-        Args:
-            sam (SystemAndMeter): The system and meter object.
-            times (ndarray or list, optional): The times at which to evaluate the conditional probabilities. Defaults to [0.5, 0.75, 1.0].
-            fname (str, optional): The filename to save the plot. Defaults to None.
-            """
-    fig, axs = plt.subplots(len(times), 1, figsize=(10, 8))
-    for i,t in enumerate(times):
-        sam.set_time(t)
-        p0, p1 = sam.joint_prob_evol()
-        # Calculate conditional probabilities without calling the function for efficiency
-        p0_cond = p0/(p0+p1)
-        p1_cond = p1/(p0+p1)
-        axs[i].plot(np.arange(0, len(p0))*t/len(p0), p0_cond, label=rf'Cond prob $P_0(t|n)$', color='blue')
-        axs[i].plot(np.arange(0, len(p1))*t/len(p1), p1_cond, label=rf'Cond prob $P_1(t|n)$', color='red')
-        axs[i].set_title(f'Conditional Probabilities as a function of time measuring in state {sam.get_n()}, t_max={t:.2f}')
-        axs[i].set_xlabel(r'Reduced time, $[2\pi/\omega]$')
-        axs[i].set_ylabel('Probability')
-        axs[i].legend()
-
-    plt.tight_layout()
-    if fname is None:
-        plt.savefig(f'../images/conditional_probabilities_Tm_{sam.get_temp_meter()}.png')
-    else:
-        plt.savefig(fname)
-    print("Conditional probabilities plotted")
-
-def plot_joint_probabilities(sam, time = 0.9, fname=None):
-    """Plots the joint probabilities as a function of meter level at a given time.
-
-    Args:
-        sam (SystemAndMeter): The system and meter object.
-        time (float, optional): The time at which to evaluate hte joint probabilities. Defaults to 0.9.
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    fig, ax = plt.subplots()
-    if isinstance(time, (np.ndarray, list)):
-        time = time[0]
-    sam.set_time(time)
-
-    meas_levels = np.arange(0, sam.get_total_levels()+1)
-    joint_probs = np.zeros_like(meas_levels, dtype=np.float64)
-    joint_probs_0 = np.zeros_like(meas_levels, dtype=np.float64)
-    cond_probs = np.zeros_like(meas_levels, dtype=np.float64)
-    for i in range(len(meas_levels)):
-        sam.set_n(i) 
-        p0_n, p1_n = sam.joint_probability(sam.get_n(), sam.get_time())
-        joint_probs[i] = p1_n
-        joint_probs_0[i] = p0_n
-        cond_probs[i] = p1_n/(p0_n+p1_n)
-    ax.scatter(meas_levels, joint_probs, s=10, color='red', label='Joint prob P_1(n,t)')
-    ax.scatter(meas_levels, joint_probs_0, s=10, color='blue', label='Joint prob P_0(n,t)')
-    ax.scatter(meas_levels, cond_probs, s=10, color='green', label='Cond prob P(1|n,t)')
-    ax.set_xlabel('Meter Level')
-    ax.set_ylabel('Probability')
-    ax.legend()
-    ax.set_title(fr'Prob of i given meter in n time $t={time:.3f}')
-    if fname is None:
-        plt.savefig(f'../images/joint_probabilities_Tm_{sam.get_temp_meter()}_tm_{time}.png')
-    else:
-        plt.savefig(fname)
-    print("Joint probabilities plotted")
-
-def plot_cond_entropy(sam, times=[0.5, 0.75, 1.0], fname=None):
-    """Plots the conditional entropy as a function of meter level at different times.
-
-    Args:
-        sam (SystemAndMeter): The system and meter object.
-        times (ndarray or list, optional): The times at which to evaluate the conditional entropy. Defaults to [0.5, 0.75, 1.0].
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    fig, axs = plt.subplots(len(times),1)
-    for i,t in enumerate(times):
-        cond_entropy = np.zeros(sam.get_total_levels(), dtype=np.float64)
-        for n in range(sam.get_total_levels()):
-            cond_entropy[n] = sam.conditional_entropy(n=n, time=t)
-        axs[i].scatter(np.arange(0, sam.get_total_levels()), cond_entropy, label=f'$S_n(t={t:.3f})$')
-        axs[i].set_xlabel('Meter Level')
-        axs[i].set_ylabel('Conditional Entropy')
-        axs[i].set_title(f'Conditional Entropy as a function of meter level at time t={t:.3f}')
-        axs[i].legend()
-    plt.tight_layout()
-    if fname is None:
-        plt.savefig(f'../images/conditional_entropy_Tm_{sam.get_temp_meter()}.png')
-    else:
-        plt.savefig(fname)
-    print("Conditional entropy plotted")
-
-def plot_entropy(sam, times=np.linspace(0.0, 2, 100), fname=None):
-    """Plots the entropy as a function of time.
-
-    Args:
-        sam (SystemAndMeter): The system and meter object.
-        times (ndarray or list, optional): The times at which to evaluate the entropy. Defaults to np.linspace(0.0, 2, 100).
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    fig, ax = plt.subplots()
-    entropy = np.zeros_like(times)
-    cond_entropy = np.zeros_like(times)
-    sam.set_n(0)
-    for i,t in enumerate(times):
-        sam.set_time(t)
-        entropy[i] = sam.entropy()
-    ax.plot(times, entropy, color='blue', label='Entropy')
-    ax.legend()
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Entropy')
-    ax.set_title('Entropy as a function of time')
-    if fname is None:
-        plt.savefig(f'../images/entropy_Tm_{sam.get_temp_meter()}.png')
-    else:
-        plt.savefig(fname)
-    print("Entropy plotted")
-
-def plot_mutual_info(sam, times=np.linspace(0.0, 2, 100), fname=None):
-    """Plots the mutual information between the system and meter as a function of time.
-
-    Args:
-        sam (SystemAndMeter): The system and meter object.
-        times (ndarray or list, optional): The times at which to evaluate the mutual information. Defaults to np.linspace(0.0, 2, 100).
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    # Plot mutual information as a function of time
-    mut_info = np.zeros_like(times)
-    fig, ax = plt.subplots()
-    for i, t in enumerate(times):
-        sam.set_tau(t)
-        sam.full_update()
-        sam.set_n(first_positive_W_ext(sam))
-        sam.set_n_upper_limit(sam.get_total_levels())
-        mut_info[i] = sam.mutual_information(time = t)
-    ax.plot(times, mut_info, color='blue', label='Mutual Information')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Mutual Information')
-    ax.set_title('Mutual information between system and meter as a function of time')
-    if fname is not None:
-        plt.savefig(fname)
-    else:
-        plt.savefig(f'../images/mutual_information_Tm_{sam.get_temp_meter()}.png')
-    print("Mutual information plotted")
-
-def plot_observer_info(sam, times=[0.9], fname=None):
-    """Plots the observer information as a function of meter level at different times.
+    param_sets = {'eq_temp': params_eq_temp, 'eq_temp_zeno': params_eq_temp_zeno, 'uneq_temp': params_uneq_temp, 'uneq_temp_zeno': params_uneq_temp_zeno}
     
-    Args:
-        sam (SystemAndMeter): The system and meter object.
-        times (ndarray or list, optional): The times at which to evaluate the observer information. Defaults to [0.9].
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    fig, axs = plt.subplots(len(times), 1)
-    if len(times) == 1:
-        axs = [axs]
-    for ax, t in zip(axs, times):
-        sam.set_time(t)
-        for n in range(sam.get_total_levels()):
-            sam.set_n(n)
-            obs_info = sam.observer_information()
-            ax.scatter(n, obs_info, color='blue', label='Observer Information')
-        ax.set_xlabel('Meter Level')
-        ax.set_ylabel('Observer Information')
-        ax.set_title('Observer Information as a function of meter level')
-    if fname is None:
-        plt.savefig(f'../images/observer_information_Tm_{sam.get_temp_meter()}.png')
-    else:
-        plt.savefig(fname)
-    print("Observer information plotted")
 
-def plot_observer_info_vs_time(sam, times=np.linspace(0.0, 2, 100), fname=None):
-    """Plots the observer information as a function of time.
-
-    Args:
-        sam (SystemAndMeter): The system and meter object.
-        times (ndarray or list, optional): The times at which to evaluate the observer information. Defaults to np.linspace(0.0, 2, 100).
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    fig, ax = plt.subplots()
-    obs_info = np.zeros_like(times)
-    for i, t in enumerate(times):
-        sam.set_tau(t)
-        sam.full_update()
-        sam.set_n(first_positive_W_ext(sam))
-        sam.set_n(first_positive_W_ext(sam))
-        sam.set_n_upper_limit(sam.get_total_levels())
-        obs_info[i] = sam.observer_information()
-    ax.plot(times, obs_info, color='blue', label='Observer Information')
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Observer Information')
-    ax.set_title('Observer Information as a function of time')
-    plt.tight_layout()
-    if fname is None:
-        plt.savefig(f'../images/observer_information_vs_time_Tm_{sam.get_temp_meter()}.png')
-    else:
-        plt.savefig(fname)
-    print("Observer information plotted")
-
-def plot_work(sam, times=np.linspace(0.0, 2, 100), work_type='extracted', sep=False, fname=None):
-    """Plots work as a function of time, either extracted, measurement, or both.
-        Can plot the extracted and measurement work in separate plots if sep is True.
-
-    Args:
-        sam (SystemAndMeter): The system and meter object.
-        times (ndarray, optional): The times at which to evaluate the work. Defaults to np.linspace(0.0, 2, 100).
-        work_type (str, optional): The type of plot you want, valid options are 'extracted', 'measurement', 'both'. Defaults to 'extracted'.
-        sep (bool, optional): Whether to plot in separate plots. Defaults to False.
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    if fname is None:
-        fname = f'../images/{work_type}_work_Tm_{sam.get_temp_meter()}'
-    # If sep is True but only one type of work is requested, set sep to False
-    if sep and work_type != 'both':
-        sep = False
-    # If sep is True, create two subplots, otherwise create one
-    if sep:
-        fig, axs = plt.subplots(2, 1)
-        types = ['Extracted', 'Measurement']
-    else:
-        fig, ax = plt.subplots()
-    # Calculate the work at each time
-    work = np.zeros_like(times)
-    # Calculate the measurement work at each time
-    work_meas = np.zeros_like(times)
-    for i, t in enumerate(times):
-        sam.set_tau(t)
-        work[i] = sam.work_extraction()
-        work_meas[i] = sam.work_measurement()
-    if sep:
-        for ax, w, typ in zip(axs, [work, work_meas], types):
-            ax.plot(times, w, color='blue', label=f'{typ.capitalize()} Work')
-            ax.set_xlabel('Time')
-            ax.set_ylabel('Work [meV]')
-            ax.set_title(f'{typ.capitalize()} Work as a function of time')
-    else:
-        if work_type == 'extracted':
-            ax.plot(times, work, color='blue', label='Extracted Work')
-        elif work_type == 'measurement':
-            ax.plot(times, work_meas, color='red', label='Measurement Work')
-        elif work_type == 'both':
-            ax.plot(times, work, color='blue', label=r'$W_{ext}$')
-            ax.plot(times, work_meas, color='red', label=r'$W_{meas}$')
-        ax.set_title(f'{work_type.capitalize()} Work as a function of time')
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Work [meV]')
-        ax.legend()
-    plt.tight_layout()
-    if sep:
-        plt.savefig(f'{fname}_sep.png')
-    else:
-        plt.savefig(f'{fname}.png')
-    print(f"{work_type.capitalize()} work plotted")
-
-def plot_quality(sam, times=np.linspace(0.0, 2, 100), fname=None):
-    """Plots the quality of the measurement as a function of time.
-
-    Args:
-        sam (SystemAndMeter): The coupled system and meter object.
-        times (ndarray or list, optional): The times at which to evaluate info and work. Defaults to np.linspace(0.0, 2, 100).
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    # Plot the quality of the measurement as a function of time
-    fig, ax = plt.subplots(3,1)
-    quality_work = np.zeros_like(times)
-    quality_info_ext = np.zeros_like(times)
-    quality_info_msmt = np.zeros_like(times)
-    for i, t in enumerate(times):
-        sam.set_time(t)
-        quality_work[i] = sam.quality_factor()
-        quality_info_ext[i], quality_info_msmt[i] = sam.quality_factor_info()
-        
-    ax[0].plot(times, quality_work, color='blue', label='$W_{meas}/W_{ext}$')
-    ax[0].set_xlabel('Time')
-    ax[0].set_ylabel('Quality Factor')
-    ax[0].set_title('Quality of the measurement as a function of time')
-    ax[0].legend()
-    ax[1].plot(times, quality_info_ext, color='red', label='$I/W_{ext}$')
-    ax[1].set_xlabel('Time')
-    ax[1].set_ylabel('Quality Factor')
-    ax[1].set_title('Quality of the measurement as a function of time')
-    ax[1].legend()
-    ax[2].plot(times, quality_info_msmt, color='green', label='$I/W_{meas}$')
-    ax[2].set_xlabel('Time')
-    ax[2].set_ylabel('Quality Factor')
-    ax[2].set_title('Quality of the measurement as a function of time')
-    ax[2].legend()
-    plt.tight_layout()
-    if fname is not None:
-        plt.savefig(fname)
-    else:
-        plt.savefig(f'../images/quality_Tm_{sam.get_temp_meter()}.png')
-    print("Quality plotted")
-
-def plot_quality_coupling(sam, coupling_strengths=[0.0, 1.0, 10.0]):
-    """Plots the quality of the measurement as a function of coupling strength.
-
-    Args:
-        sam (SystemAndMeter): The coupled system and meter object.
-        coupling_strengths (ndarray or list, optional): The coupling strengths at which to evaluate the quality. Defaults to [0.0, 1.0, 10.0].
-    """
-    for P in coupling_strengths:
-        sam.set_P(P)
-        plot_quality(sam, fname=f'../images/quality_Tm_{sam.get_temp_meter()}_P_{P}.png')
-    sam.set_P(1.0)
-    print("Quality plotted for different coupling strengths and P reset to 1.0")
-
-def plot_work_temp(sam, temps=np.linspace(0.0,2.1,100), time=0.5, fname=None):
-    """Plots the useful work, W_ext - W_meas, as a function of the normalized temperature x at
-        a given normalized time.
-
-    Args:
-        sam (SystemAndMeter): The coupled system and meter object.
-        temps (ndarray or list, optional): The temperatures to evaluate at. Defaults to np.linspace(0,2,100).
-        time (float, optional): The normalized time at which to evaluate the work. Defaults to 0.5.
-        fname (str, optional): The file name for the plot. Defaults to None.
-    """
-    old_time = sam.get_tau()
-    old_x = sam.get_x()
-    sam.set_tau(time)
-    W_ext = np.zeros_like(temps)
-    W_meas = np.zeros_like(temps)
-    for i,x in enumerate(temps):
-        sam.set_x(x)
-        W_ext[i] = sam.work_extraction()
-        W_meas[i] = sam.work_measurement()
-    fig, ax = plt.subplots()
-    ax.plot(temps, W_ext, color='blue', label=r'$W_{ext}$')
-    ax.plot(temps, W_meas, color='red', label=r'$W_{meas}$')
-    ax.plot(temps, W_ext-W_meas, color='green', label='$W_{ext} - W_{meas}$')
-    ax.set_xlabel(r'Normalized Temperature, $T_{meter}/T_{system}$')
-    ax.set_ylabel('Work [meV]')
-    ax.set_title(f'Work at {sam.get_tau()} period of the meter, system at T={sam.get_temp_system()}K')
-    ax.legend()
-    plt.tight_layout()
-    if fname is None:
-        plt.savefig(f'../images/work_temp_Tm_{sam.get_temp_meter()}_t_{time}.png')
-    else:
-        plt.savefig(fname)
-    sam.set_tau(old_time)
-    sam.set_x(old_x)
-    print(f"W_ext and W_meas plotted at time {time}, and x reset to {old_x} and time reset to {old_time}")
-                                                                                                                     
-def plot_Wmeas_vs_I_mutual(sam, times=np.linspace(0.0, 2, 100), fname=None):
-    """Plots the measurement work versus the mutual information as a function of time.
-
-    Args:
-        sam (SystemAndMeter): The coupled system and meter object.
-        times (ndarray or list, optional): The times at which to evaluate the work and mutual information. Defaults to np.linspace(0.0, 2, 100).
-        fname (str, optional): The filename to save the plot. Defaults to None.
-    """
-    fig, ax = plt.subplots()
-
-    W_meas = np.zeros_like(times)
-    I = np.zeros_like(times)
-    for i, t in enumerate(times):
-        sam.set_time(t)
-        W_meas[i] = sam.work_measurement()
-        I[i] = sam.mutual_information()
-
-    # Rescale times to show the extracted work
-    ax.plot(I[len(I)//2:], W_meas[len(W_meas)//2:], color='blue', label=r'$I$')
-    ax.set_xlabel(r'Mutual Information, $I(\tau)$')
-    ax.set_ylabel(r'$W_{meas}(\tau)$ [meV]')
-    ax.set_title('Measurement work as a function of mutual information')
-
-    # Set the y-ticks to the times points and the y-tick labels to the corresponding measurement work
-    #y_ticks = ax.get_yticks()
-    #y_tick_labels = [f'{W_meas[np.abs(times - yt).argmin()]:.2f}' for yt in y_ticks]
-    #ax.set_yticklabels(y_tick_labels)  
     
-    plt.tight_layout()
+    sam.set_Q_S(2.451)
+    sam.set_Q_M(1.018)
+    sam.set_P(0.767)
+    sam.set_x(0.2)
+    sam.set_tau(0.335)
+    sam.set_n(1)
+    res_best = 0
+    for i in range(10):
+        res, x = find_pos_net_work_fixed_temps(sam, n=1, T=1.0)
+        if res > res_best:
+            res_best = res
+            x_best = x
+        print(f"Maximum net work extraction: {res_best} meV")
+    print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
+    #params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'data/test_3_vs_time.csv', fixed=sam.get_n())
+    #sam.set_tau(0.335)
+    #params_vs_temp(sam, temp_range=np.linspace(0.01, 2.0, 100), fname=f'data/test_3_vs_temp.csv', fixed=sam.get_n())
+    #sam.set_x(0.2)
+    #params_vs_coupling(sam, g_range=np.linspace(0.01, 2.0, 100), fname=f'data/test_3_vs_coupling.csv', fixed=sam.get_n())
+    #sam.set_P(0.767)
+    #params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.01, 2.0, 100), fname=f'data/test_3_vs_omega_per_delta_E.csv', fixed=sam.get_n())
+    #sam.set_Q_S(2.451)
+    #sam.set_Q_M(1.018)
+    #params_vs_nprime(sam, nprime_range=np.arange(0, 10), fname=f'data/test_3_vs_nprime.csv')
+    #print("Test 3 done.")
 
-    if fname is not None:
-        plt.savefig(fname)
-    else:
-        plt.savefig(f'../images/Wmeas_vs_I_Tm_{sam.get_temp_meter()}.png')
-    print("W_meas plotted against I")
+
+
+
+
+    #params_vs_temp(sam, temp_range=np.linspace(0.01, 2, 100), fname=f'data/params{params["file_ending"]}_vs_temperature.csv', fixed=params['n_prime'])
+    #sam.set_tau(params['tau'])
+    #sam.full_update()
+    #params_vs_temp(sam, temp_range=np.linspace(0.1, 2, 100), fname=f'data/params{params["file_ending"]}_vs_temperature.csv')
+    #for n in range(1,10):
+    #    res_best = 0
+    #    for i in range(10):
+    #        res, x = find_pos_net_work_fixed_temps(sam, n=n, T=0.2)
+    #        if res > res_best:
+    #            res_best = res
+    #            x_best = x
+    #    try:
+    #        print(f"Maximum net work extraction: {res_best} meV")
+    #        print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
+    #        print(f'Activation threshold n = {n}')
+    #    except:
+    #        print("No positive net work extraction.")
+    #for i in range(10):
+    #    res, x = find_pos_net_work_fixed_temps(sam)
+    #    if res > res_best:
+    #        res_best = res
+    #        x_best = x
+    #try:
+    #    print(f"Maximum net work extraction: {res_best:.9f} meV")
+    #    print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
+    #    sam.set_Q_S(x_best[0])
+    #    sam.set_P(x_best[1])
+    #    sam.set_Q_M(x_best[2])
+    #    sam.set_tau(x_best[3])
+    #    sam.set_x(params['x'])
+    #    sam.full_update()
+    #    print(f"Net work extraction: {sam.work_extraction()-sam.work_measurement():.3f}")
+    #except:
+    #    print("No positive net work extraction.")
+    #for i in range(10):
+    #    res, x = find_pos_net_work(sam)
+    #    if res > res_best:
+    #        res_best = res
+    #        x_best = x
+    #try:
+    #    print(f"Maximum net work extraction: {res_best:.9f} meV")
+    #    print(f"Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, x = {x_best[3]:.3f}, tau = {x_best[4]:.9f}")
+    #    sam.set_Q_S(x_best[0])
+    #    sam.set_P(x_best[1])
+    #    sam.set_Q_M(x_best[2])
+    #    sam.set_x(x_best[3])
+    #    sam.set_tau(x_best[4])
+    #    sam.full_update()
+    #    print(f"Net work extraction: {sam.work_extraction()-sam.work_measurement():.3f}")
+    #except:
+    #    print("No positive net work extraction.")
+    # Simulate phase boundary for dissipative case
+    #tau_list = [1e-6, 0.125, 0.25, 0.5]
+    #tau_list= [tau_list[1]]
+    #for tau in tau_list:
+    #    sam.set_tau(tau)
+    #    sam.full_update()
+    #    find_phase_boundary(sam, temp_range=np.linspace(1, 2, 1000), fname=f'data/phase_boundary_unitary_tau={tau}.csv')
+    ## Simulate power output for unitary cases
+    #for tau in tau_list:
+    #    sam.set_tau(tau)
+    #    sam.full_update()
+    #    params_vs_temp(sam, temp_range=np.linspace(0.001, 2, 1000), fname=f'data/params_vs_temp_unitary_tau={tau}.csv')
+    ##Try to run the multidata function
+    #for tau in tau_list:
+    #    sam.set_tau(tau)
+    #    sam.full_update()
+    #    phase_boundary_multidata(sam, temp_range=np.linspace(0, 2, 1000), fname=f'data/multidata_unitary_tau={tau}_ending.csv')
+    
+        
 
 def positive_work_extraction(sam, fname=None, times=[0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]):
     """ Investigates whether positive work extraction is possible for the given system and meter.
@@ -586,7 +299,8 @@ def work_minimizer(x, sam):
     W_ext = sam.work_extraction()
     W_meas = sam.work_measurement()
     return -(W_ext - W_meas)
-def find_pos_net_work(sam):
+
+def find_pos_net_work(sam, n=1):
     """ Find the maximum net work extraction possible for the given system and meter.
 
     Args:
@@ -597,10 +311,10 @@ def find_pos_net_work(sam):
     from scipy.optimize import minimize
     # Set the initial guess for the minimizer and bounds that are non-zero and positive
     x0 = [sam.get_Q_S(), sam.get_P(), sam.get_Q_M(), sam.get_x(), sam.get_tau()]
-    sam.set_n(1)
+    sam.set_n(n)
     # Add some small random noise to the initial guess to avoid getting stuck in local minima
     x0 = [x + np.random.normal(-0.1, 0.1) for x in x0]
-    res = minimize(work_minimizer, x0, args=(sam), bounds=[(1e-2, None), (1e-2, None), (0.2, None), (1e-2, None), (0,1)], method='L-BFGS-B')
+    res = minimize(work_minimizer, x0, args=(sam), bounds=[(1e-2, None), (1e-2, None), (0.2, None), (1e-2, None), (1e-2,1)], method='L-BFGS-B')
     return -res.fun, res.x
 
 def work_minimizer_fixed_temps(x, sam: SystemAndMeter):
@@ -621,15 +335,17 @@ def work_minimizer_fixed_temps(x, sam: SystemAndMeter):
     W_ext = sam.work_extraction()
     W_meas = sam.work_measurement()
     return -(W_ext - W_meas)
-def find_pos_net_work_fixed_temps(sam: SystemAndMeter):
+def find_pos_net_work_fixed_temps(sam: SystemAndMeter, n=1, T=1.0):
     from scipy.optimize import minimize
     # Set the initial guess for the minimizer and bounds that are non-zero and positive
-    sam.set_x(1.0)
-    sam.set_n(1)
-    x0 = [sam.get_Q_S(), sam.get_P(), sam.get_Q_M(), sam.get_tau()]
+    sam.set_x(T)
+    sam.set_n(n)
+    P_scale = 1e8
+    #x0 = [sam.get_Q_S(), P_scale, sam.get_Q_M(), sam.get_tau()]
+    x0 = [1.0, 1e2*P_scale, 1.51, 1e-9]
     # Add some small random noise to the initial guess to avoid getting stuck in local minima
-    x0 = [x + np.random.normal(-0.1, 0.1) for x in x0]
-    res = minimize(work_minimizer_fixed_temps, x0, args=(sam), bounds=[(1e-2, None), (1e-2, None), (1e-2, None), (0, 1)], method='L-BFGS-B')
+    x0 = [x + x*2*np.random.normal(-0.1, 0.1) for x in x0]
+    res = minimize(work_minimizer_fixed_temps, x0, args=(sam), bounds=[(1e-2, None), (0.001*P_scale, 10*P_scale), (1e-2, None), (1e-10, 0.5)], method='L-BFGS-B')
     return -res.fun, res.x
 
 def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_temp.csv", fixed=None, n_upper_limit=None):
@@ -651,9 +367,13 @@ def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), f
         "Mutual Information": [],
         "Information": []
     }
+    #sam.set_x(max(temp_range))
+    #sam.full_update()
+    #n_max = sam.get_total_levels()
     for T in temp_range:
         sam.set_x(T)
         sam.full_update()
+        #sam.set_total_levels(n_max)
         if fixed is None:
             n = first_positive_W_ext(sam)
             sam.set_n(n)
@@ -664,12 +384,14 @@ def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), f
         else:
             sam.set_n_upper_limit(sam.get_total_levels())
         # Check if we're in the Zeno regime
-        if sam.get_tau() < 1e-5:
-            W_ext = sam.zeno_limit_work_extraction()
-            W_meas = sam.zeno_limit_work_measurement()
-        else:
-            W_ext = sam.work_extraction()
-            W_meas = sam.work_measurement()
+        #if sam.get_tau() < 1e-5:
+        #    W_ext = sam.zeno_limit_work_extraction()
+        #    W_meas = sam.zeno_limit_work_measurement()
+        #else:
+        #    W_ext = sam.work_extraction()
+        #    W_meas = sam.work_measurement()
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
         Q_M = W_meas
@@ -714,9 +436,10 @@ def params_vs_omega_per_delta_E(sam: SystemAndMeter, omega_range=np.linspace(0.0
         "Mutual Information": [],
         "Information": []
     }
-    hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
-    for omega in omega_range:
-        sam.set_Q_M(omega)
+    for C_M in omega_range:
+        temp_Q_S = sam.get_Q_S()
+        sam.set_Q_S(1)
+        sam.set_Q_M(C_M)
         sam.full_update()
         if fixed is None:
             n = first_positive_W_ext(sam)
@@ -724,7 +447,8 @@ def params_vs_omega_per_delta_E(sam: SystemAndMeter, omega_range=np.linspace(0.0
             n = fixed
         sam.set_n(n)
         sam.set_n_upper_limit(sam.get_total_levels())
-        hw_per_delta_E = hbar*sam.get_omega()/sam.get_delta_E()
+        #hw_per_delta_E = hbar*sam.get_omega()/sam.get_delta_E()
+        hw_per_delta_E = C_M 
         # Check if we're in the Zeno regime
         if sam.get_tau() < 1e-5:
             W_ext = sam.zeno_limit_work_extraction()
@@ -746,7 +470,7 @@ def params_vs_omega_per_delta_E(sam: SystemAndMeter, omega_range=np.linspace(0.0
         results['Mutual Information'].append(I_m)
         results['Information'].append(I)
     df = pd.DataFrame(results)
-
+    sam.set_Q_S(temp_Q_S)
     # Write the header lines manually
     with open(fname, mode="w") as file:
         file.write(f"System temperature: {sam.get_temp_system():.3f},\
@@ -987,30 +711,94 @@ def params_vs_nprime(sam: SystemAndMeter, nprime_range=np.arange(0,10), fname='d
     print(f"Parameters vs nprime saved to {fname}")
 
 
-def pareto_helper(args: tuple):
-    """Helper function for the Pareto optimization.
-        Creates a SystemAndMeter object with the parameters specified in args 
-        and returns the work, power, and mutual information of a cycle as a tuple.
-
-    Args:
-        args (tuple): The arguments to pass to the function.
-    """
-    pass
-
-def plot_joint_prob_of_time(sam, t_max=1, n=None):
-    """ Plots the joint probability P(1,n,t) as a function of time"""
-    sam.set_tau(0.001)
-    sam.set_n(1)
-    p0, p1 = sam.joint_prob_evol()
-    t = np.arange(0, sam.get_time(), sam.get_time()/100)
-    plt.plot(t, p1, label=f'P(1,{sam.get_n()},t)')
-    plt.plot(t, p0, label=f'P(0,{sam.get_n()},t)')
-    plt.plot(t, p1+p0, label=f'P({sam.get_n()},t)')
-    plt.legend()
-    plt.xlabel(r'Time ($\tau$)')
-    plt.ylabel('Probability')
-    plt.savefig(f'../images/joint_prob_t_{t_max}.png')
+def find_phase_boundary(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/phase_boundary.csv"):
+    """ Investigate the phase boundary between the positive and negative net work regions.
+        Saves the data to a csv file.
         
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            temp_range (ndarray or list, optional): The temperature range to evaluate the phase boundary at. Defaults to np.linspace(0.0, 2.0, 100).
+            fname (str, optional): The filename to save the data to. Defaults to "data/phase_boundary.csv".
+    """
+    #Q_S = sam.get_Q_S()
+    #Q_M_range = np.linspace(0.1*Q_S, 100*Q_S, 100)
+    P_range = np.logspace(start=-2, stop=10, num=100, base=10)
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system():.3f},\
+                    Coupling strength: {sam.get_P():.3f}, \
+                            Period: {sam.get_tau():.3f}\n")
+    # For each temperature, calculate the net work for each Q_M in the range
+    # Find where the net work changes sign and save the results
+    for T in temp_range:
+        sam.set_x(T)
+        sam.full_update()
+        #W_vals = np.zeros_like(Q_M_range)
+        W_vals = np.zeros_like(P_range)
+        # Calculate the net work for each Q_M in the range
+        #for i, Q_M in enumerate(Q_M_range):
+        for i, P in enumerate(P_range):
+            #sam.set_Q_M(Q_M)
+            sam.set_P(P)
+            sam.full_update()
+            W_vals[i] = sam.work_extraction() -sam.work_measurement()
+        # Find where the net work changes sign, i.e. the phase boundary
+        sign_changes = np.where(np.diff(np.sign(W_vals)))[0]
+        if True: #len(sign_changes) > 0:
+            #hw_dE_values = Q_M_range[sign_changes] / Q_S
+            P_values = P_range[sign_changes]
+        else:
+            print(f"Phase boundary saved to {fname}")
+            return
+
+        # Append the data to the file
+        with open(fname, mode="a") as file:
+            #file.write(f"{T},{hw_dE_values}\n")
+            file.write(f"{T},{P_values}\n")
+    print(f"Phase boundary saved to {fname}")
+
+def phase_boundary_multidata(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/testing.csv"):
+    """ Investigate the phase boundary between the positive and negative net work regions.
+        Saves the data to a csv file.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            temp_range (ndarray or list, optional): The temperature range to evaluate the phase boundary at. Defaults to np.linspace(0.0, 2.0, 100).
+            fname (str, optional): The filename to save the data to. Defaults to "data/phase_boundary.csv".
+    """
+    Q_S = sam.get_Q_S()
+    Q_M_range = np.linspace(0.01, 10*Q_S, 500)
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system():.3f},\
+                    Coupling strength: {sam.get_P():.3f}, \
+                            Period: {sam.get_tau():.3f}\n")
+        for T in temp_range:
+            file.write(f"{T},")
+        file.write("\n")
+
+    # For each temperature, calculate the net work for each Q_M in the range
+    # Find where the net work changes sign and save the results
+    for Q_M in Q_M_range:
+        sam.set_Q_M(Q_M)
+        sam.full_update()
+        # Calculate the net work for each Q_M in the range
+        with open(fname, mode="a") as file:
+            for i, T in enumerate(temp_range):
+                sam.set_x(T)
+                sam.full_update()
+                W_ext = sam.work_extraction()
+                W_meas = sam.work_measurement()
+                W = W_ext - W_meas
+                element = [Q_M/Q_S, W, W_ext, W_meas]
+                file.write(f"{element},")
+
+        # Append the data to the file
+        with open(fname, mode="a") as file:
+            file.write(f"\n")
+    print(f"Phase boundary saved to {fname}")
+
+
 
 if __name__=='__main__':
     main()

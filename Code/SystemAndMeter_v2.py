@@ -2,11 +2,12 @@ import numpy as np
 import scipy as sp # Not currently used but can be uncommented if needed
 from scipy.special import factorial, assoc_laguerre
 
-kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+c = sp.constants.physical_constants['speed of light in vacuum'][0] # Speed of light in m/s
 
 class SystemAndMeter:
-    def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0, n_upper_limit=None, R=0):
+    def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0, n_upper_limit=None, R=0, mass = 1):
         """Initializes the system and meter with the given parameters.
         Ideally, we use the dimensionless parameters Q_S, Q_M, and P to set the energy scales of the system and meter.
         However, you can set the parameters directly if you want via the seter functions, but this requires
@@ -31,6 +32,7 @@ class SystemAndMeter:
         self.n = msmt_state
         self.tau = tau
         self.R = R
+        self.mass = mass
         self.update_params()
         self.update_total_levels()
         if n_upper_limit == None:
@@ -97,6 +99,7 @@ class SystemAndMeter:
             alpha = g*np.sqrt(mass*omega/(2*hbar))*t*(1+1j*R/2)
         else:
             alpha = g*np.sqrt(mass/(2*hbar*omega))*(np.exp(-gamma*t/2)*np.sin(omega*t) -1j*(np.exp(-gamma*t/2)*np.cos(omega*t)-1))
+
         try:
             if n >= m:
                 # Check if the factorial ratio is zero and if either the real or imaginary part
@@ -369,11 +372,55 @@ class SystemAndMeter:
         upper_limit = self.n_upper_limit
         for n in range(lower_limit, upper_limit+1):
             p0_n, p1_n = self.joint_probability(n=n, t=time)
+            #W+=a*p1_n - b*p0_n
+            W += (p1_n - p0_n)
+        W *= delta_E
+        return W
+
+    def work_extraction_OLD(self, time=None):
+        """Calculates the work extracted from the system at time t. This is for the old version of the work extraction formula.
+        Probably don't use this, I'm not convinced it's correct.
+
+        Args:
+            time (float, optional): System time to calculate the work extracted at. Defaults to self.time if not set.
+
+        Returns:
+            float: The work extracted from the system at time t. sum_n P(n,t)*(P(1|n,t) - P(1|n,0))*delta_E
+        """
+        if (time==None):
+            time = self.time
+        delta_E = self.delta_E
+        a, b = self.tls_state
+        W = 0
+        lower_limit = self.n
+        upper_limit = self.n_upper_limit
+        for n in range(lower_limit, upper_limit+1):
+            p0_n, p1_n = self.joint_probability(n=n, t=time)
             W+=a*p1_n - b*p0_n
         W *= delta_E
         return W
 
     def work_measurement(self, time=None):
+        """Calculates the work required to measure the meter at time t.
+
+        Args:
+            time (float, optional): The time to measure at. Defaults to self.time if not set.
+
+        Returns:
+            float: The work required to measure the meter at time t.
+        """
+        if time == None:
+            time = self.time
+        g = self.g
+        omega = self.omega_meter
+        m = self.mass   
+        b = self.tls_state[1]
+        wt = 2*np.pi*self.tau # t = tau*2*pi/omega
+        if wt/(2*np.pi) < 1e-5:
+            return b*m*g**2*(wt)**2/2
+        else:
+            return b*m*g**2*(1-np.cos(wt))
+    def work_measurement_OLD(self, time=None):
         """Returns the amount of work required to measure the meter at time t.
 
         Args:
@@ -583,6 +630,13 @@ class SystemAndMeter:
             gamma (float): Dissipation rate of the meter.
         """
         self.gamma = gamma
+    def set_mass(self, mass):
+        """Setter function for the mass of the meter.
+
+        Args:
+            mass (float): Mass of the meter in meV/c^2.
+        """
+        self.mass = mass
 
 
     #--------- Functions to update the hidden parameters ofthe system and meter ------------

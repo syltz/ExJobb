@@ -9,11 +9,14 @@ import re
 import numpy as np
 import ast
 from scipy.interpolate import UnivariateSpline
+import csv
+import shutil
+import gc
 
 # Set the style of the plots
-sns.set_style(style='white')
-sns.set_context(context='paper', font_scale=2)#, rc={"lines.linewidth": 5.0})
-sns.set_palette(palette='colorblind')
+#sns.set_style(style='white')
+#sns.set_context(context='paper', font_scale=2)#, rc={"lines.linewidth": 5.0})
+#sns.set_palette(palette='colorblind')
 lw = 1.75 # Line width
 
 symbol_dict = {'temperature': r'$T_M/T_S$', 'hw/de': r'$\hbar\omega/\Delta E$',\
@@ -50,33 +53,135 @@ def main():
     #main_data_list = ['data/phase_boundary_opt_eq_temp_tau=1e-06.csv', 'data/phase_boundary_opt_eq_temp_tau=0.125.csv', 'data/phase_boundary_opt_eq_temp_tau=0.25.csv', 'data/phase_boundary_opt_eq_temp_tau=0.5.csv']
     #ending_data_list = ['data/phase_boundary_opt_eq_temp_tau=1e-06_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.125_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.25_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.5_ending.csv']
     tau_labels = ['1e-06', '0.125', '0.25', '0.5']
-    taus = np.array([1e-06, 0.125, 0.25, 0.5])
-    dissipation_data = [f'data/phase_boundary_tau={tau}_gamma=0.01.csv' for tau in taus]
-    unitary_data = [f'data/phase_boundary_opt_eq_temp_tau={tau}.csv' for tau in taus]
-    unitary_data_ending = [f'data/phase_boundary_opt_eq_temp_tau={tau}_ending.csv' for tau in taus]
-    dissipation_data_list = phase_diagram_preprocessing(dissipation_data)
-    unitary_data_list = phase_diagram_preprocessing(unitary_data, ending_data_names=unitary_data_ending)
-    fnames = ['_gamma=0.01.pdf', '_unitary.pdf']
-    labels = [r'$\tau=10^{-6}$', r'$\tau=0.125$', r'$\tau=0.25$', r'$\tau=0.5$']
-    data_sets = [dissipation_data_list, unitary_data_list]
+    #taus = np.array([1e-06, 0.125, 0.25, 0.5])
+    #dissipation_data = [f'data/phase_boundary_dissipation_tau={tau}.csv' for tau in taus]
+    #dissipation_data_ending = [f'data/phase_boundary_dissipation_tau={tau}_ending.csv' for tau in taus]
+    #unitary_data = [f'data/phase_boundary_unitary_tau={tau}.csv' for tau in taus]
+    #unitary_data_ending = [f'data/phase_boundary_unitary_tau={tau}_ending.csv' for tau in taus]
+    #dissipation_data_list = phase_diagram_preprocessing(dissipation_data, dissipation_data_ending)
+    #unitary_data_list = phase_diagram_preprocessing(unitary_data, ending_data_names=unitary_data_ending)
+    #fnames = ['_gamma=0.01.pdf', '_unitary.pdf']
+    #labels = [r'$\tau=10^{-6}$', r'$\tau=0.125$', r'$\tau=0.25$', r'$\tau=0.5$']
+    #data_sets = [dissipation_data_list, unitary_data_list]
     #for data_set, fname in zip(data_sets, fnames):
-    #    phase_diagram(data_set, labels=labels, fname=f"thesis_figures/phase_diagram{fname}")
-    #    phase_diagram_comparison(data_set[0], fname=f"thesis_figures/phase_diagram_comparison{fname}")
+        #phase_diagram(data_set, labels=labels, fname=f"thesis_figures/phase_diagram{fname}")
+        #phase_diagram_comparison(data_set[0], fname=f"thesis_figures/phase_diagram_comparison{fname}")
     #df_1 = pd.read_csv('data/multidata_Work_tau=1e-06_gamma=0.01.csv', index_col=0)
     #df_2 =  pd.read_csv('data/multidata_Work_tau=0.125_gamma=0.01.csv', index_col=0)
     #df_3 =  pd.read_csv('data/multidata_Work_tau=0.25_gamma=0.01.csv', index_col=0)
     #df_4 =  pd.read_csv('data/multidata_Work_tau=0.5_gamma=0.01.csv', index_col=0)
     #df_list = [df_1, df_2, df_3, df_4]
     #power_heatmap(indata=df_list, times=taus, labels=tau_labels, overlay=True, fname='thesis_figures/power_plot_dissipation.png')
-    gammas = [0, 0.001, 0.01]
-    df_list = [pd.read_csv(f'data/dissipation/params_vs_time_opt_eq_temp_gamma_{gamma}_extreme_long_run.csv', skiprows=1) for gamma in gammas]
-    plot_data_broken_x_axis(df_list, 'Time', 'Information', (0,2), (98,100), fname='thesis_figures/information_vs_time_broken_x_axis.png', labels=[r'$\gamma=0$', r'$\gamma=0.001$', r'$\gamma=0.01$'],\
-                             title='Information vs Time', xlabel=r'$\tau$', ylabel=r'$I_{tot}$', legend_pos=(-0.08, 0.7))
-    for df in df_list:
-        df['Q-factor'] = -df['System Heat'] / df['Information']
-    plot_data_broken_x_axis(df_list, 'Time', 'Q-factor', (0,2), (98, 100), fname='thesis_figures/Q_factor_vs_time.png', labels=[r'$\gamma=0$', r'$\gamma=0.001$', r'$\gamma=0.01$'],\
-                             title='Q-factor vs Time', xlabel=r'Time $\tau$', ylabel=r'$Q = \frac{W_{ext}}{I_{tot}}$', legend_pos=(-0.08, 0.7))
+    #gammas = [0, 0.001, 0.01]
+    #T_S = []
+    #x = []
+    #df_list = [pd.read_csv(f'data/dissipation/params_vs_time_opt_eq_temp_gamma_{gamma}_extreme_long_run.csv', skiprows=1) for gamma in gammas]
+    ## Use regex to extract the System temperature and the Temperature from the first row of the csv file
+    #pattern = r"System temperature: (\d+\.\d+).*?Temperature: (\d+\.\d+)"
+    #for gamma in gammas:
+    #    with open(f'data/dissipation/params_vs_time_opt_eq_temp_gamma_{gamma}_extreme_long_run.csv', 'r') as f:
+    #        reader = csv.reader(f)
+    #        first_row = next(reader)
+    #        title_string = ', '.join(first_row)
+    #        f.close()
+    #    match = re.search(pattern, title_string)
+    #    T_S.append(float(match.group(1)))
+    #    x.append(float(match.group(2)))
+    #for df, gamma, T, x_val in zip(df_list, gammas, T_S, x):
+    #    df['System Entropy'] = df['System Heat']/T
+    #    df['Meter Entropy'] = df['Meter Heat']/(x_val*T)
+    #    df['Classical Entropy'] = df['System Entropy'] + df['Meter Entropy']
+    #    df['Total Entropy'] = df['Classical Entropy'] + df['Information']
+    #    df['No-obs Entropy']= df['Classical Entropy'] + df['Mutual Information']
+    #x_axis = 'Time'
+    #y_axes = ['Classical Entropy', 'Total Entropy']
+    #y_axes.reverse()
+    #labels = [r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M}$', r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M} + I$']
+    #labels.reverse()
+    #iv1 = (0.52, 0.56)
+    #iv2 = (-0.005, 0.005)
+    #plot_broken_y_axis(df_list[0][df_list[0]<2], xaxis=x_axis, yaxis=y_axes, interval_1=iv1, interval_2=iv2, labels=labels, title='Entropy vs Time', xlabel=r'$\tau$',\
+    #                    ylabel='Entropy [a.u.]', fname='thesis_figures/entropy_vs_time.png', legend_pos=(0.5, 0.8))
+    #plot_multidata(df_list[0],  xaxis=x_axis, yaxis_list=y_axes, labels=[[r'$S_{c}$', r'$S_{c} + I$', r'$S_{c} + I_{mut}$']],\
+    #                title='Entropy vs Time', xlabel=r'$\tau$', ylabel='Entropy [a.u.]', fname='thesis_figures/entropy_vs_time_dissipation.png',\
+    #                    xlim=(0, 2))
+    # Select only the dataframe corresponding to time less than 2
+    #print(title_string)
+    #df_list = [df[df['Time'] < 2] for df in df_list]
+    #plot_entropy(df_list[0], 'dissipation', '0', 'Time', title_string)
+
+    #plot_data_broken_x_axis(df_list, 'Time', 'Information', (0,2), (98,100), fname='thesis_figures/information_vs_time_broken_x_axis.png', labels=[r'$\gamma=0$', r'$\gamma=0.001$', r'$\gamma=0.01$'],\
+    #                         title='Information vs Time', xlabel=r'$\tau$', ylabel=r'$I_{tot}$', legend_pos=(-0.08, 0.7))
+    #for df in df_list:
+    #    df['Q-factor'] = -df['System Heat'] / df['Information']
+    #plot_data_broken_x_axis(df_list, 'Time', 'Q-factor', (0,2), (98, 100), fname='thesis_figures/Q_factor_vs_time.png', labels=[r'$\gamma=0$', r'$\gamma=10^{-3}$', r'$\gamma=10^{-2}$'],\
+    #                         title='Q-factor vs Time', xlabel=r'Time $\tau$', ylabel=r'$Q = \frac{W_{ext}}{I_{tot}}$', legend_pos=(0.15, 0.802))
     
+    #for n in [1,2,3]:
+    #    test1_time = pd.read_csv(f'data/test_{n}_vs_time.csv', skiprows=1)
+    #    plot_data([test1_time], 'Time', 'Information', f'test_images/test{1}_info_vs_time.png', title='Information vs Time', xlabel=r'$\tau$', ylabel=r'$I_{tot}$')
+    #    plot_multidata([test1_time], xaxis='Time', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Time', xlabel=r'$\tau$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_time.png')
+    #    test1_temp = pd.read_csv(f'data/test_{n}_vs_temp.csv', skiprows=1)
+    #    plot_data([test1_temp], 'Temperature', 'Information', f'test_images/test{n}_info_vs_temp.png', title='Information vs Temperature', xlabel=r'$T_M/T_S$', ylabel=r'$I_{tot}$')
+    #    #test1_temp = test1_temp[test1_temp['Temperature'] < 0.5]
+    #    plot_multidata([test1_temp], xaxis='Temperature', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Temperature', xlabel=r'$T_M/T_S$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_temp.png')
+    #    test1_coupling = pd.read_csv(f'data/test_{n}_vs_coupling.csv', skiprows=1)
+    #    plot_data([test1_coupling], 'Coupling Strength', 'Information', f'test_images/test{n}_info_vs_coupling.png', title='Information vs Coupling Strength', xlabel=r'$g$', ylabel=r'$I_{tot}$')
+    #    plot_multidata([test1_coupling], xaxis='Coupling Strength', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Coupling Strength', xlabel=r'$g$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_coupling.png')
+    #    test1_n = pd.read_csv(f'data/test_{n}_vs_nprime.csv', skiprows=1)
+    #    plot_data([test1_n], 'Meter Level', 'Information', f'test_images/test{n}_info_vs_n.png', title='Information vs Meter Level', xlabel=r'$n$', ylabel=r'$I_{tot}$')
+    #    plot_multidata([test1_n], xaxis='Meter Level', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Meter Level', xlabel=r'$n$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_n.png')
+    #    del test1_time, test1_temp, test1_coupling, test1_n
+    #    gc.collect()
+    
+    #W, W_ext, W_meas = multidata_preprocessing('data/multidata_eq_temp_zeno.csv')
+    #W.to_csv('data/multidata_eq_temp_zeno_W.csv')
+    #W_ext.to_csv('data/multidata_eq_temp_zeno_W_ext.csv')
+    #W_meas.to_csv('data/multidata_eq_temp_zeno_W_meas.csv')
+    #W, W_ext, W_meas = multidata_preprocessing('data/multidata_uneq_temp.csv')
+    #W.to_csv('data/multidata_uneq_temp_W.csv')
+    #W_ext.to_csv('data/multidata_uneq_temp_W_ext.csv')
+    #W_meas.to_csv('data/multidata_uneq_temp_W_meas.csv')
+    #df_zeno = pd.read_csv('data/multidata_eq_temp_zeno_W.csv', index_col=0)
+    ## Select the column where the values of the column header is less than 0.5
+    #df_zeno = df_zeno[df_zeno.columns[df_zeno.columns.astype(float) < 0.5]]
+    ## Select the rows with indices less than 0.5
+    #df_zeno = df_zeno[df_zeno.index.astype(float) < 2.5]
+    #df_uneq = pd.read_csv('data/multidata_uneq_temp_W.csv', index_col=0)
+    #df_uneq = df_uneq[df_uneq.columns[df_uneq.columns.astype(float) < 0.5]]
+    #df_uneq = df_uneq[df_uneq.index.astype(float) < 2.5]
+    #power_heatmap([df_zeno, df_uneq], times=[1e-10, 0.1], labels=['Zeno', 'Unequal'], overlay=True, fname='thesis_figures/power_plot_zeno_uneq.png')
+    #del df_zeno, df_uneq
+    #gc.collect()
+    #df = pd.read_csv('data/test_1_vs_temp.csv', skiprows=1)
+    # Create a new column for the efficiency / COP
+    # When work is positive and temperature is less than 1, the efficiency is Work/abs(System Heat),
+    # When work is positive and temperature is greater than 1, the efficiency is (Work + abs(System Heat)/abs(Meter Heat)
+    # When work is negative, the efficiency is (System Heat)/abs(Work)
+    #df['Efficiency'] = df.apply(calc_efficiency, axis=1)
+    ## Plot the efficiency against the temperature
+    #plot_data([df], 'Temperature', 'Efficiency', 'thesis_figures/efficiency_vs_temp.png', title='Efficiency vs Temperature', xlabel=r'$T_M/T_S$', ylabel='Efficiency [a.u.]')
+    #efficiency_plot(df)
+    #df = pd.read_csv('data/test_2_vs_temp.csv', skiprows=1)
+    #plt.plot(df['Temperature'], df['Work'])
+    #plt.plot(df['Temperature'], df['System Heat'])
+    #plt.plot(df['Temperature'], df['Meter Heat'])
+    #plt.ylim(-1,1)
+    #plt.show()
+    #fnames = ['data/multidata_eq_temp_zeno_tau=2e-09.csv', 'data/multidata_eq_temp_zeno_tau=3e-09.csv', 'data/multidata_eq_temp_zeno_tau=4e-09.csv']
+    #taus = [2,3,4]
+    #for fname, tau in zip(fnames, taus):
+    #    W, We, Wm = multidata_preprocessing(fname)
+    #    W.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W.csv')
+    #    We.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W_ext.csv')
+    #    Wm.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W_meas.csv')
+    df1 = pd.read_csv('data/multidata_eq_temp_zeno_W.csv', index_col=0)
+    df2 = pd.read_csv('data/multidata_eq_temp_zeno_tau=2e-09_W.csv', index_col=0)
+    df3 = pd.read_csv('data/multidata_eq_temp_zeno_tau=3e-09_W.csv', index_col=0)
+    df4 = pd.read_csv('data/multidata_eq_temp_zeno_tau=4e-09_W.csv', index_col=0)
+    df_list = [df1, df2, df3, df4]
+    labels = [r'$\tau=10^{-9}', r'$\tau=2\cdot 10^{-9}$', r'$\tau=3\cdot 10^{-9}$', r'$\tau=4\cdot 10^{-9}$']
+    power_heatmap(df_list, times=[1e-09, 2e-09, 3e-09, 4e-09], labels=labels, overlay=True, fname='thesis_figures/power_plot_zeno_tau.png', xlim=0.2, ylim=1.5)
 
 
 
@@ -129,7 +234,7 @@ def individual_plots_all(sim_run):
         if x_axis.lower() == 'time':
             plot_w_meas_vs_mutual_info(data, file_ending, sim_run, x_axis, title_string)
 
-def plot_work_comparison(data, file_ending, sim_run, x_axis, title_string):
+def plot_work_comparison(data, fname, x_axis, title_string):
         # Work = W_meas + W_ext but also stored in the data
         Work = data['Work']
         fig, ax = plt.subplots(figsize=(12, 8))
@@ -149,7 +254,7 @@ def plot_work_comparison(data, file_ending, sim_run, x_axis, title_string):
         plt.xlabel(f'{symbol_dict[x_axis.lower()]}')
         plt.ylabel('Energy [meV]')
         sns.despine()
-        plt.savefig(f'images/param_vs_{file_ending}/work__comparison_{sim_run}.png')
+        plt.savefig(f'{fname}')
         plt.close()
 def plot_q_factor(data, file_ending, sim_run, x_axis, title_string):
     # Select all columns that contain the word "information"
@@ -203,13 +308,13 @@ def plot_entropy(data, file_ending, sim_run, x_axis, title_string):
                      color="black", linestyle='dotted')
     # Add horizontal line at 0
     plt.axhline(0, color='black', linewidth=lw)
-    plt.ylim(-0.01, 0.02)
+    #plt.ylim(-0.01, 0.02)
     plt.title(title_string)
     plt.xlabel(f'{symbol_dict[x_axis.lower()]}')
     plt.ylabel('Entropy [meV/K]')
     plt.legend()
     sns.despine()
-    plt.savefig(f'images/param_vs_{file_ending}/entropy_{sim_run}.png')
+    plt.savefig(f'images/testing.png')
     plt.close()
 
 def plot_w_meas_vs_mutual_info(data, file_ending, sim_run, x_axis, title_string):
@@ -750,34 +855,30 @@ def phase_diagram_preprocessing(main_data_names, ending_data_names=None):
         
         # Sort the values by temperature
         df = df.sort_values(by='Temperature')
-        # Apply the custom function to the 'hw/dE' column
+        # Convert the 'hw/dE' column to a list
         df['hw/dE'] = df['hw/dE'].apply(convert_to_list)
+        # Drop rows where the 'hw/dE' column contains an empty list
+        df = df.loc[df['hw/dE'].apply(lambda x: len(x) >0)]
         # Separate the 'hw/dE' column into two columns
         df['hw/dE_1'] = df['hw/dE'].apply(lambda x: x[-1] if len(x) > 0 else None)
         df['hw/dE_2'] = df['hw/dE'].apply(lambda x: x[0] if len(x) > 1 else None)
         data_list.append(df)
     
     return data_list
-    #for main_data_name, ending_data_name in zip(main_data_names, ending_data_names):
-    #    df = pd.read_csv(main_data_name, skiprows=1, header=None)
-    #    df.columns = ['Temperature', 'hw/dE']
-    #    df_ending = pd.read_csv(ending_data_name, skiprows=1, header=None)
-    #    df_ending.columns = ['Temperature', 'hw/dE']
-    #    # Merge the two dataframes
-    #    df = pd.concat([df, df_ending])
-    #    # Sort the values by temperature
-    #    df = df.sort_values(by='Temperature')
-    #    # Apply the custom function to the 'hw/dE' column
-    #    df['hw/dE'] = df['hw/dE'].apply(convert_to_list)
-    #    # Separate the 'hw/dE' column into two columns
-    #    df['hw/dE_1'] = df['hw/dE'].apply(lambda x: x[-1] if len(x) > 0 else None)
-    #    df['hw/dE_2'] = df['hw/dE'].apply(lambda x: x[0] if len(x) > 1 else None)
-    #    data_list.append(df)
-    #return data_list
 
 def phase_diagram(data_list, fname='phase_diagram.png', title=None, labels=None):
     # Create a figure with 4 subplots in a 2x2 grid
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    # Do some color magic
+    cmap = plt.get_cmap('seismic')
+    color_points = [0.25, 0.75]
+    colors = [cmap(i) for i in color_points]
+    red = colors[1]
+    blue = colors[0]
+    cmap = plt.get_cmap('Wistia')
+    color_points = [0.2]
+    colors = [cmap(i) for i in color_points]
+    yellow = colors[0]
     # Loop over the dataframes and plot the data in the subplots
     for i, df in enumerate(data_list):
         df = df.dropna(how='any', subset=['hw/dE_1'])
@@ -796,15 +897,22 @@ def phase_diagram(data_list, fname='phase_diagram.png', title=None, labels=None)
             axs[i//2, i%2].text(1.5, 1.5, labels[i], fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
 
         # Fill with blue the entire region with temperature above 1 using axvspan
-        axs[i//2, i%2].axvspan(1, 2, facecolor='blue', alpha=0.3, edgecolor='none')
+        axs[i//2, i%2].axvspan(1, 2, facecolor=blue, alpha=0.7, edgecolor='none')
         # Fill the region between the two phase boundaries and below temperature 1 with red
-        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], df['hw/dE_2'], where=df['Temperature'] < 1, facecolor='red', alpha=0.3, edgecolor='none')
+        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], df['hw/dE_2'], where=df['Temperature'] < 1, facecolor=red, alpha=0.7, edgecolor='none')
         # Fill the region below hw/dE_2 but above the x-axis with up to temperature 1 with yellow
-        axs[i//2, i%2].fill_between(df['Temperature'], 0, df['hw/dE_2'], where=(df['Temperature'] < 1), facecolor='yellow', alpha=0.3, edgecolor='none')
+        axs[i//2, i%2].fill_between(df['Temperature'], 0, df['hw/dE_2'], where=(df['Temperature'] < 1), facecolor=yellow, alpha=0.7, edgecolor='none')
         # Fill the region above hw/dE_1 below temperature 1 with yellow
-        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], 2, where=(df['Temperature'] < 1), facecolor='yellow', alpha=0.3, edgecolor='none')
+        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], 2, where=(df['Temperature'] < 1), facecolor=yellow, alpha=0.7, edgecolor='none')
         # Fill the region between the two phase boundaries and above temperature 1 with white
-        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], df['hw/dE_2'], where=df['Temperature'] > 1, facecolor='white', alpha=1.0, edgecolor='none')
+        axs[i//2, i%2].fill_between(df['Temperature'], df['hw/dE_1'], df['hw/dE_2'], where=df['Temperature'] > 1, facecolor='white', edgecolor='none')
+        
+        # For the first subplot, add some text to indicate the four regions
+        if i == 0:
+            axs[i//2, i%2].text(0.3, 0.5, 'HE', fontsize=30, color='black')
+            axs[i//2, i%2].text(1.05, 0.5, 'IE', fontsize=30, color='black')
+            axs[i//2, i%2].text(0.3, 1.2, 'HP', fontsize=30, color='black')
+            axs[i//2, i%2].text(1.05, 1.2, 'RF', fontsize=30, color='black')
 
     # Make each row share the same y-axis and each column share the same x-axis
     for i in range(2):
@@ -874,7 +982,7 @@ def boundary_two(mu, x):
     else:
         return 0
 
-def power_heatmap(indata, times, fname='power_plot.png', title=None, labels=None, overlay=False):
+def power_heatmap(indata, times, fname='power_plot.png', title=None, labels=None, overlay=False, xlim=None, ylim=None):
     """Takes work-data and time-data and plots the power as a heatmap
 
     Args:
@@ -883,23 +991,43 @@ def power_heatmap(indata, times, fname='power_plot.png', title=None, labels=None
         fname (str, optional): File name to save the plot. Defaults to 'power_plot.png'.
         title (str, optional): Title of the plot if desired. Defaults to None.
         labels (list/str, optional): Labels to set on each of the plots. Defaults to None.
+        xlim (float, optional): Limits the x-values by filtering the data. Defaults to None.
+        ylim (float, optional): Limits the y-values by filtering the data. Defaults to None.
     """
     # Create a custom colormap
-    colors = [(0, 0, 1), (1, 1, 1), (1, 0, 0)]  # Blue -> White -> Red
-    n_bins = 1000  # Discretizes the interpolation into bins
-    cmap_name = 'custom_cmap'
-    cm = mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=n_bins)
-
+    global_max_val = 0
+    if not isinstance(indata, list):
+        indata = [indata]
+    for i, df in enumerate(indata):
+        global_max_val = max(global_max_val, df.max().max()/times[i])
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
     for i, df in enumerate(indata):
+        df = df[df.columns[df.columns.astype(float) < xlim]]
+        df = df[df.index.astype(float) < ylim]
         df.columns = df.columns.astype(float)
         df.index = df.index.astype(float)
-        norm =  mcolors.TwoSlopeNorm(vmin=df.min().min(), vcenter=0, vmax=df.max().max())
-        sns.heatmap(df/np.float64(times[i]), ax=axs[i//2, i%2], cmap='seismic', cbar_kws={'label': 'Power [a.u.]'}, norm=norm)
-        axs[i//2, i%2].set_xticks([0, 250, 500, 750, 1000])
-        axs[i//2, i%2].set_yticks([0, 125, 250, 375, 500])
-        axs[i//2, i%2].set_xticklabels([0, 0.5, 1, 1.5, 2])
-        axs[i//2, i%2].set_yticklabels([0, 0.5, 1, 1.5, 2])
+        #if df.max().max()/np.float64(times[i]) < global_max_val*1e-2:
+        #    r = 50
+        #    cmap = plt.get_cmap('seismic')
+        #    colors = cmap(np.linspace(0.4, 0.6, 256))
+        #    cmap = mcolors.LinearSegmentedColormap.from_list('custom_seismic', colors)
+        #    norm = mcolors.TwoSlopeNorm(vmin=-df.max().max()/times[i]/r, vcenter=0, vmax=df.max().max()/times[i]/r)
+        #else:
+        #    norm =  mcolors.TwoSlopeNorm(vmin=df.min().min(), vcenter=0, vmax=df.max().max())
+        #    cmap = plt.get_cmap('seismic')
+        norm = mcolors.TwoSlopeNorm(vmin=df.min().min()/np.float64(times[i]), vcenter=0, vmax=df.max().max()/np.float64(times[i]))
+        cmap = plt.get_cmap('seismic')
+        sns.heatmap(df/np.float64(times[i]), ax=axs[i//2, i%2], cmap=cmap, cbar_kws={'label': 'Power [meV/s]'}, norm=norm)
+        n_cols = len(df.columns)
+        n_rows = len(df.index)
+        axs[i//2, i%2].set_xticks(np.linspace(0, n_cols, 5))
+        axs[i//2, i%2].set_yticks(np.linspace(0, n_rows, 5))
+        xticklabels = np.linspace(df.columns[0], df.columns[-1], 5)
+        xticklabels = [f'{x:.2f}' for x in xticklabels]
+        yticklabels = np.linspace(df.index[0], df.index[-1], 5)
+        yticklabels = [f'{y:.2f}' for y in yticklabels]
+        axs[i//2, i%2].set_xticklabels(xticklabels)
+        axs[i//2, i%2].set_yticklabels(yticklabels)
         axs[i//2, i%2].invert_yaxis()
         axs[i//2, i%2].set_xlabel(f'{symbol_dict["temperature"]}')
         axs[i//2, i%2].set_ylabel(f'{symbol_dict["hw/de"]}')
@@ -1007,13 +1135,14 @@ def add_overlay(ax, df, time):
         # Find the indices where the values change sign
         indices = np.where(np.diff(np.sign(df[column])))[0]
         for index in indices:
-            phase_boundaries.append((column, index))
+            phase_boundaries.append((column, index+1))
     # Create a scatter plot with the phase boundaries
     ax.scatter([x[0]*500 for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
 
     # Add the time in the upper right corner
     ax.text(0.9, 0.9, fr'$\tau$={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
     #ax.text(1.5, 1.5, f'time={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
+
 def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_x_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None):
     """Creates a plot with the x-axis broken into two intervals. Uses seaborn to plot df[f'{xaxis}'] against df[f'{yaxis}'] for each dataframe in df_list. 
     The x-axis is broken into two intervals defined by interval_1 and interval_2.
@@ -1041,15 +1170,23 @@ def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname
                 sns.lineplot(x=xaxis, y=yaxis, data=df, ax=ax, label=labels[i])
             else:
                 sns.lineplot(x=xaxis, y=yaxis, data=df, ax=ax)
+    # Set the limits of the x-axes
     ax1.set_xlim(interval_1[0], interval_1[1])
     ax2.set_xlim(interval_2[0], interval_2[1])
+    # Set the title of the figure
+    if title is not None:
+        fig.suptitle(title)
     plt.tight_layout()
+    # Remove the spines between the two axes
     ax1.spines['right'].set_visible(False)
     ax2.spines['left'].set_visible(False)
+    # Remove the labels on the y-axis
     ax1.set_ylabel('')
     ax2.set_ylabel('')
+    # Remove the labels on the x-axis
     ax1.set_xlabel('')
     ax2.set_xlabel('')
+    # Remove the legend from the first axis
     ax1.legend().remove()
     if isinstance(legend_pos, tuple):
         ax2.legend(bbox_to_anchor=legend_pos)
@@ -1057,14 +1194,105 @@ def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname
         ax2.legend(loc=legend_pos)
     else:
         ax2.legend()
-    #legend = ax2.legend(bbox_to_anchor=(-0.08, 0.7))
+    # Set the x- and y-axis labels
     fig.supxlabel(xlabel)
     fig.supylabel(ylabel)
+    # Add the slashes to indicate the broken x-axis
     d = 0.5
     kwargs = dict(marker=[(-1, -d), (1, d)], markersize=12,
               linestyle="none", color='k', mec='k', mew=1, clip_on=False)
     ax1.plot([1, 1], [1, 0], transform=ax1.transAxes, **kwargs)
     ax2.plot([0, 0], [0, 1], transform=ax2.transAxes, **kwargs)
+    # Save the figure
+    plt.savefig(f'images/{fname}', dpi=300)
+
+def plot_broken_y_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_y_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None):
+    """Creates a plot with the y-axis broken into two intervals. Uses seaborn to plot df[f'{xaxis}'] against df[f'{yaxis}'] for each dataframe in df_list.
+    The y-axis is broken into two intervals defined by interval_1 and interval_2.
+
+    Args:
+        df_list (list of pandas.DataFrame): List of pandas dataframes to plot.
+        xaxis (str): The quantity to plot on the x-axis.
+        yaxis (str): The quantity to plot on the y-axis.
+        interval_1 (tuple, list, numpy.ndarray): Interval of the upper subplot. Should be a tuple, list or numpy.ndarray with two elements. Chooses the first and last element in the list or array.
+        interval_2 (tuple, list, numpy.ndarray): Interval of the lower subplot. Should be a tuple, list or numpy.ndarray with two elements. Chooses the first and last element in the list or array.
+        fname (str, optional): Filename to save the figure. Will save to f'images/{fname}'. Defaults to 'broken_y_axis.png'.
+        title (str, optional): Title of the figure. Defaults to None.
+        labels (list of str, optional): Labels to be added to the legend. Defaults to None.
+        xlabel (str, optional): Label for the x-axis. Defaults to None.
+        ylabel (str, optional): Label for the y-axis. Defaults to None.
+        legend_pos (tuple, str, optional): Position of the legend. Either takes a str in which case 'loc' is used or takes a tuple, in which case 'anchor_to_bbox' is used. Defaults to None.
+    """
+    # Create a figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    if not isinstance(df_list, list):
+        df_list = [df_list]
+    if not isinstance(yaxis, list):
+        yaxis = [yaxis]
+    # Loop over the dataframes and plot the data in the subplots
+    for df in df_list:
+        for i, y in enumerate(yaxis):
+            if labels is not None:
+                sns.lineplot(x=xaxis, y=y, data=df, ax=ax1, label=labels[i])
+                sns.lineplot(x=xaxis, y=y, data=df, ax=ax2, label=labels[i])
+            else:
+                sns.lineplot(x=xaxis, y=y, data=df, ax=ax1)
+                sns.lineplot(x=xaxis, y=y, data=df, ax=ax2)
+    # Set the limits of the y-axes
+    ax1.set_ylim(interval_1[0], interval_1[1])
+    ax2.set_ylim(interval_2[0], interval_2[1])
+    # Set the title of the figure
+    if title is not None:
+        fig.suptitle(title)
+    plt.tight_layout()
+
+    # Display ticks on the y-axis and the lower x-axis
+    ax2.tick_params(axis='x', bottom=True)
+    ax1.set_yticks(ax1.get_yticks()[1:]) # Remove the first y-tick since it interferes with the diagonal line for the broken axis
+    ax1.tick_params(axis='y', left=True)
+    ax2.tick_params(axis='y', left=True)
+
+
+    # Remove the spines between the two axes
+    ax1.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+
+    # Remove the labels on the x-axis
+    ax1.set_xlabel('')
+    ax2.set_xlabel('')
+
+    # Remove the labels on the y-axis
+    ax1.set_ylabel('')
+    ax2.set_ylabel('')
+
+    # Remove the legend from the first axis
+    ax1.legend().remove()
+    if isinstance(legend_pos, tuple):
+        ax2.legend(loc='center', bbox_to_anchor=legend_pos)
+    elif isinstance(legend_pos, str):
+        ax2.legend(loc=legend_pos)
+    else:
+        ax2.legend()
+
+    # Set the x- and y-axis labels
+    fig.supxlabel(xlabel)
+    fig.supylabel(ylabel)
+
+    # Add the slashes to indicate the broken y-axis
+    d = .012  # how big to make the diagonal lines in axes coordinates
+    # arguments to pass to plot, just so we don't keep repeating them
+    kwargs = dict(transform=ax1.transAxes, color='k', clip_on=False)
+    ax1.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+    ax1.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+
+    kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
+    ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+    
+    # Change the spacing between the subplots
+    plt.subplots_adjust(hspace=0.05)
+
+    # Save the figure
     plt.savefig(f'images/{fname}', dpi=300)
 
 def plot_data(df_list, xaxis, yaxis, fname='plot.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, xlim=None, ylim=None):
@@ -1096,7 +1324,7 @@ def plot_data(df_list, xaxis, yaxis, fname='plot.png', title=None, labels=None, 
     if title is not None:
         plt.title(title)
     if isinstance(legend_pos, tuple):
-        plt.legend(bbox_to_anchor=legend_pos)
+        plt.legend(loc='upper right', bbox_to_anchor=legend_pos)
     elif isinstance(legend_pos, str):
         plt.legend(loc=legend_pos)
     else:
@@ -1109,8 +1337,163 @@ def plot_data(df_list, xaxis, yaxis, fname='plot.png', title=None, labels=None, 
         plt.xlim(xlim[0], xlim[1])
     if ylim is not None:
         plt.ylim(ylim[0], ylim[1])
+    plt.hlines(0, 0, 2, color='black', linestyle='--')
     plt.tight_layout()
     plt.savefig(f'images/{fname}', dpi=300)
+    plt.close()
+
+def plot_multidata(df_list, xaxis, yaxis_list, fname=None, title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, xlim=None, ylim=None):
+    """Function to generate a plot with seaborn for multiple dataframes and multiple quantities on the y-axis.
+
+    Args:
+        df_list (list of pandas.DataFrame): List of the dataframes to plot.
+        xaxis (str): The quantity to plot on the x-axis.
+        yaxis_list (list of str): The quantities to plot on the y-axis.
+        fname (str, optional): The filename to save the plot to, saves to f'images/{fname}'. Defaults to None. If None, the figure is returned as an axis object.
+        title (str, optional): Title of the figure. Defaults to None.
+        labels (list o list of str, optional): Each element should be a list of legend labels matched to the entries in the corresponding dataframe. Defaults to None.
+        xlabel (str, optional): The label on the x-axis. Defaults to None.
+        ylabel (str, optional): The label on the y-axis. Defaults to None.
+        legend_pos (tuple, str, optional): Position of the legend. Either takes a str un which case 'loc' is used or takes a tuple, in which case 'anchor_to_bbox' is used. Defaults to None.
+        xlim (tuple, list, optional): Limits for the x-axis. Defaults to None.
+        ylim (tuple, list, optional): Limits for the y-axis. Defaults to None.
+    """
+    # Check if df_list is a single dataframe and convert to a list if it is
+    if isinstance(df_list, pd.DataFrame):
+        df_list = [df_list]
+    # Check if labels is a single string and convert to a list if it is
+    if isinstance(labels, str):
+        labels = [labels]
+    # Create the figure
+    plt.figure(figsize=(12, 8))
+    # Loop over the dataframes and the y-axis quantities
+    for i,df in enumerate(df_list):
+        for j,yaxis in enumerate(yaxis_list):
+            if labels is not None:
+                sns.lineplot(x=xaxis, y=yaxis, data=df, label=labels[i][j])
+            else:
+                sns.lineplot(x=xaxis, y=yaxis, data=df)
+    # Add the title
+    if title is not None:
+        plt.title(title)
+    # Add the legend
+    if isinstance(legend_pos, tuple):
+        plt.legend(loc='upper right', bbox_to_anchor=legend_pos)
+    elif isinstance(legend_pos, str):
+        plt.legend(loc=legend_pos)
+    else:
+        plt.legend()
+    # Add the x-axis label
+    if xlabel is not None:
+        plt.xlabel(xlabel)
+    # Add the y-axis label
+    if ylabel is not None:
+        plt.ylabel(ylabel)
+    # Set the x-axis limits
+    if xlim is not None:
+        plt.xlim(xlim[0], xlim[1])
+    # Set the y-axis limits
+    if ylim is not None:
+        plt.ylim(ylim[0], ylim[1])
+    # Save the figure
+    plt.tight_layout()
+    if fname is not None:
+        plt.savefig(f'images/{fname}', dpi=300)
+        plt.close()
+    else:
+        return plt.gca()
+
+def fix_broken_csv(input_file, output_file):
+    """Fixes a broken csv file where the error is a premature line break. I.e.
+    x,[y1 y2] has become
+    x,[y1
+    y2]
+
+    Args:
+        input_file (str): Path to the broken CSV file
+        output_file (str): Path to the fixed CSV file
+    """
+    fixed_lines = []
+    with open(input_file, 'r') as infile:
+        buffer = "" # Buffer to store the incomplete line
+        for line in infile:
+            stripped_line = line.strip() # Get rid of leading/trailing whitespace
+            # If buffer is empty, start processing the new line
+            if not buffer:
+                buffer = stripped_line
+            else:
+                # If buffer is not empty, append the stripped line to the buffer
+                buffer += " " + stripped_line
+            # If the buffer ends with a closing bracket, the line is complete
+            if buffer.endswith(']'):
+                fixed_lines.append(buffer)
+                buffer = "" # Reset the buffer
+        # If the last line is incomplete, add it to the fixed lines anyway
+        if buffer:
+            fixed_lines.append(buffer)
+    # Write the fixed lines to the output file
+    with open(output_file, 'w') as outfile:
+        for line in fixed_lines:
+            outfile.write(line + '\n')
+def file_fixer():
+    # Just here so that I can save the code somewhere if I need to reuse it
+    taus = [1e-06, 0.125, 0.25, 0.5]
+    unitary_indata = [f'data/phase_boundary_opt_eq_temp_tau={tau}_ending.csv' for tau in taus]
+    unitary_outdata = [f'data/phase_boundary_unitary_tau={tau}_ending.csv' for tau in taus]
+    dissipation_indata = [f'data/phase_boundary_tau={tau}_gamma=0.01_ending.csv' for tau in taus]
+    dissipation_outdata = [f'data/phase_boundary_dissipation_tau={tau}_ending.csv' for tau in taus]
+    for unit_in, unit_out, diss_in, diss_out in zip(unitary_indata, unitary_outdata, dissipation_indata, dissipation_outdata):
+        fix_broken_csv(unit_in, unit_out)
+        fix_broken_csv(diss_in, diss_out)
+    # Create a new folder called broken_csv_file_backup and move the broken csv files there
+    if not os.path.exists('broken_csv_file_backup'):
+        os.makedirs('broken_csv_file_backup')
+    for unit_in, diss_in in zip(unitary_indata, dissipation_indata):
+        shutil.move(unit_in, 'broken_csv_file_backup')
+        shutil.move(diss_in, 'broken_csv_file_backup')
+
+def efficiency_plot(df, fname='images/efficiency_plot.png'):
+    """The efficiency is a bit wonky so it gets its own plot function.
+
+    Args:
+        df (pandas.DataFrame): The dataframe to plot the data from
+    """
+    # First plot the efficiency in the temp < 1, work > 0 region
+    # Then plot the efficiency in the temp < 1, work < 0 region
+    # Then plot the efficiency in the temp > 1 region, work > 0 if it exists
+    # Then plot the efficiency in the temp > 1, work < 0 region
+    # Create figure
+    plt.figure(figsize=(12, 8))
+
+    # Plot the efficiency in the temp < 1, work > 0 region, i.e. the HE region
+    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] < 1) & (df['Work'] > 0)], label=r'$\eta_{HE}$')
+    # Plot the efficiency in the temp < 1, work < 0 region, i.e. the HP region
+    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] < 1) & (df['Work'] < 0)], label=r'$COP_{HP}$')
+    # Plot the efficiency in the temp > 1, work > 0 region, i.e. the IE region
+    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] > 1) & (df['Work'] > 0)], label=r'$\eta_{IE}$')
+    # Plot the efficiency in the temp > 1, work < 0 region, i.e. the RF region  
+    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] > 1) & (df['Work'] < 0)], label=r'$COP_{RF}$')
+    # Add vertical lines to indicate the phase boundaries where the HE region ends and where the IE region starts
+    # Find where the HE starts and ends
+    HE_start = df[(df['Temperature'] < 1) & (df['Work'] > 0)].index[0]
+    HE_end = df[(df['Temperature'] < 1) & (df['Work'] > 0)].index[-1]
+    # Find where the IE starts
+    IE_start = df[(df['Temperature'] > 1) & (df['Work'] > 0)].index[0]
+    # Add the vertical lines
+    plt.axvline(HE_start, color='black', linestyle='--', label='HE start')
+    plt.axvline(HE_end, color='black', linestyle='--', label='HE end')
+    plt.axvline(IE_start, color='black', linestyle='--', label='IE start')
+    # Add the legend
+    plt.legend()
+    # Set the x- and y-axis labels
+    plt.xlabel(f'{symbol_dict["temperature"]}')
+    plt.ylabel('Efficiency')
+    # Save the figure
+    plt.tight_layout()
+    plt.savefig(f'{fname}', dpi=300)
+
+
+
 
 if __name__ == "__main__":
     main()
