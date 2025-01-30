@@ -376,6 +376,35 @@ class SystemAndMeter:
             W += (p1_n - p0_n)
         W *= delta_E
         return W
+    def ergotropy(self, time=None):
+        """Calculates the ergotropy of the system, i.e. for a tls the work extracted via population inversion.
+        If no value of n' <= n_upper_limit exists for which the work extracted is positive, the ergotropy is zero.
+
+        Args:
+            time (float, optional): System time to calculate the ergotropy at. Defaults to self.time if not set.
+        
+        Returns:
+            float: The ergotropy of the system at time t.
+        """
+        if (time==None):
+            time = self.time
+        delta_E = self.delta_E
+        old_n = self.n
+        # The ergotropy should choose n' such that it's the minimum n' yielding P(1|n',t) > P(0|n',t) for some n' <= n_upper_limit
+        for n_prime in range(1, self.n_upper_limit):
+            self.set_n(n_prime) # Set the meter state to n_prime
+            p0_cond, p1_cond = self.conditional_probability(n=n_prime, t=time) # Get the conditional probabilities
+            if p1_cond > p0_cond: # If the conditional probability of the system being in state 1 is greater than 0
+                ergotropy = self.work_extraction(time) # Calculate the work extracted starting from n_prime
+                self.set_n(old_n) # Reset the meter state to the original state
+                return ergotropy # Return the ergotropy
+        
+        # If no value of n' <= n_upper_limit exists for which the work extracted is positive, the ergotropy is zero.
+        self.set_n(old_n) # Reset the meter state to the original state
+        return 0.0
+
+
+
 
     def work_extraction_OLD(self, time=None):
         """Calculates the work extracted from the system at time t. This is for the old version of the work extraction formula.
