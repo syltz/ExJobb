@@ -68,14 +68,27 @@ def main():
     sam.set_x(0.2)
     sam.set_tau(0.335)
     sam.set_n(1)
-    res_best = 0
-    for i in range(10):
+    sam.full_update()
+    for i in range(1000):
         res, x = find_pos_net_work_fixed_temps(sam, n=1, T=1.0)
-        if res > res_best:
-            res_best = res
-            x_best = x
-        print(f"Maximum net work extraction: {res_best} meV")
-    print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
+        if res > 0:
+            print(f"Maximum net work extraction: {res:.9f} meV")
+            print(f'Optimal parameters: Q_S = {x[0]:.3f}, P = {x[1]:.3f}, Q_M = {x[2]:.3f}, tau = {x[3]:.9f}')
+
+    #tau_range = np.linspace(0.0, 2.0, 250)
+    #tau_range_2 = np.linspace(98.0, 100.0, 250)
+    #tau_range_tot = np.concatenate((tau_range, tau_range_2))
+    #params_vs_time(sam, tau_range=tau_range_tot, fname=f'data/test_3_vs_time_higher_res.csv', fixed=sam.get_n())
+    #sam.set_R(0.01)
+    #params_vs_time(sam, tau_range=tau_range_tot, fname=f'data/test_3_vs_time_higher_res_R=0.01.csv', fixed=sam.get_n())
+    #res_best = 0
+    #for i in range(10):
+    #    res, x = find_pos_net_work_fixed_temps(sam, n=1, T=1.0)
+    #    if res > res_best:
+    #        res_best = res
+    #        x_best = x
+    #    print(f"Maximum net work extraction: {res_best} meV")
+    #print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
     #params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'data/test_3_vs_time.csv', fixed=sam.get_n())
     #sam.set_tau(0.335)
     #params_vs_temp(sam, temp_range=np.linspace(0.01, 2.0, 100), fname=f'data/test_3_vs_temp.csv', fixed=sam.get_n())
@@ -342,10 +355,11 @@ def find_pos_net_work_fixed_temps(sam: SystemAndMeter, n=1, T=1.0):
     sam.set_n(n)
     P_scale = 1e8
     #x0 = [sam.get_Q_S(), P_scale, sam.get_Q_M(), sam.get_tau()]
-    x0 = [1.0, 1e2*P_scale, 1.51, 1e-9]
+    #x0 = [1.0, 1e2*P_scale, 1.51, 1e-9]
+    x0 = [np.random.uniform(0.1, 10), np.random.uniform(0.1, 10), np.random.uniform(0.1, 10), np.random.uniform(0.1, 0.5)]
     # Add some small random noise to the initial guess to avoid getting stuck in local minima
-    x0 = [x + x*2*np.random.normal(-0.1, 0.1) for x in x0]
-    res = minimize(work_minimizer_fixed_temps, x0, args=(sam), bounds=[(1e-2, None), (0.001*P_scale, 10*P_scale), (1e-2, None), (1e-10, 0.5)], method='L-BFGS-B')
+    #x0 = [x + x*2*np.random.normal(-0.1, 0.1) for x in x0]
+    res = minimize(work_minimizer_fixed_temps, x0, args=(sam), bounds=[(1e-2, None), (0.1, None), (1e-2, None), (1e-1, 0.5)], method='L-BFGS-B')
     return -res.fun, res.x
 
 def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_temp.csv", fixed=None, n_upper_limit=None):
@@ -798,6 +812,45 @@ def phase_boundary_multidata(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.
             file.write(f"\n")
     print(f"Phase boundary saved to {fname}")
 
+def phase_boundary_multidata_coupling(sam: SystemAndMeter, temp_range=np.linspace(1e-2, 2.0, 100), fname="data/testing.csv"):
+    """ Investigate the phase boundary between negative net work regions by varying the parameter
+    g_eff**2 / delta E or in other words the ratio P^2/Q_S 
+
+    Args:
+        sam (SystemAndMeter): The coupled system and meter object.
+        temp_range (ndarray, list, optional): The temperature range to investigate.
+        fname (str, optional): the filename to save the data to. Defaults to "data/phase_boundary_coupling.csv".
+
+    """
+    Q_S = sam.get_Q_S()
+    P_range = np.linspace(0.1*Q_S, 10*Q_S, 500)
+    # Write header lines manually
+    with open(fname, mode="w") as file:
+        file.write(f"System temperature: {sam.get_temp_system():.3f}, \
+                Omega param: {sam.get_Q_M():.3f},\
+                Period: {sam.get_tau():.3F}\n")
+        for T in temp_range:
+            file.write(f"{T},")
+        file.write("\n")
+
+    # For each temperature calculate the net work for each P in the range
+    for P in P_range:
+        sam.set_P(P)
+        sam.full_update()
+        # Calculate the net work for each Q_M in the range
+        with open(fname, mode="a") as file:
+            for i,T in enumerate(temp_range):
+                sam.set_x(T)
+                sam.full_update()
+                W_ext = sam.work_extraction()
+                W_meas = sam.work_measurement()
+                W = W_ext - W_meas
+                element = [P**2/Q_S, W, W_ext, W_meas]
+                file.write(f"{element},")
+        # New line for the next round of values
+        with open(fname, mode="a") as file:
+            file.write(f"\n")
+    print(f"Phase boundary multidata saved to {fname}")
 
 
 if __name__=='__main__':

@@ -12,11 +12,13 @@ from scipy.interpolate import UnivariateSpline
 import csv
 import shutil
 import gc
-
+import scipy.constants as const
+hbar = 1e3*const.physical_constants['reduced Planck constant in eV s'][0] # hbar in meV * s
+kB = 1e3*const.physical_constants['Boltzmann constant in eV/K'][0] # kB in meV/K
 # Set the style of the plots
-#sns.set_style(style='white')
-#sns.set_context(context='paper', font_scale=2)#, rc={"lines.linewidth": 5.0})
-#sns.set_palette(palette='colorblind')
+sns.set_style(style='white')
+sns.set_context(context='paper', font_scale=2)#, rc={"lines.linewidth": 5.0})
+sns.set_palette(palette='colorblind')
 lw = 1.75 # Line width
 
 symbol_dict = {'temperature': r'$T_M/T_S$', 'hw/de': r'$\hbar\omega/\Delta E$',\
@@ -175,13 +177,26 @@ def main():
     #    W.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W.csv')
     #    We.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W_ext.csv')
     #    Wm.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W_meas.csv')
-    df1 = pd.read_csv('data/multidata_eq_temp_zeno_W.csv', index_col=0)
-    df2 = pd.read_csv('data/multidata_eq_temp_zeno_tau=2e-09_W.csv', index_col=0)
-    df3 = pd.read_csv('data/multidata_eq_temp_zeno_tau=3e-09_W.csv', index_col=0)
-    df4 = pd.read_csv('data/multidata_eq_temp_zeno_tau=4e-09_W.csv', index_col=0)
-    df_list = [df1, df2, df3, df4]
-    labels = [r'$\tau=10^{-9}', r'$\tau=2\cdot 10^{-9}$', r'$\tau=3\cdot 10^{-9}$', r'$\tau=4\cdot 10^{-9}$']
-    power_heatmap(df_list, times=[1e-09, 2e-09, 3e-09, 4e-09], labels=labels, overlay=True, fname='thesis_figures/power_plot_zeno_tau.png', xlim=0.2, ylim=1.5)
+    #df1 = pd.read_csv('data/multidata_eq_temp_zeno_W.csv', index_col=0)
+    #df2 = pd.read_csv('data/multidata_eq_temp_zeno_tau=2e-09_W.csv', index_col=0)
+    #df3 = pd.read_csv('data/multidata_eq_temp_zeno_tau=3e-09_W.csv', index_col=0)
+    #df4 = pd.read_csv('data/multidata_eq_temp_zeno_tau=4e-09_W.csv', index_col=0)
+    #df_list = [df1, df2, df3, df4]
+    #labels = [r'$\tau=10^{-9}', r'$\tau=2\cdot 10^{-9}$', r'$\tau=3\cdot 10^{-9}$', r'$\tau=4\cdot 10^{-9}$']
+    #power_heatmap(df_list, times=[1e-09, 2e-09, 3e-09, 4e-09], labels=labels, overlay=True, fname='thesis_figures/power_plot_zeno_tau.png', xlim=0.2, ylim=1.5)
+    #fnames = [f'data/test3_params/multidata_test_3_tau={tau}.csv' for tau in [1e-06, 0.125, 0.25, 0.5]]
+    #for fname in fnames:
+    #    W, We, Wm = multidata_preprocessing(fname)
+    #    W.to_csv(fname.replace('.csv', '_W.csv'))
+    #    We.to_csv(fname.replace('.csv', '_W_ext.csv'))
+    #    Wm.to_csv(fname.replace('.csv', '_W_meas.csv'))
+    #    del W, We, Wm
+    #    gc.collect()
+    df_list = [pd.read_csv(f'data/test3_params/multidata_test_3_tau={tau}_W.csv', index_col=0) for tau in [1e-06, 0.125, 0.25, 0.5]]
+    labels = [r'$\tau=10^{-6}$', r'$\tau=0.125$', r'$\tau=0.25$', r'$\tau=0.5$']
+    times = np.array([1e-06, 0.125, 0.25, 0.5])*2*np.pi*hbar/(kB*300*1.018)
+    power_heatmap(df_list, times=[1e-06, 0.125, 0.25, 0.5], labels=labels, overlay=True, fname='thesis_figures/power_plot.png', xlabel=f'{symbol_dict["temperature"]}', ylabel=f'{symbol_dict["hw/de"]}', xlim=0.4, ylim=1.5)
+
 
 
 
@@ -982,7 +997,7 @@ def boundary_two(mu, x):
     else:
         return 0
 
-def power_heatmap(indata, times, fname='power_plot.png', title=None, labels=None, overlay=False, xlim=None, ylim=None):
+def power_heatmap(indata, times, xlabel=None, ylabel=None, fname='power_plot.png', title=None, labels=None, overlay=False, xlim=None, ylim=None):
     """Takes work-data and time-data and plots the power as a heatmap
 
     Args:
@@ -1002,8 +1017,10 @@ def power_heatmap(indata, times, fname='power_plot.png', title=None, labels=None
         global_max_val = max(global_max_val, df.max().max()/times[i])
     fig, axs = plt.subplots(2, 2, figsize=(12, 8))
     for i, df in enumerate(indata):
-        df = df[df.columns[df.columns.astype(float) < xlim]]
-        df = df[df.index.astype(float) < ylim]
+        if xlim is not None:
+            df = df[df.columns[df.columns.astype(float) < xlim]]
+        if ylim is not None:
+            df = df[df.index.astype(float) < ylim]
         df.columns = df.columns.astype(float)
         df.index = df.index.astype(float)
         #if df.max().max()/np.float64(times[i]) < global_max_val*1e-2:
@@ -1029,8 +1046,12 @@ def power_heatmap(indata, times, fname='power_plot.png', title=None, labels=None
         axs[i//2, i%2].set_xticklabels(xticklabels)
         axs[i//2, i%2].set_yticklabels(yticklabels)
         axs[i//2, i%2].invert_yaxis()
-        axs[i//2, i%2].set_xlabel(f'{symbol_dict["temperature"]}')
-        axs[i//2, i%2].set_ylabel(f'{symbol_dict["hw/de"]}')
+        if xlabel:
+            axs[i//2, i%2].set_xlabel(xlabel)
+        if ylabel:
+            axs[i//2, i%2].set_ylabel(ylabel)
+        #axs[i//2, i%2].set_xlabel(f'{symbol_dict["temperature"]}')
+        #axs[i//2, i%2].set_ylabel(f'{symbol_dict["hw/de"]}')
         if overlay:
             add_overlay(axs[i//2, i%2], df, times[i])
         
@@ -1130,6 +1151,12 @@ def phase_diagram_2(data_list, fname='phase_diagram_2.png', title=None, labels=N
     plt.show()
 def add_overlay(ax, df, time):
     # Add an overlay of the phase boundaries
+    # Find the number of columns in the dataframe
+    n_cols = len(df.columns)
+    # Find the numerical value of the last column as float
+    last_col = np.float64(df.columns[-1])
+    # Set the x-axis scale parameter
+    x_scale = n_cols/last_col
     phase_boundaries=[]
     for column in df.columns:
         # Find the indices where the values change sign
@@ -1137,13 +1164,13 @@ def add_overlay(ax, df, time):
         for index in indices:
             phase_boundaries.append((column, index+1))
     # Create a scatter plot with the phase boundaries
-    ax.scatter([x[0]*500 for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
+    ax.scatter([x[0]*x_scale for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
 
     # Add the time in the upper right corner
     ax.text(0.9, 0.9, fr'$\tau$={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
     #ax.text(1.5, 1.5, f'time={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
 
-def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_x_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None):
+def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_x_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, multi_y_labels=False):
     """Creates a plot with the x-axis broken into two intervals. Uses seaborn to plot df[f'{xaxis}'] against df[f'{yaxis}'] for each dataframe in df_list. 
     The x-axis is broken into two intervals defined by interval_1 and interval_2.
 
@@ -1161,15 +1188,22 @@ def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname
         legend_pos (tuple, str, optional): Position of the legend. Either takes a str in which case 'loc' is used or takes a tuple, in which case 'anchor_to_bbox' is used.  Defaults to None.
     """
     # Select only the values where Time < 2 and Time > 98 and plot those
+    if not isinstance(yaxis, list):
+        yaxis = [yaxis]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 8), sharey=True)
     fig.subplots_adjust(wspace=0.05)
     #filter_df = df_gamma_0[(df_gamma_0['Time'] < 2) | (df_gamma_0['Time'] > 98)]
     for ax in (ax1, ax2):
         for i,df in enumerate(df_list):
             if labels is not None:
-                sns.lineplot(x=xaxis, y=yaxis, data=df, ax=ax, label=labels[i])
+                for j,y in enumerate(yaxis):
+                    if not multi_y_labels:
+                        sns.lineplot(x=xaxis, y=y, data=df, ax=ax, label=labels[i])
+                    else:
+                        sns.lineplot(x=xaxis, y=y, data=df, ax=ax, label=labels[i]+multi_y_labels[j])
             else:
-                sns.lineplot(x=xaxis, y=yaxis, data=df, ax=ax)
+                for y in yaxis:
+                    sns.lineplot(x=xaxis, y=y, data=df, ax=ax)
     # Set the limits of the x-axes
     ax1.set_xlim(interval_1[0], interval_1[1])
     ax2.set_xlim(interval_2[0], interval_2[1])
@@ -1180,6 +1214,8 @@ def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname
     # Remove the spines between the two axes
     ax1.spines['right'].set_visible(False)
     ax2.spines['left'].set_visible(False)
+    # Remove the y-axis ticks from the right subplot
+    ax2.yaxis.set_visible(False)
     # Remove the labels on the y-axis
     ax1.set_ylabel('')
     ax2.set_ylabel('')
@@ -1337,7 +1373,7 @@ def plot_data(df_list, xaxis, yaxis, fname='plot.png', title=None, labels=None, 
         plt.xlim(xlim[0], xlim[1])
     if ylim is not None:
         plt.ylim(ylim[0], ylim[1])
-    plt.hlines(0, 0, 2, color='black', linestyle='--')
+    #plt.hlines(0, 0, 2, color='black', linestyle='--')
     plt.tight_layout()
     plt.savefig(f'images/{fname}', dpi=300)
     plt.close()
