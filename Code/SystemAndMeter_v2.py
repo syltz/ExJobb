@@ -354,7 +354,7 @@ class SystemAndMeter:
         I_O = -kB * (p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
         return I_O
 
-    def work_extraction(self, time=None):
+    def ergotropy_faulty(self, time=None):
         """Calculates the work extracted from the system at time t.
 
         Args:
@@ -390,23 +390,25 @@ class SystemAndMeter:
             time = self.time
         delta_E = self.delta_E
         old_n = self.n
+        ergotropy = 0
         # The ergotropy should choose n' such that it's the minimum n' yielding P(1|n',t) > P(0|n',t) for some n' <= n_upper_limit
         for n_prime in range(1, self.n_upper_limit):
             self.set_n(n_prime) # Set the meter state to n_prime
-            p0_cond, p1_cond = self.conditional_probability(n=n_prime, t=time) # Get the conditional probabilities
-            if p1_cond > p0_cond: # If the conditional probability of the system being in state 1 is greater than 0
-                ergotropy = self.work_extraction(time) # Calculate the work extracted starting from n_prime
-                self.set_n(old_n) # Reset the meter state to the original state
-                return ergotropy # Return the ergotropy
+            p0_n, p1_n = self.joint_probability(n=n_prime, t=time) # Get the conditional probabilities
+            if p1_n > p0_n: # If the conditional probability of the system being in state 1 is greater than 0
+                ergotropy += delta_E*(p1_n - p0_n) # Calculate the work extracted starting from n_prime
+                #ergotropy = self.work_extraction(time) # Calculate the work extracted starting from n_prime
+                #self.set_n(old_n) # Reset the meter state to the original state
+                #return ergotropy # Return the ergotropy
         
         # If no value of n' <= n_upper_limit exists for which the work extracted is positive, the ergotropy is zero.
         self.set_n(old_n) # Reset the meter state to the original state
-        return 0.0
+        return ergotropy
 
 
 
 
-    def work_extraction_OLD(self, time=None):
+    def work_extraction_excess(self, time=None):
         """Calculates the work extracted from the system at time t. This is for the old version of the work extraction formula.
         Probably don't use this, I'm not convinced it's correct.
 

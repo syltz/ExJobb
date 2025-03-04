@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.ticker import FuncFormatter, ScalarFormatter
+import matplotlib.ticker as mticker
 import seaborn as sns
 import pandas as pd
 import scipy as sp
@@ -16,9 +18,9 @@ import scipy.constants as const
 hbar = 1e3*const.physical_constants['reduced Planck constant in eV s'][0] # hbar in meV * s
 kB = 1e3*const.physical_constants['Boltzmann constant in eV/K'][0] # kB in meV/K
 # Set the style of the plots
-sns.set_style(style='white')
-sns.set_context(context='paper', font_scale=2)#, rc={"lines.linewidth": 5.0})
-sns.set_palette(palette='colorblind')
+#sns.set_style(style='white')
+#sns.set_context(context='poster')#, font_scale=2.5)#, rc={"lines.linewidth": 5.0})
+#sns.set_palette(palette='colorblind')
 lw = 1.75 # Line width
 
 symbol_dict = {'temperature': r'$T_M/T_S$', 'hw/de': r'$\hbar\omega/\Delta E$',\
@@ -27,7 +29,8 @@ symbol_dict = {'temperature': r'$T_M/T_S$', 'hw/de': r'$\hbar\omega/\Delta E$',\
                     "information": r'$I$', "observer information": r'$I_{\text{obs}}$',\
                     "mutual information": r'$I_{\text{mut}}$', "entropy": r'$S$',\
                     "measurement work": r'$W_{\text{meas}}$', 'extracted work': r'$W_{\text{ext}}$',\
-                    "meter level": r'$n$', "q-factor": r'$Q = \frac{I_m}{W_{meas}}$', "total entropy": r'$S_{\text{tot}}$'}
+                    "meter level": r'$n$', "q-factor": r'$Q = \frac{I_m}{W_{meas}}$', "total entropy": r'$S_{\text{tot}}$',\
+                    "geff/de": r'$g_{eff}^2/\Delta E$' }
 
 x_axes = ['Temperature', 'hw/dE', 'Time', 'Coupling Strength', 'Meter Level']
 file_endings = ['temp', 'omega_per_delta_E', 'time', 'coupling', 'nprime']
@@ -52,150 +55,341 @@ run_dict = {'opt': '_opt', 'opt_eq_temp': '_opt_eq_temp', 'zeno_eq_temp': '_zeno
             'uneq_temp': '_opt_uneq_temp', 'naive': '_naive', 'zeno':'_zeno'}
 
 def main():
-    #main_data_list = ['data/phase_boundary_opt_eq_temp_tau=1e-06.csv', 'data/phase_boundary_opt_eq_temp_tau=0.125.csv', 'data/phase_boundary_opt_eq_temp_tau=0.25.csv', 'data/phase_boundary_opt_eq_temp_tau=0.5.csv']
-    #ending_data_list = ['data/phase_boundary_opt_eq_temp_tau=1e-06_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.125_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.25_ending.csv', 'data/phase_boundary_opt_eq_temp_tau=0.5_ending.csv']
-    tau_labels = ['1e-06', '0.125', '0.25', '0.5']
-    #taus = np.array([1e-06, 0.125, 0.25, 0.5])
-    #dissipation_data = [f'data/phase_boundary_dissipation_tau={tau}.csv' for tau in taus]
-    #dissipation_data_ending = [f'data/phase_boundary_dissipation_tau={tau}_ending.csv' for tau in taus]
-    #unitary_data = [f'data/phase_boundary_unitary_tau={tau}.csv' for tau in taus]
-    #unitary_data_ending = [f'data/phase_boundary_unitary_tau={tau}_ending.csv' for tau in taus]
-    #dissipation_data_list = phase_diagram_preprocessing(dissipation_data, dissipation_data_ending)
-    #unitary_data_list = phase_diagram_preprocessing(unitary_data, ending_data_names=unitary_data_ending)
-    #fnames = ['_gamma=0.01.pdf', '_unitary.pdf']
-    #labels = [r'$\tau=10^{-6}$', r'$\tau=0.125$', r'$\tau=0.25$', r'$\tau=0.5$']
-    #data_sets = [dissipation_data_list, unitary_data_list]
-    #for data_set, fname in zip(data_sets, fnames):
-        #phase_diagram(data_set, labels=labels, fname=f"thesis_figures/phase_diagram{fname}")
-        #phase_diagram_comparison(data_set[0], fname=f"thesis_figures/phase_diagram_comparison{fname}")
-    #df_1 = pd.read_csv('data/multidata_Work_tau=1e-06_gamma=0.01.csv', index_col=0)
-    #df_2 =  pd.read_csv('data/multidata_Work_tau=0.125_gamma=0.01.csv', index_col=0)
-    #df_3 =  pd.read_csv('data/multidata_Work_tau=0.25_gamma=0.01.csv', index_col=0)
-    #df_4 =  pd.read_csv('data/multidata_Work_tau=0.5_gamma=0.01.csv', index_col=0)
-    #df_list = [df_1, df_2, df_3, df_4]
-    #power_heatmap(indata=df_list, times=taus, labels=tau_labels, overlay=True, fname='thesis_figures/power_plot_dissipation.png')
-    #gammas = [0, 0.001, 0.01]
-    #T_S = []
-    #x = []
-    #df_list = [pd.read_csv(f'data/dissipation/params_vs_time_opt_eq_temp_gamma_{gamma}_extreme_long_run.csv', skiprows=1) for gamma in gammas]
-    ## Use regex to extract the System temperature and the Temperature from the first row of the csv file
-    #pattern = r"System temperature: (\d+\.\d+).*?Temperature: (\d+\.\d+)"
-    #for gamma in gammas:
-    #    with open(f'data/dissipation/params_vs_time_opt_eq_temp_gamma_{gamma}_extreme_long_run.csv', 'r') as f:
-    #        reader = csv.reader(f)
-    #        first_row = next(reader)
-    #        title_string = ', '.join(first_row)
-    #        f.close()
-    #    match = re.search(pattern, title_string)
-    #    T_S.append(float(match.group(1)))
-    #    x.append(float(match.group(2)))
-    #for df, gamma, T, x_val in zip(df_list, gammas, T_S, x):
-    #    df['System Entropy'] = df['System Heat']/T
-    #    df['Meter Entropy'] = df['Meter Heat']/(x_val*T)
-    #    df['Classical Entropy'] = df['System Entropy'] + df['Meter Entropy']
-    #    df['Total Entropy'] = df['Classical Entropy'] + df['Information']
-    #    df['No-obs Entropy']= df['Classical Entropy'] + df['Mutual Information']
-    #x_axis = 'Time'
-    #y_axes = ['Classical Entropy', 'Total Entropy']
-    #y_axes.reverse()
-    #labels = [r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M}$', r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M} + I$']
-    #labels.reverse()
-    #iv1 = (0.52, 0.56)
-    #iv2 = (-0.005, 0.005)
-    #plot_broken_y_axis(df_list[0][df_list[0]<2], xaxis=x_axis, yaxis=y_axes, interval_1=iv1, interval_2=iv2, labels=labels, title='Entropy vs Time', xlabel=r'$\tau$',\
-    #                    ylabel='Entropy [a.u.]', fname='thesis_figures/entropy_vs_time.png', legend_pos=(0.5, 0.8))
-    #plot_multidata(df_list[0],  xaxis=x_axis, yaxis_list=y_axes, labels=[[r'$S_{c}$', r'$S_{c} + I$', r'$S_{c} + I_{mut}$']],\
-    #                title='Entropy vs Time', xlabel=r'$\tau$', ylabel='Entropy [a.u.]', fname='thesis_figures/entropy_vs_time_dissipation.png',\
-    #                    xlim=(0, 2))
-    # Select only the dataframe corresponding to time less than 2
-    #print(title_string)
-    #df_list = [df[df['Time'] < 2] for df in df_list]
-    #plot_entropy(df_list[0], 'dissipation', '0', 'Time', title_string)
-
-    #plot_data_broken_x_axis(df_list, 'Time', 'Information', (0,2), (98,100), fname='thesis_figures/information_vs_time_broken_x_axis.png', labels=[r'$\gamma=0$', r'$\gamma=0.001$', r'$\gamma=0.01$'],\
-    #                         title='Information vs Time', xlabel=r'$\tau$', ylabel=r'$I_{tot}$', legend_pos=(-0.08, 0.7))
-    #for df in df_list:
-    #    df['Q-factor'] = -df['System Heat'] / df['Information']
-    #plot_data_broken_x_axis(df_list, 'Time', 'Q-factor', (0,2), (98, 100), fname='thesis_figures/Q_factor_vs_time.png', labels=[r'$\gamma=0$', r'$\gamma=10^{-3}$', r'$\gamma=10^{-2}$'],\
-    #                         title='Q-factor vs Time', xlabel=r'Time $\tau$', ylabel=r'$Q = \frac{W_{ext}}{I_{tot}}$', legend_pos=(0.15, 0.802))
+    # General settings for the plots
+    Q_M = 1.51
+    T_S = 300
+    thesis_image_dir = 'images/Actual Thesis Figures/'
+    test_image_dir = 'images/test_images/'
+    tau_vals = np.array([1e-6, 0.125, 0.25, 0.5])
+    times = tau_vals*2*np.pi*hbar/(Q_M*T_S*kB) * 1e15 # Convert to fs
+    #labels = [r'$\frac{\omega t}{2\pi}=10^{-6}$', r'$\frac{\omega t}{2\pi}=0.125$', r'$\frac{\omega t}{2\pi}=0.25$', r'$\frac{\omega t}{2\pi}=0.5$']
+    #main_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_unitary_tau={tau}.csv' for tau in tau_vals]
+    #ending_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_unitary_tau={tau}_ending.csv' for tau in tau_vals]
+    #df_list = phase_diagram_preprocessing(main_fnames, ending_fnames)
+    #phase_diagram(df_list, fname=f'{test_image_dir}phase_diagram_unitary.pdf', labels=labels)
+    ## Now do the same for the dissipative case
+    #main_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_dissipation_tau={tau}.csv' for tau in tau_vals]
+    #ending_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_dissipation_tau={tau}_ending.csv' for tau in tau_vals]
+    #df_list = phase_diagram_preprocessing(main_fnames, ending_fnames)
+    #phase_diagram(df_list, fname=f'{test_image_dir}phase_diagram_dissipative.pdf', labels=labels)
+    #df = phase_diagram_preprocessing(main_fnames, ending_fnames)
+    #phase_diagram_comparison(df[0], fname=f'{test_image_dir}phase_diagram_unitary_comparison.png')
+    # Plot unitary ergotropy heatmaps for extracted work and net work against temperature and hw/de
+    #main_ext = [pd.read_csv(f'data/thesis_data/ergotropy/heatmap_data/hw_per_de/sep_data/multidata_ergotropy_opt_eq_temp_tau={tau}_R=0_ext.csv', index_col=0) for tau in tau_vals]
+    #main_net = [pd.read_csv(f'data/thesis_data/ergotropy/heatmap_data/hw_per_de/sep_data/multidata_ergotropy_opt_eq_temp_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(main_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname='Actual Thesis Figures/ergotropy_heatmap_ext.png', overlay=True)
+    #power_heatmap(main_net, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname='Actual Thesis Figures/ergotropy_heatmap_net.png', overlay=True, xlim=0.5, ylim=1.5)
     
-    #for n in [1,2,3]:
-    #    test1_time = pd.read_csv(f'data/test_{n}_vs_time.csv', skiprows=1)
-    #    plot_data([test1_time], 'Time', 'Information', f'test_images/test{1}_info_vs_time.png', title='Information vs Time', xlabel=r'$\tau$', ylabel=r'$I_{tot}$')
-    #    plot_multidata([test1_time], xaxis='Time', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Time', xlabel=r'$\tau$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_time.png')
-    #    test1_temp = pd.read_csv(f'data/test_{n}_vs_temp.csv', skiprows=1)
-    #    plot_data([test1_temp], 'Temperature', 'Information', f'test_images/test{n}_info_vs_temp.png', title='Information vs Temperature', xlabel=r'$T_M/T_S$', ylabel=r'$I_{tot}$')
-    #    #test1_temp = test1_temp[test1_temp['Temperature'] < 0.5]
-    #    plot_multidata([test1_temp], xaxis='Temperature', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Temperature', xlabel=r'$T_M/T_S$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_temp.png')
-    #    test1_coupling = pd.read_csv(f'data/test_{n}_vs_coupling.csv', skiprows=1)
-    #    plot_data([test1_coupling], 'Coupling Strength', 'Information', f'test_images/test{n}_info_vs_coupling.png', title='Information vs Coupling Strength', xlabel=r'$g$', ylabel=r'$I_{tot}$')
-    #    plot_multidata([test1_coupling], xaxis='Coupling Strength', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Coupling Strength', xlabel=r'$g$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_coupling.png')
-    #    test1_n = pd.read_csv(f'data/test_{n}_vs_nprime.csv', skiprows=1)
-    #    plot_data([test1_n], 'Meter Level', 'Information', f'test_images/test{n}_info_vs_n.png', title='Information vs Meter Level', xlabel=r'$n$', ylabel=r'$I_{tot}$')
-    #    plot_multidata([test1_n], xaxis='Meter Level', yaxis_list=['Work', 'Meter Heat', 'System Heat'], labels=[['$W$', '$Q_{M}$', '$Q_{S}$']], title='Energy vs Meter Level', xlabel=r'$n$', ylabel='Energy [meV]', fname=f'test_images/test{n}_energy_vs_n.png')
-    #    del test1_time, test1_temp, test1_coupling, test1_n
-    #    gc.collect()
+    # Plot ergotropy heatmaps for extracted work and net work against temperature and effective coupling strength squared. 
+    # This is for both the unitary (R=0) and dissipative (R=0.01) cases
+    erg_cplng_data_dir = 'data/thesis_data/ergotropy/heatmap_data/coupling/'
+    erg_hwde_data_dir = 'data/thesis_data/ergotropy/heatmap_data/hw_per_de/'
+    exc_cplng_data_dir = 'data/thesis_data/excess_work/heatmap_data/coupling/'
+    exc_hwde_data_dir = 'data/thesis_data/excess_work/heatmap_data/hw_per_de/'
+    #fnames_unitary = [f'multidata_tau={tau}.csv' for tau in tau_vals]
+    #fnames_dissipative = [f'multidata_tau={tau}_gamma=0.01.csv' for tau in tau_vals]
+    #for tau in tau_vals:
+    #    W, We, Wm = multidata_preprocessing(f'{erg_hwde_data_dir}DOUBLE_CHECKED_multidata_ergotropy_tau={tau}_R=0.01.csv')
+    #    W.to_csv(f'{erg_hwde_data_dir}double_check_tau={tau}_net.csv')
+    #    We.to_csv(f'{erg_hwde_data_dir}double_check_tau={tau}_ext.csv')
     
-    #W, W_ext, W_meas = multidata_preprocessing('data/multidata_eq_temp_zeno.csv')
-    #W.to_csv('data/multidata_eq_temp_zeno_W.csv')
-    #W_ext.to_csv('data/multidata_eq_temp_zeno_W_ext.csv')
-    #W_meas.to_csv('data/multidata_eq_temp_zeno_W_meas.csv')
-    #W, W_ext, W_meas = multidata_preprocessing('data/multidata_uneq_temp.csv')
-    #W.to_csv('data/multidata_uneq_temp_W.csv')
-    #W_ext.to_csv('data/multidata_uneq_temp_W_ext.csv')
-    #W_meas.to_csv('data/multidata_uneq_temp_W_meas.csv')
-    #df_zeno = pd.read_csv('data/multidata_eq_temp_zeno_W.csv', index_col=0)
-    ## Select the column where the values of the column header is less than 0.5
-    #df_zeno = df_zeno[df_zeno.columns[df_zeno.columns.astype(float) < 0.5]]
-    ## Select the rows with indices less than 0.5
-    #df_zeno = df_zeno[df_zeno.index.astype(float) < 2.5]
-    #df_uneq = pd.read_csv('data/multidata_uneq_temp_W.csv', index_col=0)
-    #df_uneq = df_uneq[df_uneq.columns[df_uneq.columns.astype(float) < 0.5]]
-    #df_uneq = df_uneq[df_uneq.index.astype(float) < 2.5]
-    #power_heatmap([df_zeno, df_uneq], times=[1e-10, 0.1], labels=['Zeno', 'Unequal'], overlay=True, fname='thesis_figures/power_plot_zeno_uneq.png')
-    #del df_zeno, df_uneq
-    #gc.collect()
-    #df = pd.read_csv('data/test_1_vs_temp.csv', skiprows=1)
-    # Create a new column for the efficiency / COP
-    # When work is positive and temperature is less than 1, the efficiency is Work/abs(System Heat),
-    # When work is positive and temperature is greater than 1, the efficiency is (Work + abs(System Heat)/abs(Meter Heat)
-    # When work is negative, the efficiency is (System Heat)/abs(Work)
-    #df['Efficiency'] = df.apply(calc_efficiency, axis=1)
-    ## Plot the efficiency against the temperature
-    #plot_data([df], 'Temperature', 'Efficiency', 'thesis_figures/efficiency_vs_temp.png', title='Efficiency vs Temperature', xlabel=r'$T_M/T_S$', ylabel='Efficiency [a.u.]')
-    #efficiency_plot(df)
-    #df = pd.read_csv('data/test_2_vs_temp.csv', skiprows=1)
-    #plt.plot(df['Temperature'], df['Work'])
-    #plt.plot(df['Temperature'], df['System Heat'])
-    #plt.plot(df['Temperature'], df['Meter Heat'])
-    #plt.ylim(-1,1)
-    #plt.show()
-    #fnames = ['data/multidata_eq_temp_zeno_tau=2e-09.csv', 'data/multidata_eq_temp_zeno_tau=3e-09.csv', 'data/multidata_eq_temp_zeno_tau=4e-09.csv']
-    #taus = [2,3,4]
-    #for fname, tau in zip(fnames, taus):
-    #    W, We, Wm = multidata_preprocessing(fname)
-    #    W.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W.csv')
-    #    We.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W_ext.csv')
-    #    Wm.to_csv(f'data/multidata_eq_temp_zeno_tau={tau}e-09_W_meas.csv')
-    #df1 = pd.read_csv('data/multidata_eq_temp_zeno_W.csv', index_col=0)
-    #df2 = pd.read_csv('data/multidata_eq_temp_zeno_tau=2e-09_W.csv', index_col=0)
-    #df3 = pd.read_csv('data/multidata_eq_temp_zeno_tau=3e-09_W.csv', index_col=0)
-    #df4 = pd.read_csv('data/multidata_eq_temp_zeno_tau=4e-09_W.csv', index_col=0)
-    #df_list = [df1, df2, df3, df4]
-    #labels = [r'$\tau=10^{-9}', r'$\tau=2\cdot 10^{-9}$', r'$\tau=3\cdot 10^{-9}$', r'$\tau=4\cdot 10^{-9}$']
-    #power_heatmap(df_list, times=[1e-09, 2e-09, 3e-09, 4e-09], labels=labels, overlay=True, fname='thesis_figures/power_plot_zeno_tau.png', xlim=0.2, ylim=1.5)
-    #fnames = [f'data/test3_params/multidata_test_3_tau={tau}.csv' for tau in [1e-06, 0.125, 0.25, 0.5]]
+    #df_list = [pd.read_csv(f'{erg_cplng_data_dir}dissipative_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
+    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_geff_net.png', overlay=False, cbar_label='Power [meV/fs]')#, xlim=150, ylim=200)
+    #df_list = [pd.read_csv(f'{erg_cplng_data_dir}dissipative_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
+    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_geff_ext.png', overlay=False, cbar_label='Power [meV/fs]')
+    #fnames = [f'data/thesis_data/control2/ergotropy_coupling_control2_tau={tau}_R=0.01.csv' for tau in tau_vals]
     #for fname in fnames:
     #    W, We, Wm = multidata_preprocessing(fname)
-    #    W.to_csv(fname.replace('.csv', '_W.csv'))
-    #    We.to_csv(fname.replace('.csv', '_W_ext.csv'))
-    #    Wm.to_csv(fname.replace('.csv', '_W_meas.csv'))
+    #    W.to_csv(fname.replace('ergotropy', 'ergotropy_net'))
+    #    We.to_csv(fname.replace('ergotropy', 'ergotropy_ext'))
     #    del W, We, Wm
     #    gc.collect()
-    df_list = [pd.read_csv(f'data/test3_params/multidata_test_3_tau={tau}_W.csv', index_col=0) for tau in [1e-06, 0.125, 0.25, 0.5]]
-    labels = [r'$\tau=10^{-6}$', r'$\tau=0.125$', r'$\tau=0.25$', r'$\tau=0.5$']
-    times = np.array([1e-06, 0.125, 0.25, 0.5])*2*np.pi*hbar/(kB*300*1.018)
-    power_heatmap(df_list, times=[1e-06, 0.125, 0.25, 0.5], labels=labels, overlay=True, fname='thesis_figures/power_plot.png', xlabel=f'{symbol_dict["temperature"]}', ylabel=f'{symbol_dict["hw/de"]}', xlim=0.4, ylim=1.5)
+    #df_list = [pd.read_csv(f'{exc_cplng_data_dir}dissipative_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{exc_cplng_data_dir}dissipative_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    indata_net = [f'{erg_cplng_data_dir}dissipative_net_tau={tau}.csv' for tau in tau_vals]
+    #indata_ext = [f'{erg_hwde_data_dir}ergotropy_dissipative_tau={tau}_ext.csv' for tau in tau_vals]
+    xlim_ext = 2
+    ylim_ext = [8, 8, 8, 8]
+    xlim_net = 0.6
+    ylim_net = np.array([2,6,2,2])
+    indata_net = indata_net[1]
+    ylim_net = ylim_net[1]
+    times = times[1]
+    tau_vals = tau_vals[1]
+    heatmap(indata_net, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['geff/de'],\
+                   fname=f'{test_image_dir}ergotropy_geff_v_T_net_single_cross.png', overlay=False, cbar_label='Power [meV/fs]', ylim=ylim_net,xlim=xlim_net)
+    #heatmap(indata_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
+    #                 fname=f'{test_image_dir}ergotropy_hwde_v_T_ext.png', overlay=True, cbar_label='Power [meV/fs]', ylim=ylim_ext,xlim=xlim_ext)
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
+    #               fname=f'{test_image_dir}test2_net.png', overlay=False, cbar_label='Power [meV/fs]', ylim=200)
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
+    #               fname=f'{test_image_dir}test2_ext.png', overlay=False, cbar_label='Power [meV/fs]')
+    #df_list = [pd.read_csv(f'data/thesis_data/control2/ergotropy_net_coupling_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'data/thesis_data/control2/ergotropy_ext_coupling_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g^2_{eff}/\Delta E$', fname=f'{test_image_dir}ergotropy_control2_dissipative_coupling_net.png', overlay=False)
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g^2_{eff}/\Delta E$', fname=f'{test_image_dir}ergotropy_control2_dissipative_coupling_ext.png', overlay=False)
+
+
+    # Preprocess the data to separate net, extracted, and measurement work
+    #for fname_unit, fname_diss, tau in zip(fnames_unitary, fnames_dissipative, tau_vals):
+    #    W, We, Wm = multidata_preprocessing(f'{exc_hwde_data_dir}{fname_unit}')
+    #    W.to_csv(f'{exc_hwde_data_dir}unitary_net_tau={tau}.csv')
+    #    We.to_csv(f'{exc_hwde_data_dir}unitary_ext_tau={tau}.csv')
+    #    W, We, Wm = multidata_preprocessing(f'{exc_hwde_data_dir}{fname_diss}')
+    #    W.to_csv(f'{exc_hwde_data_dir}dissipative_net_tau={tau}.csv')
+    #    We.to_csv(f'{exc_hwde_data_dir}dissipative_ext_tau={tau}.csv')
+    #    del W, We, Wm
+    #    gc.collect()
+    #W_dissipative = [pd.read_csv(f'{erg_hwde_data_dir}base_data/{tau}_net.csv', index_col=0) for tau in tau_vals]
+    #We_dissipative = [pd.read_csv(f'{erg_hwde_data_dir}ergotropy_dissipative_tau={tau}_ext.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(W_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_net.png', overlay=True)
+    #power_heatmap(We_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_ext.png', overlay=True) 
+
+    # Create the heatmaps for the extracted work and net work for the unitary and dissipative cases
+    #W_unitary = [pd.read_csv(f'{exc_hwde_data_dir}unitary_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    #We_unitary = [pd.read_csv(f'{exc_hwde_data_dir}unitary_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    #W_dissipative = [pd.read_csv(f'{exc_hwde_data_dir}dissipative_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    #We_dissipative = [pd.read_csv(f'{exc_hwde_data_dir}dissipative_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(W_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_unitary_T_v_hwdE_net.png', overlay=True)#, ylim=250, xlim=100)
+    #power_heatmap(We_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_unitary_T_v_hwdE_ext.png', overlay=True)
+    #power_heatmap(W_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_dissipative_T_v_hwdE_net.png', overlay=True)#, ylim=250, xlim=100)
+    #power_heatmap(We_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_dissipative_T_v_hwdE_ext.png', overlay=True)
+    #W_unitary = [pd.read_csv(f'{erg_hwde_data_dir}sep_data/multidata_ergotropy_opt_eq_temp_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #We_unitary = [pd.read_csv(f'{erg_hwde_data_dir}sep_data/multidata_ergotropy_opt_eq_temp_tau={tau}_R=0_ext.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(W_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_unitary_T_v_hwdE_net.png', overlay=True, ylim=120, xlim=200)
+    #power_heatmap(We_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_unitary_T_v_hwdE_ext.png', overlay=True)
+    erg_data_dir = 'data/thesis_data/ergotropy/'
+    exc_data_dir = 'data/thesis_data/excess_work/'
+    #x = 1
+    ## Create efficiency plots for both ergotropy and excess work in the dissipative cases:
+    #df_exc = pd.read_csv(f'{exc_data_dir}params_vs_temp_NEW.csv', skiprows=1)
+    #df_erg = pd.read_csv(f'{erg_data_dir}params_vs_temp_NEW.csv', skiprows=1)
+    #df_exc_time = pd.read_csv(f'{exc_data_dir}params_vs_time_NEW.csv', skiprows=1)
+    #df_erg_time = pd.read_csv(f'{erg_data_dir}params_vs_time_NEW.csv', skiprows=1)
+    #efficiency_plot(df_exc, fname=f'{test_image_dir}efficiency_excess_work.png', xlim=2, ylim=5)
+    #efficiency_plot(df_erg, fname=f'{test_image_dir}efficiency_ergotropy_to_1.png', ylim=5, xlim=1)
+    # Find the location where 'Work' becomes negative
+    #negative_work_index = df_erg[df_erg['Work'] < 0].index[0] -1
+    #negative_work_temp = df_erg.loc[negative_work_index, 'Temperature']
+    # Set xlim to the temperature corresponding to the index
+    #xlim = negative_work_temp
+    #df_erg = df_erg[df_erg['Temperature'] <= xlim]
+    #efficiency_plot(df_erg, fname=f'{test_image_dir}efficiency_ergotropy_HE_only.png', ylim=1.1, xlim=xlim)
+    ## Read the data for the excess work params vs time
+    #df_unitary = pd.read_csv(f'{exc_data_dir}params_vs_time_R=0.csv', skiprows=1)
+    #df_dissipative = pd.read_csv(f'{exc_data_dir}params_vs_temp_NEW.csv', skiprows=1)
+    ## Create a total entropy column and a classical entropy column
+    #ylim=(-0.5, 2)
+    #sns.lineplot(x='Temperature', y='Work', data=df_exc)
+    #sns.lineplot(x='Temperature', y='System Heat', data=df_exc)
+    #sns.lineplot(x='Temperature', y='Meter Heat', data=df_exc)
+    #df_exc['Clausius Entropy'] = df_exc['System Heat']/T_S + df_exc['Meter Heat']/(T_S*df_exc['Temperature'])
+    #df_exc['No-obs Entropy'] = df_exc['System Heat']/T_S + df_exc['Meter Heat']/(T_S*df_exc['Temperature']) + df_exc['Mutual Information']
+    #df_exc['Total Entropy'] = df_exc['System Heat']/T_S + df_exc['Meter Heat']/(T_S*df_exc['Temperature']) + df_exc['Information']
+    #plot_broken_y_axis(df_exc, xaxis='Temperature', yaxis=['Clausius Entropy', 'No-obs Entropy', 'Total Entropy'], fname=f'{test_image_dir}entropy_excess_work_v_T.png',\
+    #                   labels=[r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M}$', r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M} + I_{\text{mut}}$', r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M} + I$'],\
+    #                    hline=True, interval_1=(0.008, 0.08), interval_2=(-1e-3, 1e-3), xlabel=r'$\frac{T_M}{T_S}$', ylabel='Entropy (meV/K)', legend_pos=(0.7, 1.25))
+    #df_erg['Clausius Entropy'] = df_erg['System Heat']/T_S + df_erg['Meter Heat']/(T_S*df_erg['Temperature'])
+    #df_erg['No-obs Entropy'] = df_erg['System Heat']/T_S + df_erg['Meter Heat']/(T_S*df_erg['Temperature']) + df_erg['Mutual Information']
+    #df_erg['Total Entropy'] = df_erg['System Heat']/T_S + df_erg['Meter Heat']/(T_S*df_erg['Temperature']) + df_erg['Information']
+    #plot_multidata(df_erg, xaxis='Temperature', yaxis_list=['Clausius Entropy', 'No-obs Entropy', 'Total Entropy'], fname=f'{test_image_dir}entropy_ergotropy_v_T.png',\
+    #                      labels=[r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M}$', r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M} + I_{\text{mut}}$', r'$\frac{Q_S}{T_S} + \frac{Q_M}{T_M} + I$'],\
+    #                        hline=True, xlabel=r'$\frac{T_M}{T_S}$', ylabel='Entropy (meV/K)', ylim=(0, 0.06))
+    #                        #hline=True, interval_1=(0.008, 0.08), interval_2=(-1e-3, 1e-3), xlabel=r'$\frac{T_M}{T_S}$', ylabel='Entropy (meV/K)', legend_pos=(0.7, 1.25))
+    #df_exc['Total entropy'] = df_exc['System Heat']/T_S + df_exc['Meter Heat']/df_exc['Temperature'] + df_exc['Information']
+    #df_exc['Meter Entropy'] = df_exc['Meter Heat']/df_exc['Temperature']
+    #df_exc['System Entropy'] = df_exc['System Heat']/T_S
+    #sns.lineplot(x='Temperature', y='System Entropy', data=df_exc, label=r'$Q_S$')
+    #sns.lineplot(x='Temperature', y='Meter Entropy', data=df_exc, label=r'$Q_M$')
+    #plt.ylim((-0.5, 0.5))
+
+    #fname_list = [f'{erg_hwde_data_dir}multidata_ergotropy_tau={tau}_R=0.01.csv' for tau in tau_vals]
+    #for fname in fname_list:
+    #    W, We, Wm = multidata_preprocessing(fname)
+    #    W.to_csv(fname.replace('multidata_ergotropy', 'multidata_ergotropy_net'))
+    #    We.to_csv(fname.replace('multidata_ergotropy', 'multidata_ergotropy_ext'))
+    #    del W, We, Wm
+    #    gc.collect()
+    #df_list = [pd.read_csv(f'{erg_hwde_data_dir}multidata_ergotropy_net_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{erg_hwde_data_dir}multidata_ergotropy_ext_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
+    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_net.png', overlay=True, xlim=200, ylim=500, cbar_label="Power [meV/fs]")
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
+    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_ext.png', overlay=True, cbar_label="Power [meV/fs]")
+    control_data_dir = 'data/thesis_data/control/'
+    #ew_hwde_names = []
+    #ew_coupling_names = []
+    #erg_hwde_names = []
+    #erg_coupling_names = []
+    #for tau in tau_vals:
+    #    for R in [0, 0.01]:
+    #        #ew_hwde_names.append(f'{control_data_dir}excess_work_hwde_tau={tau}_R={R}.csv')
+    #        ew_coupling_names.append(f'{control_data_dir}excess_work_coupling_tau={tau}_R={R}.csv')
+    #        erg_hwde_names.append(f'{control_data_dir}ergotropy_hwde_tau={tau}_R={R}.csv')
+    #        erg_coupling_names.append(f'{control_data_dir}ergotropy_coupling_tau={tau}_R={R}.csv')
+    ## Multidata preprocessing for the excess work and ergotropy data
+    #for fname1, fname2, fname3 in zip(ew_coupling_names, erg_hwde_names, erg_coupling_names):
+    #    W, We, Wm = multidata_preprocessing(fname1)
+    #    W.to_csv(fname1.replace('excess_work', 'excess_work_net'))
+    #    We.to_csv(fname1.replace('excess_work', 'excess_work_ext'))
+    #    W, We, Wm = multidata_preprocessing(fname2)
+    #    W.to_csv(fname2.replace('ergotropy', 'ergotropy_net'))
+    #    We.to_csv(fname2.replace('ergotropy', 'ergotropy_ext'))
+    #    W, We, Wm = multidata_preprocessing(fname3)
+    #    W.to_csv(fname3.replace('ergotropy', 'ergotropy_net'))
+    #    We.to_csv(fname3.replace('ergotropy', 'ergotropy_ext'))
+    #    del W, We, Wm
+    #    gc.collect()
+    # Heatmap plotting for the excess work and ergotropy data
+    # Unitary case for excess work hwde, only want net work for the excess work
+    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_hwde_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_control_unitary_hwde_net.png', overlay=True)
+    ## Dissipative case for excess work hwde
+    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_hwde_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_control_dissipative_hwde_net.png', overlay=True)
+    # Unitary case for excess work coupling
+    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_coupling_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}excess_work_control_unitary_coupling_net.png', overlay=True)
+    ## Dissipative case for excess work coupling
+    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_coupling_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'],\
+    #               fname=f'{test_image_dir}excess_work_control_dissipative_coupling_net.png', overlay=True, cbar_label='Power [meV/fs]')
+    ## Unitary case for ergotropy hwde
+    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_hwde_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_hwde_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_unitary_hwde_net.png', overlay=True)
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_unitary_hwde_ext.png', overlay=True)
+    ## Dissipative case for ergotropy hwde
+    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_hwde_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_hwde_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_dissipative_hwde_net.png', overlay=True)
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_dissipative_hwde_ext.png', overlay=True)
+    ## Unitary case for ergotropy coupling
+    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_coupling_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_coupling_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_unitary_coupling_net.png', overlay=True)
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_unitary_coupling_ext.png', overlay=True)
+    ## Dissipative case for ergotropy coupling
+    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_coupling_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_coupling_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_dissipative_coupling_net.png', overlay=True)
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_dissipative_coupling_ext.png', overlay=True)
+    #control2_dir = 'data/thesis_data/control2/'
+    #fnames = [f'{control2_dir}ergotropy_hwde_control2_tau={tau}_R=0.01.csv' for tau in tau_vals]
+    #for fname in fnames:
+    #    W, We, Wm = multidata_preprocessing(fname)
+    #    W.to_csv(fname.replace('ergotropy', 'ergotropy_net'))
+    #    We.to_csv(fname.replace('ergotropy', 'ergotropy_ext'))
+    #    del W, We, Wm
+    #    gc.collect()
+    #df_list = [pd.read_csv(f'{control2_dir}ergotropy_net_hwde_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{control2_dir}ergotropy_ext_hwde_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
+    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control2_dissipative_hwde_net.png', overlay=True)
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control2_dissipative_hwde_ext.png', overlay=True)
+    faulty_dir = 'data/thesis_data/faulty_ergotropy/'
+    #fnames= [f'{faulty_dir}ergotropy_faulty_control2_tau={tau}_R=0.01.csv' for tau in tau_vals]
+    #for fname in fnames:
+    #    W, We, Wm = multidata_preprocessing(fname)
+    #    W.to_csv(fname.replace('.csv', '_net.csv'))
+    #    We.to_csv(fname.replace('.csv', '_ext.csv'))
+    #    del W, We, Wm
+    #    gc.collect()
+    #df_list = [f'{faulty_dir}ergotropy_faulty_control2_tau={tau}_R=0.01_net.csv' for tau in tau_vals]
+    #df_list_ext = [pd.read_csv(f'{faulty_dir}ergotropy_faulty_control2_tau={tau}_R=0.01_ext.csv', index_col=0) for tau in tau_vals]
+    #heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
+    #               fname=f'{test_image_dir}ergotropy_faulty_control2_dissipative_hwde_net.png', overlay=True, xlim=1, ylim=2, cbar_label='Power [meV/fs]')
+    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
+    #               fname=f'{test_image_dir}ergotropy_faulty_control2_dissipative_hwde_ext.png', overlay=True, cbar_label='Power [meV/fs]')
+    #long_diss_run_dir = 'data/thesis_data/long_dissipative_run/'
+    #long_tau_vals = [0.125, 1.125, 10.125, 100.125]
+    #fnames = [f'{long_diss_run_dir}ergotropy_long_time_comparisons_tau={tau}_R=0.csv' for tau in long_tau_vals]
+    #for fname in fnames:
+    #    W, We, Wm = multidata_preprocessing(fname)
+    #    W.to_csv(fname.replace('.csv', '_net.csv'))
+    #    We.to_csv(fname.replace('.csv', '_ext.csv'))
+    #    del W, We, Wm
+    #    gc.collect()
+    #df_list = [pd.read_csv(f'{long_diss_run_dir}ergotropy_long_time_comparisons_tau={tau}_R=0.01_net.csv', index_col=0) for tau in long_tau_vals]
+    #df_list_ext = [pd.read_csv(f'{long_diss_run_dir}ergotropy_long_time_comparisons_tau={tau}_R=0.01_ext.csv', index_col=0) for tau in long_tau_vals]
+    #df_list_unit = [pd.read_csv(f'{long_diss_run_dir}ergotropy_long_time_comparisons_tau={tau}_R=0_net.csv', index_col=0) for tau in long_tau_vals]
+    #df_list_unit_ext = [pd.read_csv(f'{long_diss_run_dir}ergotropy_long_time_comparisons_tau={tau}_R=0_ext.csv', index_col=0) for tau in long_tau_vals]
+    ## Look at the difference between the dissipative and unitary cases
+    #df_diff = [df_list[i] - df_list_unit[i] for i in range(len(df_list))]
+    #df_diff_ext = [df_list_ext[i] - df_list_unit_ext[i] for i in range(len(df_list_ext))]
+
+    # Plotting the conditional probabilities as functions of n
+    #df = pd.read_csv('data/thesis_data/probabilities_against_meter_level_TESTING.csv')
+    #fig = plt.figure(figsize=(12, 8))
+    #sns.lineplot(x='Meter Level', y='a', data=df, label=r'$a$', color=sns.color_palette()[0])
+    #sns.lineplot(x='Meter Level', y='b', data=df, label=r'$b$', color=sns.color_palette()[1])
+    #sns.scatterplot(x='Meter Level', y='p0', data=df, label=r'$P(0|n,t)$', color=sns.color_palette()[0], linestyle='dotted')
+    #sns.scatterplot(x='Meter Level', y='p1', data=df, label=r'$P(1|n,t)$', color=sns.color_palette()[1], linestyle='dotted')
+    ## Find the first point where p1 exceeds b and the last point before p1 exceeds b
+    #p1_exceeds_b = df[df['p1'] > df['b']]
+    #if not p1_exceeds_b.empty:
+    #    first_exceed_index = p1_exceeds_b.index[0]
+    #    if first_exceed_index > 0:
+    #        last_before_exceed = df.iloc[first_exceed_index - 1]
+
+    #        # Calculate the weighted average for the intersection
+    #        x1, y1 = last_before_exceed['Meter Level'], last_before_exceed['p1']
+    #        x2, y2 = df.iloc[first_exceed_index]['Meter Level'], df.iloc[first_exceed_index]['p1']
+    #        b1, b2 = last_before_exceed['b'], df.iloc[first_exceed_index]['b']
+    #        intersection_x = x1 + (x2 - x1) * (b1 - y1) / (y2 - y1)
+
+    #        plt.axvline(x=intersection_x, color='black', linestyle='--')
+
+    ## Repeat the process for p1 and a
+    #p1_exceeds_a = df[df['p1'] > df['a']]
+    #if not p1_exceeds_a.empty:
+    #    first_exceed_index = p1_exceeds_a.index[0]
+    #    if first_exceed_index > 0:
+    #        last_before_exceed = df.iloc[first_exceed_index - 1]
+
+    #        # Calculate the weighted average for the intersection
+    #        x1, y1 = last_before_exceed['Meter Level'], last_before_exceed['p1']
+    #        x2, y2 = df.iloc[first_exceed_index]['Meter Level'], df.iloc[first_exceed_index]['p1']
+    #        a1, a2 = last_before_exceed['a'], df.iloc[first_exceed_index]['a']
+    #        intersection_x = x1 + (x2 - x1) * (a1 - y1) / (y2 - y1)
+
+    #        plt.axvline(x=intersection_x, color='black', linestyle='--')
+    ## Repeat the process for p1 and p0
+    #p1_exceeds_p0 = df[df['p1'] > df['p0']]
+    #df['diff'] =np.abs( df['p1'] - df['p0'])
+    ## Draw axvline where the difference between p1 and p0 is the smallest
+    #min_diff_index = df['diff'].idxmin()+1
+    #if not p1_exceeds_p0.empty:
+    #    first_exceed_index = p1_exceeds_p0.index[0]
+    #    if first_exceed_index > 0:
+    #        last_before_exceed = df.iloc[first_exceed_index - 1]
+
+    #        # Calculate the weighted average for the intersection
+    #        x1, y1 = last_before_exceed['Meter Level'], last_before_exceed['p1']
+    #        x2, y2 = df.iloc[first_exceed_index]['Meter Level'], df.iloc[first_exceed_index]['p1']
+    #        p0_1, p0_2 = last_before_exceed['p0'], df.iloc[first_exceed_index]['p0']
+    #        intersection_x = x1 + (x2 - x1) * (p0_1 - y1) / (y2 - y1)-0.42
+
+    #        print(f"p1 crosses p0 at: {intersection_x}")
+    #        plt.axvline(x=intersection_x, color='black', linestyle='--')
+
+    #plt.ylabel('Conditional Probability')
+    #plt.xlabel('n')
+    #plt.legend()
+    #plt.xlim(0,35)
+    #plt.ylim(0,1)
+    #plt.tight_layout()
+    #plt.savefig(f'{test_image_dir}probabilities_against_meter_level_TESTING.png', dpi=300)
+    
+    
+
+
+
+
+
+
+
 
 
 
@@ -926,7 +1120,7 @@ def phase_diagram(data_list, fname='phase_diagram.png', title=None, labels=None)
         if i == 0:
             axs[i//2, i%2].text(0.3, 0.5, 'HE', fontsize=30, color='black')
             axs[i//2, i%2].text(1.05, 0.5, 'IE', fontsize=30, color='black')
-            axs[i//2, i%2].text(0.3, 1.2, 'HP', fontsize=30, color='black')
+            axs[i//2, i%2].text(0.3, 1.2, 'HV', fontsize=30, color='black')
             axs[i//2, i%2].text(1.05, 1.2, 'RF', fontsize=30, color='black')
 
     # Make each row share the same y-axis and each column share the same x-axis
@@ -941,10 +1135,10 @@ def phase_diagram(data_list, fname='phase_diagram.png', title=None, labels=None)
     plt.tight_layout()
     # Set the title of the figure
     fig.suptitle(title)
-    plt.savefig(f'images/{fname}', dpi=300)
+    plt.savefig(f'{fname}', dpi=300)
 
 def phase_diagram_comparison(df, fname='phase_diagram_comparison.png'):
-    """ Comparing the numerica solution to the analytical solution for the phase diagram"""
+    """ Comparing the numerical solution to the analytical solution for the phase diagram"""
     df = df.dropna(how='any', subset=['hw/dE_1'])
     df.loc[:, 'hw/dE_2'] = df['hw/dE_2'].fillna(0)
     plt.figure(figsize=(12, 8))
@@ -986,7 +1180,7 @@ def phase_diagram_comparison(df, fname='phase_diagram_comparison.png'):
 #
 #
     plt.tight_layout()
-    plt.savefig(f'images/{fname}', dpi=300)
+    plt.savefig(f'{fname}', dpi=300)
 def boundary_one(mu, x):
     Q_S = 4.33
     return (mu*Q_S/x) + np.log( 1+np.sqrt((1+np.exp(-Q_S))*mu) )
@@ -997,7 +1191,132 @@ def boundary_two(mu, x):
     else:
         return 0
 
-def power_heatmap(indata, times, xlabel=None, ylabel=None, fname='power_plot.png', title=None, labels=None, overlay=False, xlim=None, ylim=None):
+def scientific_formatter(val, pos):
+    """ Custom formatter function to display tick labels in scientific notation."""
+    exponent = int(np.floor(np.log10(abs(val)))) if val != 0 else 0
+    coefficient = val / (10**exponent)
+    return r"${:.1f} \times 10^{{{}}}$".format(coefficient, exponent)
+def heatmap(indata, times=None, xlabel=None, ylabel=None, fname='heatmap.png', title=None, labels=None, overlay=False, xlim=None, ylim=None, cbar_label=None):
+    """Takes indata and makes a heatmap using the column labels as the x-axis, and the index as the y-axis. Can take times as well, which is used to normalize the data.        
+
+    Args:
+        indata (list of pandas.DataFrame): List of pandas dataframes with the relevant data._
+        times (List or numpy.array or float, optional): List of values to normalize the data with. Defaults to None.
+        xlabel (str, optional): Label for the x-axes. Defaults to None.
+        ylabel (str, optional): Label for the y-axes. Defaults to None.
+        fname (str, optional): File name, including path to save the figure to. Defaults to 'heatmap.png'.
+        title (str, optional): Title for the figure. Defaults to None.
+        labels (str, optional): Labels to set on each of the plots. Defaults to None.
+        overlay (bool, optional): Choose whether to include an overlay that finds a boundary. Defaults to False.
+        xlim (float, optional): Limit the x-axis. Defaults to None.
+        ylim (list of float or float, optional): Limit the y-axis. Defaults to None.
+        cbar_label (str, optional): Label for the colorbar. Defaults to None.
+    """
+    if not isinstance(indata, list):
+        indata = [indata]
+    if not isinstance(ylim, list) and ylim is not None:
+        ylim = ylim*np.ones(len(indata))
+    if not isinstance(times, list) and times is not None:
+        times = times*np.ones(len(indata))
+    #fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    fig, axs = plt.subplots(1,1, figsize=(12,8))
+    for i, df in enumerate(indata):
+        #ax = axs[i//2, i%2]
+        ax = axs
+        df = pd.read_csv(df, index_col=0)
+        if ylim is not None:
+            data = df[df.index.astype(float) < ylim[i]]
+        else:
+            data = df
+        index_values = data.index.astype(float)
+        column_values = data.columns.astype(float)
+
+        X,Y = np.meshgrid(column_values, index_values)
+        Z = data.to_numpy()
+        if times is not None:
+            Z = Z/times[i]
+        if i == 0:
+            Z_max = Z.max()/1
+            Z_min = -Z_max# Z.min()/15
+            #Z_min = Z.min()/1
+        else:
+            Z_max = Z.max()/5
+            Z_min = Z.min()/5
+        if np.all(Z >= 0):
+            seismic = plt.get_cmap('seismic')
+            colors = seismic(np.linspace(0.5, 1, 256))
+            cmap = mcolors.LinearSegmentedColormap.from_list('custom_seismic', colors)
+            norm = mcolors.TwoSlopeNorm(vmin=0, vcenter=Z_max/2, vmax=Z_max)
+            #norm = None
+        else:
+            cmap = plt.get_cmap('seismic')
+            norm = mcolors.TwoSlopeNorm(vmin=Z_min, vcenter=0, vmax=Z_max)
+        # Make sure that the norm is such that the colorbar is centered around 0
+        heatmap = ax.pcolormesh(X, Y, Z, cmap=cmap, shading='auto', norm=norm)
+        cbar = plt.colorbar(mappable=heatmap, ax=ax, norm=norm)
+        if xlabel is not None:
+            ax.set_xlabel(xlabel, fontsize=24)
+        if ylabel is not None:
+            ax.set_ylabel(ylabel, fontsize=24)
+        cbar.ax.tick_params(labelsize=20)
+        # Ensure at least one positive tick on the colorbar
+        round_pos = 0
+        round_neg = 0
+        if np.all(Z >= 0) :
+            cbar_ticks = np.linspace(0, Z_max, 5)
+            max_val = cbar_ticks[-1]
+            while max_val < 1:
+                max_val *= 10
+                round_pos += 1
+            cbar_ticks = np.round(cbar_ticks, round_pos)
+        else:
+            ticks_negative = np.linspace(Z_min, 0, 2)
+            min_val = np.abs(ticks_negative[0])
+            while min_val < 1:
+                min_val *= 10
+                round_neg += 1
+            ticks_negative = np.round(ticks_negative, round_neg)
+            ticks_positive = np.linspace(0, Z_max, 3)
+            max_val = ticks_positive[-1]
+            while max_val < 1:
+                max_val *= 10
+                round_pos += 1
+            ticks_positive = np.round(ticks_positive, round_pos)
+            cbar_ticks = np.concatenate((ticks_negative, ticks_positive))
+        # Make sure the ticks are unique and finite
+        neg_reducer = 1
+        cbar_ticks = np.unique(cbar_ticks)
+        cbar_ticks = cbar_ticks[np.isfinite(cbar_ticks)]
+        if cbar_ticks[0] < Z_min:
+            while neg_reducer*cbar_ticks[0] < Z_min:
+                neg_reducer -=0.1
+            cbar_ticks[0] = np.round(cbar_ticks[0]*neg_reducer, 2)
+        pos_reducer = 1
+        if cbar_ticks[-1] > Z_max:
+            while pos_reducer*cbar_ticks[-1] > Z_max:
+                pos_reducer -= 0.2
+            cbar_ticks[-1] = np.round(cbar_ticks[-1]*pos_reducer, 3)
+        cbar.set_ticks(cbar_ticks)
+        ax.axes.tick_params(labelsize=20)
+        cbar.set_label(cbar_label, fontsize=24)
+        if overlay:
+            add_overlay(ax, df, times[i], labels[i])
+        if xlim is not None:
+            ax.set_xlim(X.min(), xlim)
+        if ylim is not None:
+            ax.set_ylim(0, ylim[i])
+    plt.axhline(y=0.8, color='black', linestyle='--')
+    plt.axvline(x=0.2, color='black', linestyle='--')
+    if title is not None:
+        fig.suptitle(title)
+    plt.tight_layout()
+    plt.savefig(fname, dpi=300)
+    plt.close()
+
+
+
+
+def power_heatmap(indata, times, xlabel=None, ylabel=None, fname='power_plot.png', title=None, labels=None, overlay=False, xlim=None, ylim=None,cbar_label=None):
     """Takes work-data and time-data and plots the power as a heatmap
 
     Args:
@@ -1006,8 +1325,8 @@ def power_heatmap(indata, times, xlabel=None, ylabel=None, fname='power_plot.png
         fname (str, optional): File name to save the plot. Defaults to 'power_plot.png'.
         title (str, optional): Title of the plot if desired. Defaults to None.
         labels (list/str, optional): Labels to set on each of the plots. Defaults to None.
-        xlim (float, optional): Limits the x-values by filtering the data. Defaults to None.
-        ylim (float, optional): Limits the y-values by filtering the data. Defaults to None.
+        xlim (float, optional): Limits the x-values. Defaults to None.
+        ylim (float, optional): Limits the y-values. Defaults to None.
     """
     # Create a custom colormap
     global_max_val = 0
@@ -1015,46 +1334,72 @@ def power_heatmap(indata, times, xlabel=None, ylabel=None, fname='power_plot.png
         indata = [indata]
     for i, df in enumerate(indata):
         global_max_val = max(global_max_val, df.max().max()/times[i])
-    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    fig, axs = plt.subplots(2, 2, figsize=(15, 10))
     for i, df in enumerate(indata):
-        if xlim is not None:
-            df = df[df.columns[df.columns.astype(float) < xlim]]
-        if ylim is not None:
-            df = df[df.index.astype(float) < ylim]
         df.columns = df.columns.astype(float)
         df.index = df.index.astype(float)
-        #if df.max().max()/np.float64(times[i]) < global_max_val*1e-2:
-        #    r = 50
-        #    cmap = plt.get_cmap('seismic')
-        #    colors = cmap(np.linspace(0.4, 0.6, 256))
-        #    cmap = mcolors.LinearSegmentedColormap.from_list('custom_seismic', colors)
-        #    norm = mcolors.TwoSlopeNorm(vmin=-df.max().max()/times[i]/r, vcenter=0, vmax=df.max().max()/times[i]/r)
-        #else:
-        #    norm =  mcolors.TwoSlopeNorm(vmin=df.min().min(), vcenter=0, vmax=df.max().max())
-        #    cmap = plt.get_cmap('seismic')
-        norm = mcolors.TwoSlopeNorm(vmin=df.min().min()/np.float64(times[i]), vcenter=0, vmax=df.max().max()/np.float64(times[i]))
-        cmap = plt.get_cmap('seismic')
-        sns.heatmap(df/np.float64(times[i]), ax=axs[i//2, i%2], cmap=cmap, cbar_kws={'label': 'Power [meV/s]'}, norm=norm)
+        if df.min().min()*df.max().max() < 0:
+            cmap = plt.get_cmap('seismic') # Select a diverging colormap if the data has both positive and negative values
+            norm = mcolors.TwoSlopeNorm(vmin=df.min().min()/np.float64(times[i]), vcenter=0, vmax=df.max().max()/np.float64(times[i]))
+        else:
+            # Turn the seismic colormap into a sequential colormap if there are only positive or negative values
+            seismic = plt.get_cmap('seismic')
+            colors = seismic(np.linspace(0.5, 1, 256))
+            cmap = mcolors.LinearSegmentedColormap.from_list('custom_seismic', colors)
+            norm = None # Use the standard norm for sns.heatmap
+        sns.heatmap(df/np.float64(times[i]), ax=axs[i//2, i%2], cmap=cmap, cbar_kws={'label': f'{cbar_label}'}, norm=norm)
+        # Create ticks for the colorbar, 5 ticks but specifically 2 ticks in the negative, 1 at 0 and 2 in the positive
+        cbar = axs[i//2, i%2].collections[0].colorbar
+        neg_ticks = np.linspace(df.min().min()/np.float64(times[i]), 0, 2)
+        pos_ticks = np.linspace(0, df.max().max()/np.float64(times[i]), 3)
+        ticks = np.concatenate((neg_ticks, pos_ticks))
+        cbar.set_ticks(ticks)
+        formatter = mticker.FuncFormatter(scientific_formatter)
+        cbar.ax.yaxis.set_major_formatter(formatter)
+        #cbar.ax.set_yticklabels([f'{x:.1e}' for x in ticks])
+        #cbar.format = mticker.FixedFormatter(['{:.1e}'.format(x) for x in cbar.get_ticks()])
+        #cbar.update_ticks()
+        max_abs = max(np.abs(df.min().min()), df.max().max())/np.float64(times[i])
         n_cols = len(df.columns)
         n_rows = len(df.index)
-        axs[i//2, i%2].set_xticks(np.linspace(0, n_cols, 5))
-        axs[i//2, i%2].set_yticks(np.linspace(0, n_rows, 5))
-        xticklabels = np.linspace(df.columns[0], df.columns[-1], 5)
-        xticklabels = [f'{x:.2f}' for x in xticklabels]
-        yticklabels = np.linspace(df.index[0], df.index[-1], 5)
-        yticklabels = [f'{y:.2f}' for y in yticklabels]
-        axs[i//2, i%2].set_xticklabels(xticklabels)
-        axs[i//2, i%2].set_yticklabels(yticklabels)
+        # Determine number of ticks
+        if xlim and ylim:
+            nx_ticks = int(4*n_cols/xlim)
+            ny_ticks = int(4*n_rows/ylim)
+        else:
+            nx_ticks = 4
+            ny_ticks = nx_ticks
+        # Create tick positions for x-axis
+        x_ticks = np.linspace(0, n_cols-1, nx_ticks)
+        x_ticks = np.insert(x_ticks, 0, 0)
+        x_ticks = np.append(x_ticks, n_cols-1)
+        x_ticks = np.unique(x_ticks)
+        # Create tick positions for y-axis
+        y_ticks = np.linspace(0, n_rows-1, ny_ticks)
+        y_ticks = np.insert(y_ticks, 0, 0)
+        y_ticks = np.append(y_ticks, n_rows-1)
+        y_ticks = np.unique(y_ticks)
+        # Set the ticks
+        axs[i//2, i%2].set_xticks(x_ticks)
+        axs[i//2, i%2].set_yticks(y_ticks)
+        # Create tick labels
+        x_ticklabels = np.interp(x_ticks, np.arange(n_cols), df.columns)
+        x_ticklabels = [f'{x:.2f}' for x in x_ticklabels]
+        y_ticklabels = np.interp(y_ticks, np.arange(n_rows), df.index)
+        y_ticklabels = [f'{y:.2f}' for y in y_ticklabels]
+        # Set the tick labels
+        axs[i//2, i%2].set_xticklabels(x_ticklabels)
+        axs[i//2, i%2].set_yticklabels(y_ticklabels)
         axs[i//2, i%2].invert_yaxis()
         if xlabel:
             axs[i//2, i%2].set_xlabel(xlabel)
         if ylabel:
             axs[i//2, i%2].set_ylabel(ylabel)
-        #axs[i//2, i%2].set_xlabel(f'{symbol_dict["temperature"]}')
-        #axs[i//2, i%2].set_ylabel(f'{symbol_dict["hw/de"]}')
         if overlay:
-            add_overlay(axs[i//2, i%2], df, times[i])
+            add_overlay(axs[i//2, i%2], df, times[i], labels[i])
         
+        axs[i//2, i%2].set_xlim([0, xlim])
+        axs[i//2, i%2].set_ylim([0, ylim])
     plt.tight_layout()
     if title:
         fig.suptitle(title)
@@ -1062,7 +1407,8 @@ def power_heatmap(indata, times, xlabel=None, ylabel=None, fname='power_plot.png
         # If overlay is true then split fname at the dot and add _overlay before the dot
         fname = fname.split('.')
         fname = fname[0] + '_overlay.' + fname[1]
-    plt.savefig(f'images/{fname}', dpi=300)
+    plt.savefig(f'{fname}', dpi=300)
+    plt.close()
 
 def zeno_function(mu,x):
     Q_S = 4.33
@@ -1149,7 +1495,7 @@ def phase_diagram_2(data_list, fname='phase_diagram_2.png', title=None, labels=N
         plt.title(title)
         plt.tight_layout()
     plt.show()
-def add_overlay(ax, df, time):
+def add_overlay(ax, df, time, labels):
     # Add an overlay of the phase boundaries
     # Find the number of columns in the dataframe
     n_cols = len(df.columns)
@@ -1164,10 +1510,10 @@ def add_overlay(ax, df, time):
         for index in indices:
             phase_boundaries.append((column, index+1))
     # Create a scatter plot with the phase boundaries
-    ax.scatter([x[0]*x_scale for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
+    #ax.scatter([x[0]*x_scale for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
 
     # Add the time in the upper right corner
-    ax.text(0.9, 0.9, fr'$\tau$={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
+    ax.text(0.9, 0.9, fr'$\tau$={labels}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
     #ax.text(1.5, 1.5, f'time={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
 
 def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_x_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, multi_y_labels=False):
@@ -1242,14 +1588,14 @@ def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname
     # Save the figure
     plt.savefig(f'images/{fname}', dpi=300)
 
-def plot_broken_y_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_y_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None):
+def plot_broken_y_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_y_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, hline=False):
     """Creates a plot with the y-axis broken into two intervals. Uses seaborn to plot df[f'{xaxis}'] against df[f'{yaxis}'] for each dataframe in df_list.
     The y-axis is broken into two intervals defined by interval_1 and interval_2.
 
     Args:
         df_list (list of pandas.DataFrame): List of pandas dataframes to plot.
         xaxis (str): The quantity to plot on the x-axis.
-        yaxis (str): The quantity to plot on the y-axis.
+        yaxis (str, list): The quantity (quantities) to plot on the y-axis.
         interval_1 (tuple, list, numpy.ndarray): Interval of the upper subplot. Should be a tuple, list or numpy.ndarray with two elements. Chooses the first and last element in the list or array.
         interval_2 (tuple, list, numpy.ndarray): Interval of the lower subplot. Should be a tuple, list or numpy.ndarray with two elements. Chooses the first and last element in the list or array.
         fname (str, optional): Filename to save the figure. Will save to f'images/{fname}'. Defaults to 'broken_y_axis.png'.
@@ -1327,9 +1673,11 @@ def plot_broken_y_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='bro
     
     # Change the spacing between the subplots
     plt.subplots_adjust(hspace=0.05)
+    if hline:
+        plt.hlines(0, 0, df_list[0][xaxis].max().max(), color='black', linestyle='--')
 
     # Save the figure
-    plt.savefig(f'images/{fname}', dpi=300)
+    plt.savefig(f'{fname}', dpi=300)
 
 def plot_data(df_list, xaxis, yaxis, fname='plot.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, xlim=None, ylim=None):
     """Creates a plot with seaborn using df[f'{xaxis}'] against df[f'{yaxis}'] for each dataframe in df_list.
@@ -1378,7 +1726,7 @@ def plot_data(df_list, xaxis, yaxis, fname='plot.png', title=None, labels=None, 
     plt.savefig(f'images/{fname}', dpi=300)
     plt.close()
 
-def plot_multidata(df_list, xaxis, yaxis_list, fname=None, title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, xlim=None, ylim=None):
+def plot_multidata(df_list, xaxis, yaxis_list, fname=None, title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, xlim=None, ylim=None, hline=False):
     """Function to generate a plot with seaborn for multiple dataframes and multiple quantities on the y-axis.
 
     Args:
@@ -1406,7 +1754,7 @@ def plot_multidata(df_list, xaxis, yaxis_list, fname=None, title=None, labels=No
     for i,df in enumerate(df_list):
         for j,yaxis in enumerate(yaxis_list):
             if labels is not None:
-                sns.lineplot(x=xaxis, y=yaxis, data=df, label=labels[i][j])
+                sns.lineplot(x=xaxis, y=yaxis, data=df, label=labels[j])
             else:
                 sns.lineplot(x=xaxis, y=yaxis, data=df)
     # Add the title
@@ -1431,10 +1779,12 @@ def plot_multidata(df_list, xaxis, yaxis_list, fname=None, title=None, labels=No
     # Set the y-axis limits
     if ylim is not None:
         plt.ylim(ylim[0], ylim[1])
+    if hline:
+        plt.hlines(0, 0, df_list[0][xaxis].max().max(), color='black')#, linestyle='--')
     # Save the figure
     plt.tight_layout()
     if fname is not None:
-        plt.savefig(f'images/{fname}', dpi=300)
+        plt.savefig(f'{fname}', dpi=300)
         plt.close()
     else:
         return plt.gca()
@@ -1488,7 +1838,7 @@ def file_fixer():
         shutil.move(unit_in, 'broken_csv_file_backup')
         shutil.move(diss_in, 'broken_csv_file_backup')
 
-def efficiency_plot(df, fname='images/efficiency_plot.png'):
+def efficiency_plot(df, fname='images/efficiency_plot.png', ylim=None, xlim=None):
     """The efficiency is a bit wonky so it gets its own plot function.
 
     Args:
@@ -1500,30 +1850,84 @@ def efficiency_plot(df, fname='images/efficiency_plot.png'):
     # Then plot the efficiency in the temp > 1, work < 0 region
     # Create figure
     plt.figure(figsize=(12, 8))
+    plt.xticks(fontsize=20)
+    plt.yticks(fontsize=20)
 
     # Plot the efficiency in the temp < 1, work > 0 region, i.e. the HE region
-    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] < 1) & (df['Work'] > 0)], label=r'$\eta_{HE}$')
+    # For heat engine the efficiency is W/|Q_S|
+    if len(df[(df['Temperature'] < 1) & (df['Work'] > 0)]) > 0:
+        #sns.lineplot(x='Temperature', y=1+df['Meter Heat']/df['System Heat'], data=df[(df['Temperature'] < 1) & (df['Work'] > 0)], label=r'$\eta_{HE}$')
+        data = df[(df['Temperature'] < 1) & (df['Work'] > 0)]
+        plt.plot(data['Temperature'], 1+data['Meter Heat']/data['System Heat'], label=r'$\eta_{HE}$')
+    #sns.lineplot(x='Temperature', y=df['Work']/(np.abs(df['System Heat']) + np.abs(df['Meter Heat'])), data=df[(df['Temperature'] < 1) & (df['Work'] > 0)], label=r'$\eta_{HE}$')
     # Plot the efficiency in the temp < 1, work < 0 region, i.e. the HP region
-    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] < 1) & (df['Work'] < 0)], label=r'$COP_{HP}$')
+    # For the heat pump the efficiency is |Q_S|/|W|
+    if len(df[(df['Temperature'] < 1) & (df['Work'] < 0)]) > 0:
+        #sns.lineplot(x='Temperature', y=np.abs(df['System Heat']/df['Work']), data=df[(df['Temperature'] < 1) & (df['Work'] < 0)], label=r'$COP_{HP}$')
+        data = df[(df['Temperature'] < 1) & (df['Work'] < 0)]
+        plt.plot(data['Temperature'], np.abs(data['System Heat']/data['Work']), label=r'$COP_{HV}$')
     # Plot the efficiency in the temp > 1, work > 0 region, i.e. the IE region
-    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] > 1) & (df['Work'] > 0)], label=r'$\eta_{IE}$')
+    # For the IE regime the efficiency is (W + |Q_S|)/Q_M
+    # However, only add the plot if there are any data points in the region
+    if len(df[(df['Temperature'] > 1) & (df['Work'] > 0)]) > 0:
+        #sns.lineplot(x='Temperature', y=(df['Work'] + np.abs(df['System Heat']))/df['Meter Heat'], data=df[(df['Temperature'] > 1) & (df['Work'] > 0)], label=r'$\eta_{IE}$')
+        data = df[(df['Temperature'] > 1) & (df['Work'] > 0)]
+        plt.plot(data['Temperature'], (data['Work'] + np.abs(data['System Heat']))/data['Meter Heat'], label=r'$\eta_{IE}$')
     # Plot the efficiency in the temp > 1, work < 0 region, i.e. the RF region  
-    sns.lineplot(x='Temperature', y='Efficiency', data=df[(df['Temperature'] > 1) & (df['Work'] < 0)], label=r'$COP_{RF}$')
+    # In the refrigeration region the efficiency is |Q_S|/|W|
+    if len(df[(df['Temperature'] > 1) & (df['Work'] < 0)]) > 0 and (xlim is not None and xlim > 1):
+        #sns.lineplot(x='Temperature', y=np.abs(df['System Heat']/df['Work']), data=df[(df['Temperature'] > 1) & (df['Work'] < 0)], label=r'$COP_{RF}$')
+        data = df[(df['Temperature'] > 1) & (df['Work'] < 0)]
+        plt.plot(data['Temperature'], np.abs(data['System Heat']/data['Work']), label=r'$COP_{RF}$')
     # Add vertical lines to indicate the phase boundaries where the HE region ends and where the IE region starts
-    # Find where the HE starts and ends
-    HE_start = df[(df['Temperature'] < 1) & (df['Work'] > 0)].index[0]
-    HE_end = df[(df['Temperature'] < 1) & (df['Work'] > 0)].index[-1]
+    # Plot the Carnot efficiency in the HE region
+    if len(df[(df['Temperature'] < 1) & (df['Work'] > 0)]) > 0:
+        #sns.lineplot(x='Temperature', y=1 - df['Temperature'], data=df[(df['Temperature'] < 1) & (df['Work'] > 0)], label=r'$\eta_{Carnot}$')
+        #sns.lineplot(x='Temperature', y= 1 - np.sqrt(df['Temperature']), data=df[(df['Temperature'] < 1) & (df['Work'] > 0)], label=r'$\eta_{CNCA}$')
+        data = df[(df['Temperature'] < 1) & (df['Work'] > 0)]
+        plt.plot(data['Temperature'], 1 - data['Temperature'], label=r'$\eta_{Carnot}$')
+        plt.plot(data['Temperature'], 1 - np.sqrt(data['Temperature']), label=r'$\eta_{CNCA}$')
+    # Plot the ideal COP for a heat pump in the HP regime
+    #if len(df[(df['Temperature'] < 1) & (df['Work'] < 0)]) > 0:
+    #    sns.lineplot(x='Temperature', y=1/(1 - df['Temperature']), data=df[(df['Temperature'] < 1) & (df['Work'] < 0)], label=r'$COP_{ideal}$')
+    # Find where the HE starts
+    try:
+        HE_start = df[(df['Temperature'] < 1) & (df['Work'] > 0)].iloc[0]['Temperature']
+    except IndexError:
+        HE_start = None
     # Find where the IE starts
-    IE_start = df[(df['Temperature'] > 1) & (df['Work'] > 0)].index[0]
+    try:
+        IE_start = df[(df['Temperature'] > 1) & (df['Work'] > 0)].iloc[0]['Temperature']
+    except IndexError:
+        IE_start = None
+    # Find where the HP starts
+    try:
+        HP_start = df[(df['Temperature'] < 1) & (df['Work'] < 0)].iloc[0]['Temperature']
+    except IndexError:
+        HP_start = None
+    # Find where the RF starts
+    try:
+        RF_start = df[(df['Temperature'] > 1) & (df['Work'] < 0)].iloc[0]['Temperature']
+    except IndexError:
+        RF_start = None
     # Add the vertical lines
-    plt.axvline(HE_start, color='black', linestyle='--', label='HE start')
-    plt.axvline(HE_end, color='black', linestyle='--', label='HE end')
-    plt.axvline(IE_start, color='black', linestyle='--', label='IE start')
+    #if HE_start is not None:
+    #    plt.axvline(HE_start, color='black', linestyle='--')#, label='HE start')
+    if IE_start is not None:
+        plt.axvline(IE_start, color='black', linestyle='--')#, label='IE start')
+    if HP_start is not None:
+        plt.axvline(HP_start, color='black', linestyle='--')#, label='HP start')
+    if RF_start is not None:
+        plt.axvline(RF_start, color='black', linestyle='--')
     # Add the legend
-    plt.legend()
+    
     # Set the x- and y-axis labels
-    plt.xlabel(f'{symbol_dict["temperature"]}')
-    plt.ylabel('Efficiency')
+    plt.xlabel(f'{symbol_dict["temperature"]}', fontsize=24)
+    plt.ylabel('Efficiency', fontsize=24)
+    if ylim:
+        plt.ylim((0, ylim))
+    if xlim:
+        plt.xlim((0, xlim))
     # Save the figure
     plt.tight_layout()
     plt.savefig(f'{fname}', dpi=300)

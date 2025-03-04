@@ -26,27 +26,26 @@ def main():
     # Just uncomment the one you want to test and comment the others.
 
     # These are all the parameters determined in the old W_ext funciton.
-    # PROBABLY DON'T USE THESE
-    #params_opt = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
-    #params_opt = {'Q_S': 1.97, 'P': 0.77, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.21,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
-    #params_naive = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_naive'} # Naive parameters
-    #params_zeno = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno'} # Zeno parameters
-    #params_opt_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.25,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_eq_temp'} # Optimal parameters but with equal temperatures
-    #params_opt_uneq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 0.01, 'tau': 0.25,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
-    #params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-6,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
-    #params_big_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 10.0, 'tau': 0.25,\
-    #               'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_big_temp'} #  The above parameters but with T_M >> T_S
-    ## Dictionary of the dictionaries of parameters to test
-    #param_sets = {'opt': params_opt, 'naive': params_naive, 'zeno': params_zeno,\
-    #               'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
-    #               'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
+    params_opt = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
+    params_opt = {'Q_S': 1.97, 'P': 0.77, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.21,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
+    params_naive = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_naive'} # Naive parameters
+    params_zeno = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno'} # Zeno parameters
+    params_opt_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.25,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_eq_temp'} # Optimal parameters but with equal temperatures
+    params_opt_uneq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 0.01, 'tau': 0.25,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
+    params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-6,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
+    params_big_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 10.0, 'tau': 0.25,\
+                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_big_temp'} #  The above parameters but with T_M >> T_S
+    # Dictionary of the dictionaries of parameters to test
+    param_sets_exc = {'opt': params_opt, 'naive': params_naive, 'zeno': params_zeno,\
+                   'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
+                   'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
 
     ### New parameters with the new W_ext function
     params_eq_temp = {'Q_S': 4.33, 'P': 0.95, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.27,\
@@ -58,22 +57,52 @@ def main():
     params_uneq_temp_zeno = {'Q_S': 1.97, 'P': 0.61, 'Q_M': 0.2, 'x': 0.2, 'tau': 1e-6,\
                                 'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_uneq_temp_zeno'} # Unequal temperatures and Zeno limit
 
-    param_sets = {'eq_temp': params_eq_temp, 'eq_temp_zeno': params_eq_temp_zeno, 'uneq_temp': params_uneq_temp, 'uneq_temp_zeno': params_uneq_temp_zeno}
+    param_sets_erg = {'eq_temp': params_eq_temp, 'eq_temp_zeno': params_eq_temp_zeno, 'uneq_temp': params_uneq_temp, 'uneq_temp_zeno': params_uneq_temp_zeno}
     
 
     
-    sam.set_Q_S(2.451)
-    sam.set_Q_M(1.018)
-    sam.set_P(0.767)
-    sam.set_x(0.2)
-    sam.set_tau(0.335)
+    params = params_naive #params_opt_eq_temp
+    params = param_sets_exc['opt_eq_temp']
+    sam.set_Q_S(params['Q_S'])
+    sam.set_Q_M(params['Q_M'])
+    sam.set_P(params['P'])
+    sam.set_x(params['x'])
+    sam.set_tau(params['tau'])
     sam.set_n(1)
     sam.full_update()
-    for i in range(1000):
-        res, x = find_pos_net_work_fixed_temps(sam, n=1, T=1.0)
-        if res > 0:
-            print(f"Maximum net work extraction: {res:.9f} meV")
-            print(f'Optimal parameters: Q_S = {x[0]:.3f}, P = {x[1]:.3f}, Q_M = {x[2]:.3f}, tau = {x[3]:.9f}')
+    sam.set_P(np.sqrt(0.4*sam.get_Q_S()))
+    #sam.set_Q_M(0.2*sam.get_Q_S())
+    sam.set_x(0.2)
+    sam.full_update()
+    short_time = np.linspace(0.0, 0.1, 100)
+    mid_time = np.linspace(0.1, 0.9, 100)
+    long_time = np.linspace(0.9, 1.0, 100)
+    time_interval = np.concatenate((short_time, mid_time, long_time))
+    params_vs_time(sam, tau_range=time_interval, fname=f'data/params_vs_time_x={sam.get_x()}_0.4.csv', fixed=params['n_prime'])
+    
+
+    #sam.set_x(0.51)
+    #sam.set_Q_S(1.)
+    #sam.set_Q_M(sam.get_Q_S()*1e-1)
+    #sam.full_update()
+    #probabilities_against_meter_level(sam, fname='data/thesis_data/probabilities_against_meter_level_TESTING.csv')
+    #save_dirs = ['data/thesis_data/ergotropy/', 'data/thesis_data/excess_work/']
+    #work_type = ['ergotropy', 'excess work']
+    #for dir, work in zip(save_dirs, work_type):
+    #    sam.set_n(params['n_prime'])
+    #    params_vs_temp(sam, temp_range=np.linspace(1e-3, 2.0, 500), fname=f'{dir}params_vs_temp_NEW.csv', fixed=params['n_prime'], type=work)
+    #    params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'{dir}params_vs_time_NEW.csv', fixed=params['n_prime'], type=work)
+    #sam.set_R(0.00)
+    #params_vs_temp(sam, temp_range=np.linspace(0.001, 2, 400), fname=f'{save_dirs[1]}params_vs_temp_R=0.00.csv', fixed=params['n_prime'], type=work_type[1])
+    #for dir, work, in zip(save_dirs, work_type):
+    #    for R in R_vals:
+    #        sam.set_R(R)
+    #        print(f"Params vs temp, R = {R}, type = {work}")
+    #        params_vs_temp(sam, temp_range=np.linspace(0.001, 2, 1000), fname=f'{dir}params_vs_temp_R={R}.csv', fixed=params['n_prime'], type=work)
+    #        sam.set_x(params['x'])
+    #        print(f"Params vs time, R = {R}, type = {work}")
+    #        params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 1000), fname=f'{dir}params_vs_time_R={R}.csv', fixed=params['n_prime'], type=work)
+    #        sam.set_tau(params['tau'])
 
     #tau_range = np.linspace(0.0, 2.0, 250)
     #tau_range_2 = np.linspace(98.0, 100.0, 250)
@@ -345,7 +374,8 @@ def work_minimizer_fixed_temps(x, sam: SystemAndMeter):
     sam.set_Q_M(Q_M)
     sam.set_tau(tau)
     sam.full_update()
-    W_ext = sam.work_extraction()
+    W_ext = sam.ergotropy()
+    #W_ext = sam.work_extraction()
     W_meas = sam.work_measurement()
     return -(W_ext - W_meas)
 def find_pos_net_work_fixed_temps(sam: SystemAndMeter, n=1, T=1.0):
@@ -362,7 +392,7 @@ def find_pos_net_work_fixed_temps(sam: SystemAndMeter, n=1, T=1.0):
     res = minimize(work_minimizer_fixed_temps, x0, args=(sam), bounds=[(1e-2, None), (0.1, None), (1e-2, None), (1e-1, 0.5)], method='L-BFGS-B')
     return -res.fun, res.x
 
-def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_temp.csv", fixed=None, n_upper_limit=None):
+def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_temp.csv", fixed=None, n_upper_limit=None, type='ergotropy'):
     """ Investigate how the various system parameters vary with temperature.
         The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
         Saves the data to a csv file.
@@ -404,7 +434,10 @@ def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), f
         #else:
         #    W_ext = sam.work_extraction()
         #    W_meas = sam.work_measurement()
-        W_ext = sam.work_extraction()
+        if type == 'ergotropy':
+            W_ext = sam.ergotropy()
+        elif type == 'excess work':
+            W_ext = sam.work_extraction_excess()
         W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
@@ -495,7 +528,7 @@ def params_vs_omega_per_delta_E(sam: SystemAndMeter, omega_range=np.linspace(0.0
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs omega/delta_E saved to {fname}")
 
-def params_vs_time(sam: SystemAndMeter, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_time.csv", fixed=None):
+def params_vs_time(sam: SystemAndMeter, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_time.csv", fixed=None, type='ergotropy'):
     """ Investigate how the various system parameters vary with time.
         The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
         Saves the data to a csv file.
@@ -525,12 +558,11 @@ def params_vs_time(sam: SystemAndMeter, tau_range=np.linspace(0.0, 2.0, 100), fn
         sam.set_n_upper_limit(sam.get_total_levels())
         # Check if we're in the Zeno regime, actually probably don't use this.
         # The Zeno regime function might not be correct.
-        if False: #sam.get_tau() < 1e-5 :
-            W_ext = sam.zeno_limit_work_extraction()
-            W_meas = sam.zeno_limit_work_measurement()
-        else:
-            W_ext = sam.work_extraction()
-            W_meas = sam.work_measurement()
+        if type == 'ergotropy':
+            W_ext = sam.ergotropy()
+        elif type == 'excess work':
+            W_ext = sam.work_extraction_excess()
+        W_meas = sam.work_measurement()
         W = W_ext - W_meas
         Q_S = -W_ext
         Q_M = W_meas
@@ -725,7 +757,7 @@ def params_vs_nprime(sam: SystemAndMeter, nprime_range=np.arange(0,10), fname='d
     print(f"Parameters vs nprime saved to {fname}")
 
 
-def find_phase_boundary(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/phase_boundary.csv"):
+def find_phase_boundary(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/phase_boundary.csv", work_type='ergotropy'):
     """ Investigate the phase boundary between the positive and negative net work regions.
         Saves the data to a csv file.
         
@@ -852,6 +884,32 @@ def phase_boundary_multidata_coupling(sam: SystemAndMeter, temp_range=np.linspac
             file.write(f"\n")
     print(f"Phase boundary multidata saved to {fname}")
 
+def probabilities_against_meter_level(sam: SystemAndMeter, fname="data/probabilities_against_meter_level.csv"):
+    """ Creates a DataFrame with four columns where the row indices correspond to the meter level.
+        The four columns are: a (the initial population of the TLS ground state), b (the initial population of the TLS excited state),
+        p0 (P(0|n,t)), and p1 (P(1|n,t)). Here the n in the conditional probabilities is the meter level corresponding to the row index.
+        Saves the DataFrame to a csv file.
+        
+        Args:
+            sam (SystemAndMeter): The coupled system and meter object.
+            fname (str, optional): The filename to save the data to. Defaults to "data/probabilities_against_meter_level.csv".
+    """
+    df = pd.DataFrame(columns=['a', 'b', 'p0', 'p1'])
+    start_n = 0
+    stop_n = sam.get_total_levels()
+    a, b = sam.get_tls_state()
+    # Preallocate the DataFrame
+    df = pd.DataFrame(index=np.arange(start_n, stop_n), columns=['a', 'b', 'p0', 'p1'])
+    df['a'] = a
+    df['b'] = b
+    for n in range(start_n, stop_n):
+        sam.set_n(n)
+        p0, p1 = sam.conditional_probability()
+        df.at[n, 'p0'] = p0
+        df.at[n, 'p1'] = p1
+    df.to_csv(fname, index_label='Meter Level')
+
+    print(f"Probabilities against meter level saved to {fname}")
 
 if __name__=='__main__':
     main()
