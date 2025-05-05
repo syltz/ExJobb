@@ -11,8 +11,8 @@ import pandas as pd
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
 # and the system is assumed to be a two-level system.
-kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 
 def main():
     temp_system = 300.0
@@ -47,7 +47,7 @@ def main():
                    'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
                    'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
 
-    ### New parameters with the new W_ext function
+    ### New parameters with the new W_ext function  
     params_eq_temp = {'Q_S': 4.33, 'P': 0.95, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.27,\
                       'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_eq_temp'} # Equal temperatures
     params_eq_temp_zeno = {'Q_S': 0.955, 'P': 1e7, 'Q_M': 5.638, 'x': 1.0, 'tau': 1e-9,\
@@ -61,31 +61,73 @@ def main():
     
 
     
-    params = params_naive #params_opt_eq_temp
-    params = param_sets_exc['opt_eq_temp']
-    sam.set_Q_S(params['Q_S'])
-    sam.set_Q_M(params['Q_M'])
-    sam.set_P(params['P'])
-    sam.set_x(params['x'])
-    sam.set_tau(params['tau'])
-    sam.set_n(1)
-    sam.full_update()
-    sam.set_P(np.sqrt(0.4*sam.get_Q_S()))
-    #sam.set_Q_M(0.2*sam.get_Q_S())
-    sam.set_x(0.2)
-    sam.full_update()
-    short_time = np.linspace(0.0, 0.1, 100)
-    mid_time = np.linspace(0.1, 0.9, 100)
-    long_time = np.linspace(0.9, 1.0, 100)
-    time_interval = np.concatenate((short_time, mid_time, long_time))
-    params_vs_time(sam, tau_range=time_interval, fname=f'data/params_vs_time_x={sam.get_x()}_0.4.csv', fixed=params['n_prime'])
+    
+    #params = params_eq_temp
+    #sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
+    #sam.set_tau(params['tau'])
+    #sam.set_n(params['n_prime'])
+    #sam.set_n_upper_limit(params['n_upper_limit'])
+    #sam.full_update()
+    #sam.set_x(params['x'])
+    #sam.full_update()
+    #params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'data/params{params["file_ending"]}_vs_time.csv', fixed=params['n_prime'])
+    #pareto_data = pd.read_csv('data/jonas_collab_data/pareto_HE.txt', sep='\t', header=None)
+    #pareto_data.columns = ['Efficiency', 'Power', 'x', 'Q_S', 'Q_M', 'P', 'tau', 'n_prime']
+    #pareto_data.iloc[:, 2:7] = 10 ** pareto_data.iloc[:, 2:7]
+    ## Find the index where power is maximum
+    #max_power_index = pareto_data['Power'].idxmax()
+
+    ## Find the index where efficiency is maximum
+    #max_efficiency_index = pareto_data['Efficiency'].idxmax()
+    #sam_power = SystemAndMeter(T_S=temp_system, x=pareto_data['x'][max_power_index],\
+    #                            Q_S=pareto_data['Q_S'][max_power_index], Q_M=pareto_data['Q_M'][max_power_index],\
+    #                            P=pareto_data['P'][max_power_index], msmt_state=pareto_data['n_prime'][max_power_index],\
+    #                            tau=pareto_data['tau'][max_power_index])
+    #sam_power.full_update()
+    #sam_efficiency = SystemAndMeter(T_S=temp_system, x=pareto_data['x'][max_efficiency_index],\
+    #                                 Q_S=pareto_data['Q_S'][max_efficiency_index],\
+    #                                 Q_M=pareto_data['Q_M'][max_efficiency_index], P=pareto_data['P'][max_efficiency_index],\
+    #                                 msmt_state=pareto_data['n_prime'][max_efficiency_index], tau=pareto_data['tau'][max_efficiency_index])
+    #sams = [sam_power, sam_efficiency]
+    #per_cycle_work(sams, fname='data/per_cycle_work_testing.csv')
+    #fixed_time_work(sams, fname='data/fixed_time_work_testing.csv', time_interval=1.99*sam_power.get_tau())
+
+    #params = params_naive #params_opt_eq_temp
+    #params = param_sets_exc['opt_eq_temp']
+    #sam.set_Q_S(params['Q_S'])
+    #sam.set_Q_M(params['Q_M'])
+    #sam.set_P(params['P'])
+    #sam.set_x(params['x'])
+    #sam.set_tau(params['tau'])
+    #sam.set_n(1)
+    #sam.full_update()
+    #sam.set_P(np.sqrt(0.8*sam.get_Q_S()))
+    ##sam.set_Q_M(0.2*sam.get_Q_S())
+    #sam.set_x(0.2)
+    #sam.set_tau(0.11616)
+    #sam.full_update()
+    #short_time = np.linspace(0.0, 0.1, 100)
+    #mid_time = np.linspace(0.1, 0.9, 100)
+    #long_time = np.linspace(0.9, 1.0, 100)
+    #time_interval = np.concatenate((short_time, mid_time, long_time))
+    ##params_vs_time(sam, tau_range=time_interval, fname=f'data/params_vs_time_x={sam.get_x()}_0.4.csv', fixed=params['n_prime'])
+    #low_temp = np.linspace(1e-5, 0.05, 200)
+    #mid_temp = np.linspace(0.05, 0.25, 200)
+    #high_temp = np.linspace(0.25, 0.3, 200)
+    #temp_interval = np.concatenate((low_temp, mid_temp, high_temp))
+    #params_vs_temp(sam, temp_range=temp_interval, fname=f'data/params_vs_temp_x={sam.get_x()}_0.8.csv', fixed=params['n_prime'])
+
     
 
-    #sam.set_x(0.51)
+    #params = params_uneq_temp
+    #sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
+    #sam.set_tau(0.125)
+    #sam.set_x(0.30)
     #sam.set_Q_S(1.)
     #sam.set_Q_M(sam.get_Q_S()*1e-1)
+    #sam.set_P(np.sqrt(Q_S))
     #sam.full_update()
-    #probabilities_against_meter_level(sam, fname='data/thesis_data/probabilities_against_meter_level_TESTING.csv')
+    #probabilities_against_meter_level(sam, fname='data/thesis_data/probabilities_against_meter_level_TESTING2.csv')
     #save_dirs = ['data/thesis_data/ergotropy/', 'data/thesis_data/excess_work/']
     #work_type = ['ergotropy', 'excess work']
     #for dir, work in zip(save_dirs, work_type):
@@ -910,6 +952,128 @@ def probabilities_against_meter_level(sam: SystemAndMeter, fname="data/probabili
     df.to_csv(fname, index_label='Meter Level')
 
     print(f"Probabilities against meter level saved to {fname}")
+
+def per_cycle_work(sam: SystemAndMeter, fname="data/per_cycle_work.csv", continuous_comparison=False):
+    """ Calculates the work done per cycle for the system and meter. Also allows for comparison with a continuous measurement approximation.
+        Saves the data to a csv file.
+        
+        Args:
+            sam (list, SystemAndMeter): The coupled system and meter object. Accepts a list of SystemAndMeter objects.
+            This is useful for parallelizing the calculation of work done per cycle.
+            If a list is provided, the function will iterate over each SystemAndMeter object in the list.
+            If a single SystemAndMeter object is provided, it will be used directly.
+            fname (str, optional): The filename to save the data to. Defaults to "data/per_cycle_work.csv".
+            continuous_comparison (bool, optional): Whether to include a continuous approximation of work done per cycle. Defaults to False.
+    """
+    tau_cont = 1e-9
+    work_def = 'excess'
+    def calc_cont_approx(sam):
+        """ Helper function to calculate the continuous approximation of work done per cycle."""
+        original_tau = sam.get_tau()
+        sam.set_tau(tau_cont)
+        sam.full_update()
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
+        W = W_ext - W_meas
+        I_obs = sam.observer_information()
+        I_m = sam.mutual_information()
+        I = I_obs + I_m
+        sam.set_tau(original_tau)
+        return W, W_ext, W_meas, I_obs, I_m, I
+
+    # Write headers for the CSV file
+    with open(fname, mode="w") as file:
+        file.write("Temp_System,P,Q_S,Q_M,Tau,W,Q_S,Q_M,I_obs,I_m,I\n")
+
+    if isinstance(sam, list):
+        # If a list of SystemAndMeter objects is provided, iterate over each object
+        for s in sam:
+            W_ext = s.work_extraction(work_type=work_def)
+            W_meas = s.work_measurement()
+            W = W_ext - W_meas
+            I_obs = s.observer_information()
+            I_m = s.mutual_information()
+            I = I_obs + I_m
+            if continuous_comparison:
+                W_cont, W_ext_cont, W_meas_cont, I_obs_cont, I_m_cont, I_cont = calc_cont_approx(s)
+                # Append the results to the CSV file
+                with open(fname, mode="a") as file:
+                    file.write(f"{s.get_temp_system()},{s.get_P()},{s.get_Q_S()},{s.get_Q_M()},{s.get_tau()},{W},{W_ext},{W_meas},{I_obs},{I_m},{I}\n")
+                    file.write(f"{s.get_temp_system()},{s.get_P()},{s.get_Q_S()},{s.get_Q_M()},{tau_cont},{W_cont},{W_ext_cont},{W_meas_cont},{I_obs_cont},{I_m_cont},{I_cont}\n")
+            else:
+                # Append the results to the CSV file
+                with open(fname, mode="a") as file:
+                    file.write(f"{s.get_temp_system()},{s.get_P()},{s.get_Q_S()},{s.get_Q_M()},{s.get_tau()},{W},{W_ext},{W_meas},{I_obs},{I_m},{I}\n")
+    else:
+        # If a single SystemAndMeter object is provided, use it directly
+        W_ext = sam.work_extraction()
+        W_meas = sam.work_measurement()
+        W = W_ext - W_meas
+        I_obs = sam.observer_information()
+        I_m = sam.mutual_information()
+        I = I_obs + I_m
+        if continuous_comparison:
+            W_cont, W_ext_cont, W_meas_cont, I_obs_cont, I_m_cont, I_cont = calc_cont_approx(sam)
+            # Append the results to the CSV file
+            with open(fname, mode="a") as file:
+                file.write(f"{sam.get_temp_system()},{sam.get_P()},{sam.get_Q_S()},{sam.get_Q_M()},{sam.get_tau()},{W},{W_ext},{W_meas},{I_obs},{I_m},{I}\n")
+                file.write(f"{sam.get_temp_system()},{sam.get_P()},{sam.get_Q_S()},{sam.get_Q_M()},{tau_cont},{W_cont},{W_ext_cont},{W_meas_cont},{I_obs_cont},{I_m_cont},{I_cont}\n")
+        else:
+            # Append the results to the CSV file
+            with open(fname, mode="a") as file:
+                file.write(f"{sam.get_temp_system()},{sam.get_P()},{sam.get_Q_S()},{sam.get_Q_M()},{sam.get_tau()},{W},{W_ext},{W_meas},{I_obs},{I_m},{I}\n")
+
+    print(f"Per cycle work saved to {fname}")
+
+def fixed_time_work(sam:SystemAndMeter, time_interval=1.0, fname="data/fixed_time_work.csv"):
+    """Calculates the net work output for a fixed time interval. Will run the largest integer number of cycles
+    possible in the time interval. 
+    The results are saved to a CSV file with the following columns:
+
+    Args:
+        sam (SystemAndMeter, list): The coupled system and meter object or a list of SystemAndMeter objects.
+            The function will iterate over each SystemAndMeter object in the list.
+            If a single SystemAndMeter object is provided, it will be used directly.
+        time_interval (float, optional): The fixed time interval for the calculation in units of the oscillator period.
+            Defaults to 1.0.
+        fname (str, optional): The filename used to save the data. Defaults to "data/fixed_time_work.csv".
+    """
+    work_def = 'excess'
+    # Write the header lines manually
+    with open(fname, mode="w") as file:
+        file.write("Temp_System,P,Q_S,Q_M,Tau,W_ext,W_meas,Work\n")
+
+    if isinstance(sam, list):
+        # If a list of SystemAndMeter objects is provided, iterate over each object
+        for s in sam:
+            n = int(time_interval/s.get_tau())
+            W_ext = 0
+            W_meas = 0
+            W = 0
+            for i in range(n):
+                W_ext += s.work_extraction(work_type=work_def)
+                W_meas += s.work_measurement()
+                W += W_ext - W_meas
+            # Append the results to the CSV file
+            with open(fname, mode="a") as file:
+                file.write(f"{s.get_temp_system()},{s.get_P()},{s.get_Q_S()},{s.get_Q_M()},{s.get_tau()},{W_ext},{W_meas},{W}\n")
+    else:
+        # If a single SystemAndMeter object is provided, use it directly
+        n = int(time_interval/sam.get_tau())
+        W_ext = 0
+        W_meas = 0
+        W = 0 
+        for i in range(n):
+            W_ext += sam.work_extraction(work_type=work_def)
+            W_meas += sam.work_measurement()
+            W += W_ext - W_meas
+        # Append the results to the CSV file
+        with open(fname, mode="a") as file:
+            file.write(f"{sam.get_temp_system()},{sam.get_P()},{sam.get_Q_S()},{sam.get_Q_M()},{sam.get_tau()},{W_ext},{W_meas},{W}\n")
+
+    print(f"Fixed time work saved to {fname}")
+    
+
 
 if __name__=='__main__':
     main()

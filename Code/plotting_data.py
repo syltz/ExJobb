@@ -19,7 +19,7 @@ hbar = 1e3*const.physical_constants['reduced Planck constant in eV s'][0] # hbar
 kB = 1e3*const.physical_constants['Boltzmann constant in eV/K'][0] # kB in meV/K
 # Set the style of the plots
 #sns.set_style(style='white')
-#sns.set_context(context='poster')#, font_scale=2.5)#, rc={"lines.linewidth": 5.0})
+#sns.set_context(context='paper')#, font_scale=2.5)#, rc={"lines.linewidth": 5.0})
 #sns.set_palette(palette='colorblind')
 lw = 1.75 # Line width
 
@@ -62,12 +62,15 @@ def main():
     test_image_dir = 'images/test_images/'
     tau_vals = np.array([1e-6, 0.125, 0.25, 0.5])
     times = tau_vals*2*np.pi*hbar/(Q_M*T_S*kB) * 1e15 # Convert to fs
-    #labels = [r'$\frac{\omega t}{2\pi}=10^{-6}$', r'$\frac{\omega t}{2\pi}=0.125$', r'$\frac{\omega t}{2\pi}=0.25$', r'$\frac{\omega t}{2\pi}=0.5$']
+    labels = [r'$\frac{\omega t}{2\pi}=10^{-6}$', r'$\frac{\omega t}{2\pi}=0.125$', r'$\frac{\omega t}{2\pi}=0.25$', r'$\frac{\omega t}{2\pi}=0.5$']
+    data = pd.read_csv('data/params_eq_temp_vs_time.csv', skiprows=1)
+    data.plot(x='Time', y='Work', c='b')
+    plt.show()
     #main_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_unitary_tau={tau}.csv' for tau in tau_vals]
     #ending_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_unitary_tau={tau}_ending.csv' for tau in tau_vals]
     #df_list = phase_diagram_preprocessing(main_fnames, ending_fnames)
     #phase_diagram(df_list, fname=f'{test_image_dir}phase_diagram_unitary.pdf', labels=labels)
-    ## Now do the same for the dissipative case
+    ### Now do the same for the dissipative case
     #main_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_dissipation_tau={tau}.csv' for tau in tau_vals]
     #ending_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_dissipation_tau={tau}_ending.csv' for tau in tau_vals]
     #df_list = phase_diagram_preprocessing(main_fnames, ending_fnames)
@@ -109,19 +112,20 @@ def main():
     #df_list = [pd.read_csv(f'{exc_cplng_data_dir}dissipative_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
     #df_list_ext = [pd.read_csv(f'{exc_cplng_data_dir}dissipative_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
     indata_net = [f'{erg_cplng_data_dir}dissipative_net_tau={tau}.csv' for tau in tau_vals]
-    #indata_ext = [f'{erg_hwde_data_dir}ergotropy_dissipative_tau={tau}_ext.csv' for tau in tau_vals]
+    #indata_ext = [f'{erg_cplng_data_dir}dissipative_ext_tau={tau}.csv' for tau in tau_vals]
     xlim_ext = 2
     ylim_ext = [8, 8, 8, 8]
-    xlim_net = 0.6
-    ylim_net = np.array([2,6,2,2])
-    indata_net = indata_net[1]
-    ylim_net = ylim_net[1]
-    times = times[1]
-    tau_vals = tau_vals[1]
-    heatmap(indata_net, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['geff/de'],\
-                   fname=f'{test_image_dir}ergotropy_geff_v_T_net_single_cross.png', overlay=False, cbar_label='Power [meV/fs]', ylim=ylim_net,xlim=xlim_net)
+    xlim_net = 0.5
+    ylim_net = np.array([10,5,2,1])
+    labels = [r'$2\pi \cdot 10^{-6}$', r'$\frac{\pi}{4}$', r'$\frac{\pi}{2}$', r'$\pi$']
+    #indata_net = indata_net[1]
+    #ylim_net = ylim_net[1]
+    #times = times[1]
+    #tau_vals = tau_vals[1]
+    #heatmap(indata_net, times=times, labels=labels, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['geff/de'],\
+    #               fname=f'{test_image_dir}ergotropy_geff_v_T_net.pdf', overlay=True, cbar_label='Power [meV/fs]', ylim=ylim_net,xlim=xlim_net)
     #heatmap(indata_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
-    #                 fname=f'{test_image_dir}ergotropy_hwde_v_T_ext.png', overlay=True, cbar_label='Power [meV/fs]', ylim=ylim_ext,xlim=xlim_ext)
+    #                 fname=f'{test_image_dir}excess_work_hwde_v_T_ext.png', overlay=True, cbar_label='Power [meV/fs]', ylim=ylim_ext,xlim=xlim_ext)
     #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
     #               fname=f'{test_image_dir}test2_net.png', overlay=False, cbar_label='Power [meV/fs]', ylim=200)
     #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
@@ -164,6 +168,14 @@ def main():
     exc_data_dir = 'data/thesis_data/excess_work/'
     #x = 1
     ## Create efficiency plots for both ergotropy and excess work in the dissipative cases:
+    df = pd.read_csv('data/params_vs_temp_x=0.2_0.8.csv', skiprows=1)
+    # Find the location where 'Work' becomes negative
+    negative_work_index = df[df['Work'] < 0].index[0]# -1
+    negative_work_temp = df.loc[negative_work_index, 'Temperature']
+    # Set xlim to the temperature corresponding to the index
+    xlim = negative_work_temp
+    df = df[df['Temperature'] <= xlim]
+    #efficiency_plot(df, fname=f'{test_image_dir}efficiency.png', xlim=xlim, ylim=1.1)
     #df_exc = pd.read_csv(f'{exc_data_dir}params_vs_temp_NEW.csv', skiprows=1)
     #df_erg = pd.read_csv(f'{erg_data_dir}params_vs_temp_NEW.csv', skiprows=1)
     #df_exc_time = pd.read_csv(f'{exc_data_dir}params_vs_time_NEW.csv', skiprows=1)
@@ -320,12 +332,17 @@ def main():
     #df_diff_ext = [df_list_ext[i] - df_list_unit_ext[i] for i in range(len(df_list_ext))]
 
     # Plotting the conditional probabilities as functions of n
-    #df = pd.read_csv('data/thesis_data/probabilities_against_meter_level_TESTING.csv')
+    #df = pd.read_csv('data/thesis_data/probabilities_against_meter_level_TESTING2.csv')
+    #plt.rcParams.update({
+    #    'font.size': 25,  # General font size
+    #    'axes.titlesize': 17,  # Title font size
+    #    'axes.labelsize': 30,  # Axis label font size
+    #    'xtick.labelsize': 25,  # X-axis tick font size
+    #    'ytick.labelsize': 25,  # Y-axis tick font size
+    #    'legend.fontsize': 25,  # Legend font size
+    #    'figure.titlesize': 17  # Figure title font size
+    #})
     #fig = plt.figure(figsize=(12, 8))
-    #sns.lineplot(x='Meter Level', y='a', data=df, label=r'$a$', color=sns.color_palette()[0])
-    #sns.lineplot(x='Meter Level', y='b', data=df, label=r'$b$', color=sns.color_palette()[1])
-    #sns.scatterplot(x='Meter Level', y='p0', data=df, label=r'$P(0|n,t)$', color=sns.color_palette()[0], linestyle='dotted')
-    #sns.scatterplot(x='Meter Level', y='p1', data=df, label=r'$P(1|n,t)$', color=sns.color_palette()[1], linestyle='dotted')
     ## Find the first point where p1 exceeds b and the last point before p1 exceeds b
     #p1_exceeds_b = df[df['p1'] > df['b']]
     #if not p1_exceeds_b.empty:
@@ -339,7 +356,7 @@ def main():
     #        b1, b2 = last_before_exceed['b'], df.iloc[first_exceed_index]['b']
     #        intersection_x = x1 + (x2 - x1) * (b1 - y1) / (y2 - y1)
 
-    #        plt.axvline(x=intersection_x, color='black', linestyle='--')
+    #        #plt.axvline(x=intersection_x, color='black', linestyle='--')
 
     ## Repeat the process for p1 and a
     #p1_exceeds_a = df[df['p1'] > df['a']]
@@ -354,7 +371,7 @@ def main():
     #        a1, a2 = last_before_exceed['a'], df.iloc[first_exceed_index]['a']
     #        intersection_x = x1 + (x2 - x1) * (a1 - y1) / (y2 - y1)
 
-    #        plt.axvline(x=intersection_x, color='black', linestyle='--')
+    #        #plt.axvline(x=intersection_x, color='black', linestyle='--')
     ## Repeat the process for p1 and p0
     #p1_exceeds_p0 = df[df['p1'] > df['p0']]
     #df['diff'] =np.abs( df['p1'] - df['p0'])
@@ -373,14 +390,22 @@ def main():
 
     #        print(f"p1 crosses p0 at: {intersection_x}")
     #        plt.axvline(x=intersection_x, color='black', linestyle='--')
+    ## Color the region between p0 and p1 gray up to the intersection point
+    #plt.axvspan(0, intersection_x, color='gray', alpha=0.5)
+    ##plt.fill_between(df['Meter Level'], df['p0'], df['p1'], where=(df['Meter Level'] <= intersection_x), color='gray', alpha=0.5)
+    ##plt.text(0.5, 0.5, 'Passive region', fontsize=20)
 
+    #sns.lineplot(x='Meter Level', y='a', data=df, label=r'$P\left(0|n,\omega t_m=0\right)$', color=sns.color_palette()[0])
+    #sns.lineplot(x='Meter Level', y='b', data=df, label=r'$P\left(1|n,\omega t_m = 0\right)$', color=sns.color_palette()[1])
+    #sns.scatterplot(x='Meter Level', y='p0', data=df, label=r'$P\left(0|n,\omega t_m=\frac{\pi}{4}\right)$', color=sns.color_palette()[0], s=100, edgecolor=None)#, linestyle='dotted')
+    #sns.scatterplot(x='Meter Level', y='p1', data=df, label=r'$P\left(1|n,\omega t_m=\frac{\pi}{4}\right)$', color=sns.color_palette()[1], s=100, edgecolor=None)#, linestyle='dotted')
     #plt.ylabel('Conditional Probability')
     #plt.xlabel('n')
     #plt.legend()
-    #plt.xlim(0,35)
+    #plt.xlim(0,30)
     #plt.ylim(0,1)
     #plt.tight_layout()
-    #plt.savefig(f'{test_image_dir}probabilities_against_meter_level_TESTING.png', dpi=300)
+    #plt.savefig(f'{test_image_dir}cond_prob_vs_meter_level.pdf', dpi=300)
     
     
 
@@ -1103,7 +1128,7 @@ def phase_diagram(data_list, fname='phase_diagram.png', title=None, labels=None)
         axs[i//2, i%2].set_ylabel(f'{symbol_dict["hw/de"]}')
         # If there is a label, print it in the upper right corner in a white box
         if labels is not None:
-            axs[i//2, i%2].text(1.5, 1.5, labels[i], fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
+            axs[i//2, i%2].text(1.5, 1.5, labels[i], fontsize=14, bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'))
 
         # Fill with blue the entire region with temperature above 1 using axvspan
         axs[i//2, i%2].axvspan(1, 2, facecolor=blue, alpha=0.7, edgecolor='none')
@@ -1212,17 +1237,26 @@ def heatmap(indata, times=None, xlabel=None, ylabel=None, fname='heatmap.png', t
         ylim (list of float or float, optional): Limit the y-axis. Defaults to None.
         cbar_label (str, optional): Label for the colorbar. Defaults to None.
     """
+        # Set font sizes for PRL formatting
+    plt.rcParams.update({
+        'font.size': 22,  # General font size
+        'axes.titlesize': 17,  # Title font size
+        'axes.labelsize': 30,  # Axis label font size
+        'xtick.labelsize': 22,  # X-axis tick font size
+        'ytick.labelsize': 22,  # Y-axis tick font size
+        'legend.fontsize': 17,  # Legend font size
+        'figure.titlesize': 17  # Figure title font size
+    })
+    
     if not isinstance(indata, list):
         indata = [indata]
     if not isinstance(ylim, list) and ylim is not None:
         ylim = ylim*np.ones(len(indata))
     if not isinstance(times, list) and times is not None:
         times = times*np.ones(len(indata))
-    #fig, axs = plt.subplots(2, 2, figsize=(12, 8))
-    fig, axs = plt.subplots(1,1, figsize=(12,8))
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
     for i, df in enumerate(indata):
-        #ax = axs[i//2, i%2]
-        ax = axs
+        ax = axs[i//2, i%2]
         df = pd.read_csv(df, index_col=0)
         if ylim is not None:
             data = df[df.index.astype(float) < ylim[i]]
@@ -1236,29 +1270,28 @@ def heatmap(indata, times=None, xlabel=None, ylabel=None, fname='heatmap.png', t
         if times is not None:
             Z = Z/times[i]
         if i == 0:
-            Z_max = Z.max()/1
-            Z_min = -Z_max# Z.min()/15
-            #Z_min = Z.min()/1
+            Z_max = Z.max()
+            Z_min = -Z_max#
         else:
-            Z_max = Z.max()/5
-            Z_min = Z.min()/5
+            Z_max = Z.max()
+            Z_min = Z.min()
         if np.all(Z >= 0):
             seismic = plt.get_cmap('seismic')
             colors = seismic(np.linspace(0.5, 1, 256))
             cmap = mcolors.LinearSegmentedColormap.from_list('custom_seismic', colors)
             norm = mcolors.TwoSlopeNorm(vmin=0, vcenter=Z_max/2, vmax=Z_max)
-            #norm = None
         else:
             cmap = plt.get_cmap('seismic')
             norm = mcolors.TwoSlopeNorm(vmin=Z_min, vcenter=0, vmax=Z_max)
         # Make sure that the norm is such that the colorbar is centered around 0
-        heatmap = ax.pcolormesh(X, Y, Z, cmap=cmap, shading='auto', norm=norm)
+        heatmap = ax.pcolormesh(X, Y, Z, cmap=cmap, shading='auto', norm=norm, rasterized=True)
         cbar = plt.colorbar(mappable=heatmap, ax=ax, norm=norm)
-        if xlabel is not None:
-            ax.set_xlabel(xlabel, fontsize=24)
-        if ylabel is not None:
-            ax.set_ylabel(ylabel, fontsize=24)
-        cbar.ax.tick_params(labelsize=20)
+        if xlabel is not None and i//2 == 1:
+            ax.set_xlabel(xlabel) 
+        if ylabel is not None and i%2 == 0:
+            ax.set_ylabel(ylabel)
+
+
         # Ensure at least one positive tick on the colorbar
         round_pos = 0
         round_neg = 0
@@ -1276,13 +1309,14 @@ def heatmap(indata, times=None, xlabel=None, ylabel=None, fname='heatmap.png', t
                 min_val *= 10
                 round_neg += 1
             ticks_negative = np.round(ticks_negative, round_neg)
-            ticks_positive = np.linspace(0, Z_max, 3)
+            ticks_positive = np.linspace(0, Z_max, 2)
             max_val = ticks_positive[-1]
             while max_val < 1:
                 max_val *= 10
                 round_pos += 1
             ticks_positive = np.round(ticks_positive, round_pos)
             cbar_ticks = np.concatenate((ticks_negative, ticks_positive))
+        
         # Make sure the ticks are unique and finite
         neg_reducer = 1
         cbar_ticks = np.unique(cbar_ticks)
@@ -1297,20 +1331,28 @@ def heatmap(indata, times=None, xlabel=None, ylabel=None, fname='heatmap.png', t
                 pos_reducer -= 0.2
             cbar_ticks[-1] = np.round(cbar_ticks[-1]*pos_reducer, 3)
         cbar.set_ticks(cbar_ticks)
-        ax.axes.tick_params(labelsize=20)
-        cbar.set_label(cbar_label, fontsize=24)
+        if i%2 == 1:
+            cbar.set_label(cbar_label)
+       
         if overlay:
             add_overlay(ax, df, times[i], labels[i])
         if xlim is not None:
             ax.set_xlim(X.min(), xlim)
         if ylim is not None:
             ax.set_ylim(0, ylim[i])
-    plt.axhline(y=0.8, color='black', linestyle='--')
-    plt.axvline(x=0.2, color='black', linestyle='--')
+    
+    #plt.axhline(y=0.8, color='yellow', linestyle='--', linewidth=2.5)
+    #plt.axvline(x=0.1, color='yellow', linestyle='--', linewidth=2.5)
+    #plt.scatter(0.1, 0.8, color='yellow', s=100)
+    
+    # Add a bubble in the top right hand corner with omega t / 2*pi = 0.125 in it
+    #ax.text(0.95, 0.95, r'$\frac{\omega t}{2\pi} = 0.125$', fontsize=40, bbox=dict(facecolor='white', alpha=0.8, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
+    
     if title is not None:
         fig.suptitle(title)
+    
     plt.tight_layout()
-    plt.savefig(fname, dpi=300)
+    plt.savefig(fname, dpi=400)
     plt.close()
 
 
@@ -1513,7 +1555,7 @@ def add_overlay(ax, df, time, labels):
     #ax.scatter([x[0]*x_scale for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
 
     # Add the time in the upper right corner
-    ax.text(0.9, 0.9, fr'$\tau$={labels}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
+    ax.text(0.9, 0.9, r'$\omega t$'+f'={labels}', fontsize=22, bbox=dict(facecolor='white', edgecolor='black', alpha=0.8, boxstyle='round,pad=0.5'), transform=ax.transAxes, ha='right', va='top')
     #ax.text(1.5, 1.5, f'time={time}', fontsize=14, bbox=dict(facecolor='white', alpha=0.5, boxstyle='round,pad=0.5'))
 
 def plot_data_broken_x_axis(df_list, xaxis, yaxis, interval_1, interval_2, fname='broken_x_axis.png', title=None, labels=None, xlabel=None, ylabel=None, legend_pos=None, multi_y_labels=False):
@@ -1865,7 +1907,7 @@ def efficiency_plot(df, fname='images/efficiency_plot.png', ylim=None, xlim=None
     if len(df[(df['Temperature'] < 1) & (df['Work'] < 0)]) > 0:
         #sns.lineplot(x='Temperature', y=np.abs(df['System Heat']/df['Work']), data=df[(df['Temperature'] < 1) & (df['Work'] < 0)], label=r'$COP_{HP}$')
         data = df[(df['Temperature'] < 1) & (df['Work'] < 0)]
-        plt.plot(data['Temperature'], np.abs(data['System Heat']/data['Work']), label=r'$COP_{HV}$')
+        plt.plot(data['Temperature'], np.abs(data['System Heat']/data['Work']))#, label=r'$COP_{HV}$')
     # Plot the efficiency in the temp > 1, work > 0 region, i.e. the IE region
     # For the IE regime the efficiency is (W + |Q_S|)/Q_M
     # However, only add the plot if there are any data points in the region
@@ -1920,7 +1962,7 @@ def efficiency_plot(df, fname='images/efficiency_plot.png', ylim=None, xlim=None
     if RF_start is not None:
         plt.axvline(RF_start, color='black', linestyle='--')
     # Add the legend
-    
+    plt.legend()
     # Set the x- and y-axis labels
     plt.xlabel(f'{symbol_dict["temperature"]}', fontsize=24)
     plt.ylabel('Efficiency', fontsize=24)

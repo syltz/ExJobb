@@ -2,8 +2,8 @@ import numpy as np
 import scipy as sp # Not currently used but can be uncommented if needed
 from scipy.special import factorial, assoc_laguerre
 
-kB = 1e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
+hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
 c = sp.constants.physical_constants['speed of light in vacuum'][0] # Speed of light in m/s
 
 class SystemAndMeter:
@@ -405,7 +405,22 @@ class SystemAndMeter:
         self.set_n(old_n) # Reset the meter state to the original state
         return ergotropy
 
+    def work_extraction(self, time=None, work_type='ergotropy'):
+        """Calculates the work extracted from the system at time t.
 
+        Args:
+            time (float, optional): System time to calculate the work extracted at. Defaults to self.time if not set.
+            work_type (str, optional): The type of work extraction to calculate. Defaults to 'ergotropy'.
+
+        Returns:
+            float: The work extracted from the system at time t.
+        """
+        if (time==None):
+            time = self.time
+        if work_type == 'ergotropy':
+            return self.ergotropy(time)
+        elif work_type == 'excess':
+            return self.work_extraction_excess(time)
 
 
     def work_extraction_excess(self, time=None):
