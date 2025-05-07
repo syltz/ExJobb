@@ -139,7 +139,10 @@ def main():
     # Create heamaps with the high R data
     fnames = [f'data/high_R_data/phase_boundary_multidata_tau={tau}_R=0.1_net.csv' for tau in tau_vals]
     data = [pd.read_csv(fname, index_col=0) for fname in fnames]
-    phase_diagram_2(data, fname=f'{test_image_dir}high_R_phase_boundary_net.png', labels=labels)
+    main_data = ['data/high_R_data/phase_boundary/phase_boundary_tau=1e-06.csv']
+    end_data = ['data/high_R_data/phase_boundary/phase_boundary_tau=1e-06_end.csv']
+    data = phase_diagram_preprocessing(main_data, end_data)
+    phase_diagram_comparison(data[0], fname=f'{test_image_dir}phase_diagram_high_R_comparison.png')
     #heatmap(fnames, times=times, labels=labels, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
     #               fname=f'{test_image_dir}high_R_phase_boundary_net.png', overlay=True, xlim=2, ylim=2, cbar_label='Power [meV/fs]')
     

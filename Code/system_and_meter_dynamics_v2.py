@@ -238,7 +238,7 @@ def main():
     for tau in tau_list:
         sam.set_tau(tau)
         sam.full_update()
-        find_phase_boundary(sam, temp_range=np.linspace(0, 2, 1000), fname=f'data/high_R_data/phase_boundary/phase_boundary_tau={tau}.csv', work_type='excess')
+        find_phase_boundary(sam, temp_range=np.linspace(1.7437437437437437, 1.745745745745745, 1000), fname=f'data/high_R_data/phase_boundary/phase_boundary_tau={tau}_end.csv', work_type='excess')
     ## Simulate power output for unitary cases
     #for tau in tau_list:
     #    sam.set_tau(tau)
