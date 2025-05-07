@@ -63,9 +63,9 @@ def main():
     tau_vals = np.array([1e-6, 0.125, 0.25, 0.5])
     times = tau_vals*2*np.pi*hbar/(Q_M*T_S*kB) * 1e15 # Convert to fs
     labels = [r'$\frac{\omega t}{2\pi}=10^{-6}$', r'$\frac{\omega t}{2\pi}=0.125$', r'$\frac{\omega t}{2\pi}=0.25$', r'$\frac{\omega t}{2\pi}=0.5$']
-    data = pd.read_csv('data/params_eq_temp_vs_time.csv', skiprows=1)
-    data.plot(x='Time', y='Work', c='b')
-    plt.show()
+    #data = pd.read_csv('data/params_eq_temp_vs_time.csv', skiprows=1)
+    #data.plot(x='Time', y='Work', c='b')
+    #plt.show()
     #main_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_unitary_tau={tau}.csv' for tau in tau_vals]
     #ending_fnames = [f'data/thesis_data/excess_work/phase_boundary_data/phase_boundary_unitary_tau={tau}_ending.csv' for tau in tau_vals]
     #df_list = phase_diagram_preprocessing(main_fnames, ending_fnames)
@@ -89,20 +89,7 @@ def main():
     erg_hwde_data_dir = 'data/thesis_data/ergotropy/heatmap_data/hw_per_de/'
     exc_cplng_data_dir = 'data/thesis_data/excess_work/heatmap_data/coupling/'
     exc_hwde_data_dir = 'data/thesis_data/excess_work/heatmap_data/hw_per_de/'
-    #fnames_unitary = [f'multidata_tau={tau}.csv' for tau in tau_vals]
-    #fnames_dissipative = [f'multidata_tau={tau}_gamma=0.01.csv' for tau in tau_vals]
-    #for tau in tau_vals:
-    #    W, We, Wm = multidata_preprocessing(f'{erg_hwde_data_dir}DOUBLE_CHECKED_multidata_ergotropy_tau={tau}_R=0.01.csv')
-    #    W.to_csv(f'{erg_hwde_data_dir}double_check_tau={tau}_net.csv')
-    #    We.to_csv(f'{erg_hwde_data_dir}double_check_tau={tau}_ext.csv')
-    
-    #df_list = [pd.read_csv(f'{erg_cplng_data_dir}dissipative_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
-    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_geff_net.png', overlay=False, cbar_label='Power [meV/fs]')#, xlim=150, ylim=200)
-    #df_list = [pd.read_csv(f'{erg_cplng_data_dir}dissipative_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
-    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_geff_ext.png', overlay=False, cbar_label='Power [meV/fs]')
-    #fnames = [f'data/thesis_data/control2/ergotropy_coupling_control2_tau={tau}_R=0.01.csv' for tau in tau_vals]
+
     #for fname in fnames:
     #    W, We, Wm = multidata_preprocessing(fname)
     #    W.to_csv(fname.replace('ergotropy', 'ergotropy_net'))
@@ -126,16 +113,6 @@ def main():
     #               fname=f'{test_image_dir}ergotropy_geff_v_T_net.pdf', overlay=True, cbar_label='Power [meV/fs]', ylim=ylim_net,xlim=xlim_net)
     #heatmap(indata_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
     #                 fname=f'{test_image_dir}excess_work_hwde_v_T_ext.png', overlay=True, cbar_label='Power [meV/fs]', ylim=ylim_ext,xlim=xlim_ext)
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
-    #               fname=f'{test_image_dir}test2_net.png', overlay=False, cbar_label='Power [meV/fs]', ylim=200)
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g_{eff}^2/\Delta E$',\
-    #               fname=f'{test_image_dir}test2_ext.png', overlay=False, cbar_label='Power [meV/fs]')
-    #df_list = [pd.read_csv(f'data/thesis_data/control2/ergotropy_net_coupling_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #df_list_ext = [pd.read_csv(f'data/thesis_data/control2/ergotropy_ext_coupling_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g^2_{eff}/\Delta E$', fname=f'{test_image_dir}ergotropy_control2_dissipative_coupling_net.png', overlay=False)
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=r'$g^2_{eff}/\Delta E$', fname=f'{test_image_dir}ergotropy_control2_dissipative_coupling_ext.png', overlay=False)
-
-
     # Preprocess the data to separate net, extracted, and measurement work
     #for fname_unit, fname_diss, tau in zip(fnames_unitary, fnames_dissipative, tau_vals):
     #    W, We, Wm = multidata_preprocessing(f'{exc_hwde_data_dir}{fname_unit}')
@@ -151,19 +128,21 @@ def main():
     #power_heatmap(W_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_net.png', overlay=True)
     #power_heatmap(We_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_ext.png', overlay=True) 
 
-    # Create the heatmaps for the extracted work and net work for the unitary and dissipative cases
-    #W_unitary = [pd.read_csv(f'{exc_hwde_data_dir}unitary_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
-    #We_unitary = [pd.read_csv(f'{exc_hwde_data_dir}unitary_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
-    #W_dissipative = [pd.read_csv(f'{exc_hwde_data_dir}dissipative_net_tau={tau}.csv', index_col=0) for tau in tau_vals]
-    #We_dissipative = [pd.read_csv(f'{exc_hwde_data_dir}dissipative_ext_tau={tau}.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(W_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_unitary_T_v_hwdE_net.png', overlay=True)#, ylim=250, xlim=100)
-    #power_heatmap(We_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_unitary_T_v_hwdE_ext.png', overlay=True)
-    #power_heatmap(W_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_dissipative_T_v_hwdE_net.png', overlay=True)#, ylim=250, xlim=100)
-    #power_heatmap(We_dissipative, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_dissipative_T_v_hwdE_ext.png', overlay=True)
-    #W_unitary = [pd.read_csv(f'{erg_hwde_data_dir}sep_data/multidata_ergotropy_opt_eq_temp_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
-    #We_unitary = [pd.read_csv(f'{erg_hwde_data_dir}sep_data/multidata_ergotropy_opt_eq_temp_tau={tau}_R=0_ext.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(W_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_unitary_T_v_hwdE_net.png', overlay=True, ylim=120, xlim=200)
-    #power_heatmap(We_unitary, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_unitary_T_v_hwdE_ext.png', overlay=True)
+    # Preprocess the data to separate net, extracted, and measurement work
+    #for tau in tau_vals:
+    #    W, We, Wm = multidata_preprocessing(f'data/high_R_data/phase_boundary_multidata_tau={tau}_R=0.1.csv')
+    #    W.to_csv(f'data/high_R_data/phase_boundary_multidata_tau={tau}_R=0.1_net.csv')
+    #    We.to_csv(f'data/high_R_data/phase_boundary_multidata_tau={tau}_R=0.1_ext.csv')
+    #    del W, We, Wm
+    #    gc.collect()
+
+    # Create heamaps with the high R data
+    fnames = [f'data/high_R_data/phase_boundary_multidata_tau={tau}_R=0.1_net.csv' for tau in tau_vals]
+    data = [pd.read_csv(fname, index_col=0) for fname in fnames]
+    phase_diagram_2(data, fname=f'{test_image_dir}high_R_phase_boundary_net.png', labels=labels)
+    #heatmap(fnames, times=times, labels=labels, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
+    #               fname=f'{test_image_dir}high_R_phase_boundary_net.png', overlay=True, xlim=2, ylim=2, cbar_label='Power [meV/fs]')
+    
     erg_data_dir = 'data/thesis_data/ergotropy/'
     exc_data_dir = 'data/thesis_data/excess_work/'
     #x = 1
@@ -216,90 +195,6 @@ def main():
     #sns.lineplot(x='Temperature', y='System Entropy', data=df_exc, label=r'$Q_S$')
     #sns.lineplot(x='Temperature', y='Meter Entropy', data=df_exc, label=r'$Q_M$')
     #plt.ylim((-0.5, 0.5))
-
-    #fname_list = [f'{erg_hwde_data_dir}multidata_ergotropy_tau={tau}_R=0.01.csv' for tau in tau_vals]
-    #for fname in fname_list:
-    #    W, We, Wm = multidata_preprocessing(fname)
-    #    W.to_csv(fname.replace('multidata_ergotropy', 'multidata_ergotropy_net'))
-    #    We.to_csv(fname.replace('multidata_ergotropy', 'multidata_ergotropy_ext'))
-    #    del W, We, Wm
-    #    gc.collect()
-    #df_list = [pd.read_csv(f'{erg_hwde_data_dir}multidata_ergotropy_net_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #df_list_ext = [pd.read_csv(f'{erg_hwde_data_dir}multidata_ergotropy_ext_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
-    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_net.png', overlay=True, xlim=200, ylim=500, cbar_label="Power [meV/fs]")
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
-    #               fname=f'{test_image_dir}ergotropy_dissipative_T_v_hwdE_ext.png', overlay=True, cbar_label="Power [meV/fs]")
-    control_data_dir = 'data/thesis_data/control/'
-    #ew_hwde_names = []
-    #ew_coupling_names = []
-    #erg_hwde_names = []
-    #erg_coupling_names = []
-    #for tau in tau_vals:
-    #    for R in [0, 0.01]:
-    #        #ew_hwde_names.append(f'{control_data_dir}excess_work_hwde_tau={tau}_R={R}.csv')
-    #        ew_coupling_names.append(f'{control_data_dir}excess_work_coupling_tau={tau}_R={R}.csv')
-    #        erg_hwde_names.append(f'{control_data_dir}ergotropy_hwde_tau={tau}_R={R}.csv')
-    #        erg_coupling_names.append(f'{control_data_dir}ergotropy_coupling_tau={tau}_R={R}.csv')
-    ## Multidata preprocessing for the excess work and ergotropy data
-    #for fname1, fname2, fname3 in zip(ew_coupling_names, erg_hwde_names, erg_coupling_names):
-    #    W, We, Wm = multidata_preprocessing(fname1)
-    #    W.to_csv(fname1.replace('excess_work', 'excess_work_net'))
-    #    We.to_csv(fname1.replace('excess_work', 'excess_work_ext'))
-    #    W, We, Wm = multidata_preprocessing(fname2)
-    #    W.to_csv(fname2.replace('ergotropy', 'ergotropy_net'))
-    #    We.to_csv(fname2.replace('ergotropy', 'ergotropy_ext'))
-    #    W, We, Wm = multidata_preprocessing(fname3)
-    #    W.to_csv(fname3.replace('ergotropy', 'ergotropy_net'))
-    #    We.to_csv(fname3.replace('ergotropy', 'ergotropy_ext'))
-    #    del W, We, Wm
-    #    gc.collect()
-    # Heatmap plotting for the excess work and ergotropy data
-    # Unitary case for excess work hwde, only want net work for the excess work
-    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_hwde_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_control_unitary_hwde_net.png', overlay=True)
-    ## Dissipative case for excess work hwde
-    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_hwde_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}excess_work_control_dissipative_hwde_net.png', overlay=True)
-    # Unitary case for excess work coupling
-    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_coupling_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}excess_work_control_unitary_coupling_net.png', overlay=True)
-    ## Dissipative case for excess work coupling
-    #df_list = [pd.read_csv(f'{control_data_dir}excess_work_net_coupling_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'],\
-    #               fname=f'{test_image_dir}excess_work_control_dissipative_coupling_net.png', overlay=True, cbar_label='Power [meV/fs]')
-    ## Unitary case for ergotropy hwde
-    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_hwde_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
-    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_hwde_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_unitary_hwde_net.png', overlay=True)
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_unitary_hwde_ext.png', overlay=True)
-    ## Dissipative case for ergotropy hwde
-    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_hwde_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_hwde_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_dissipative_hwde_net.png', overlay=True)
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control_dissipative_hwde_ext.png', overlay=True)
-    ## Unitary case for ergotropy coupling
-    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_coupling_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
-    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_coupling_tau={tau}_R=0.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_unitary_coupling_net.png', overlay=True)
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_unitary_coupling_ext.png', overlay=True)
-    ## Dissipative case for ergotropy coupling
-    #df_list = [pd.read_csv(f'{control_data_dir}ergotropy_net_coupling_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #df_list_ext = [pd.read_csv(f'{control_data_dir}ergotropy_ext_coupling_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_dissipative_coupling_net.png', overlay=True)
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['coupling strength'], fname=f'{test_image_dir}ergotropy_control_dissipative_coupling_ext.png', overlay=True)
-    #control2_dir = 'data/thesis_data/control2/'
-    #fnames = [f'{control2_dir}ergotropy_hwde_control2_tau={tau}_R=0.01.csv' for tau in tau_vals]
-    #for fname in fnames:
-    #    W, We, Wm = multidata_preprocessing(fname)
-    #    W.to_csv(fname.replace('ergotropy', 'ergotropy_net'))
-    #    We.to_csv(fname.replace('ergotropy', 'ergotropy_ext'))
-    #    del W, We, Wm
-    #    gc.collect()
-    #df_list = [pd.read_csv(f'{control2_dir}ergotropy_net_hwde_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #df_list_ext = [pd.read_csv(f'{control2_dir}ergotropy_ext_hwde_control2_tau={tau}_R=0.01.csv', index_col=0) for tau in tau_vals]
-    #power_heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control2_dissipative_hwde_net.png', overlay=True)
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'], fname=f'{test_image_dir}ergotropy_control2_dissipative_hwde_ext.png', overlay=True)
     faulty_dir = 'data/thesis_data/faulty_ergotropy/'
     #fnames= [f'{faulty_dir}ergotropy_faulty_control2_tau={tau}_R=0.01.csv' for tau in tau_vals]
     #for fname in fnames:
@@ -312,8 +207,6 @@ def main():
     #df_list_ext = [pd.read_csv(f'{faulty_dir}ergotropy_faulty_control2_tau={tau}_R=0.01_ext.csv', index_col=0) for tau in tau_vals]
     #heatmap(df_list, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
     #               fname=f'{test_image_dir}ergotropy_faulty_control2_dissipative_hwde_net.png', overlay=True, xlim=1, ylim=2, cbar_label='Power [meV/fs]')
-    #power_heatmap(df_list_ext, times=times, labels=tau_vals, xlabel=symbol_dict['temperature'], ylabel=symbol_dict['hw/de'],\
-    #               fname=f'{test_image_dir}ergotropy_faulty_control2_dissipative_hwde_ext.png', overlay=True, cbar_label='Power [meV/fs]')
     #long_diss_run_dir = 'data/thesis_data/long_dissipative_run/'
     #long_tau_vals = [0.125, 1.125, 10.125, 100.125]
     #fnames = [f'{long_diss_run_dir}ergotropy_long_time_comparisons_tau={tau}_R=0.csv' for tau in long_tau_vals]
@@ -1270,8 +1163,8 @@ def heatmap(indata, times=None, xlabel=None, ylabel=None, fname='heatmap.png', t
         if times is not None:
             Z = Z/times[i]
         if i == 0:
-            Z_max = Z.max()
-            Z_min = -Z_max#
+            Z_max = Z.max()/5#
+            Z_min = Z.min()/5#
         else:
             Z_max = Z.max()
             Z_min = Z.min()
@@ -1531,7 +1424,7 @@ def phase_diagram_2(data_list, fname='phase_diagram_2.png', title=None, labels=N
                 phase_boundaries.append((column, index))
         # Create a scatter plot with the phase boundaries
         plt.figure(figsize=(12, 8))
-        plt.scatter([x[0] for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black')
+        plt.scatter([x[0] for x in phase_boundaries], [x[1] for x in phase_boundaries], color='black', s=1)
         plt.xlabel(f'{symbol_dict["temperature"]}')
         plt.ylabel(f'{symbol_dict["hw/de"]}')
         plt.title(title)

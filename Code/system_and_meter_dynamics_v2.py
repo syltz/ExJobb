@@ -59,17 +59,18 @@ def main():
 
     param_sets_erg = {'eq_temp': params_eq_temp, 'eq_temp_zeno': params_eq_temp_zeno, 'uneq_temp': params_uneq_temp, 'uneq_temp_zeno': params_uneq_temp_zeno}
     
-
     
     
-    #params = params_eq_temp
-    #sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
-    #sam.set_tau(params['tau'])
-    #sam.set_n(params['n_prime'])
-    #sam.set_n_upper_limit(params['n_upper_limit'])
-    #sam.full_update()
-    #sam.set_x(params['x'])
-    #sam.full_update()
+    
+    params = params_opt_eq_temp
+    sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
+    sam.set_tau(params['tau'])
+    sam.set_n(params['n_prime'])
+    sam.set_n_upper_limit(params['n_upper_limit'])
+    sam.full_update()
+    sam.set_x(params['x'])
+    sam.set_R(0.1)
+    sam.full_update()
     #params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'data/params{params["file_ending"]}_vs_time.csv', fixed=params['n_prime'])
     #pareto_data = pd.read_csv('data/jonas_collab_data/pareto_HE.txt', sep='\t', header=None)
     #pareto_data.columns = ['Efficiency', 'Power', 'x', 'Q_S', 'Q_M', 'P', 'tau', 'n_prime']
@@ -94,13 +95,17 @@ def main():
 
     #params = params_naive #params_opt_eq_temp
     #params = param_sets_exc['opt_eq_temp']
-    #sam.set_Q_S(params['Q_S'])
-    #sam.set_Q_M(params['Q_M'])
-    #sam.set_P(params['P'])
-    #sam.set_x(params['x'])
-    #sam.set_tau(params['tau'])
-    #sam.set_n(1)
-    #sam.full_update()
+    #tau_vals = [1e-6, 0.125, 0.25, 0.5]
+    #for tau in tau_vals:
+    #    sam.set_Q_S(params['Q_S'])
+    #    sam.set_Q_M(params['Q_M'])
+    #    sam.set_P(params['P'])
+    #    sam.set_x(params['x'])
+    #    sam.set_tau(tau)
+    #    sam.set_R(0.1)
+    #    sam.set_n(1)
+    #    sam.full_update()
+    #    phase_boundary_multidata(sam, temp_range=np.linspace(0.0, 2.0, 1000), fname=f'data/phase_boundary_multidata_tau={tau}_R=0.1.csv', work_type='excess')
     #sam.set_P(np.sqrt(0.8*sam.get_Q_S()))
     ##sam.set_Q_M(0.2*sam.get_Q_S())
     #sam.set_x(0.2)
@@ -228,12 +233,12 @@ def main():
     #except:
     #    print("No positive net work extraction.")
     # Simulate phase boundary for dissipative case
-    #tau_list = [1e-6, 0.125, 0.25, 0.5]
+    tau_list = [1e-6, 0.125, 0.25, 0.5]
     #tau_list= [tau_list[1]]
-    #for tau in tau_list:
-    #    sam.set_tau(tau)
-    #    sam.full_update()
-    #    find_phase_boundary(sam, temp_range=np.linspace(1, 2, 1000), fname=f'data/phase_boundary_unitary_tau={tau}.csv')
+    for tau in tau_list:
+        sam.set_tau(tau)
+        sam.full_update()
+        find_phase_boundary(sam, temp_range=np.linspace(0, 2, 1000), fname=f'data/high_R_data/phase_boundary/phase_boundary_tau={tau}.csv', work_type='excess')
     ## Simulate power output for unitary cases
     #for tau in tau_list:
     #    sam.set_tau(tau)
@@ -808,9 +813,9 @@ def find_phase_boundary(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 10
             temp_range (ndarray or list, optional): The temperature range to evaluate the phase boundary at. Defaults to np.linspace(0.0, 2.0, 100).
             fname (str, optional): The filename to save the data to. Defaults to "data/phase_boundary.csv".
     """
-    #Q_S = sam.get_Q_S()
-    #Q_M_range = np.linspace(0.1*Q_S, 100*Q_S, 100)
-    P_range = np.logspace(start=-2, stop=10, num=100, base=10)
+    Q_S = sam.get_Q_S()
+    Q_M_range = np.linspace(0.01*Q_S, 2*Q_S, 100)
+    #P_range = np.logspace(start=-2, stop=10, num=100, base=10)
     # Write the header lines manually
     with open(fname, mode="w") as file:
         file.write(f"System temperature: {sam.get_temp_system():.3f},\
@@ -821,31 +826,31 @@ def find_phase_boundary(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 10
     for T in temp_range:
         sam.set_x(T)
         sam.full_update()
-        #W_vals = np.zeros_like(Q_M_range)
-        W_vals = np.zeros_like(P_range)
+        W_vals = np.zeros_like(Q_M_range)
+        #W_vals = np.zeros_like(P_range)
         # Calculate the net work for each Q_M in the range
-        #for i, Q_M in enumerate(Q_M_range):
-        for i, P in enumerate(P_range):
-            #sam.set_Q_M(Q_M)
-            sam.set_P(P)
+        for i, Q_M in enumerate(Q_M_range):
+        #for i, P in enumerate(P_range):
+            sam.set_Q_M(Q_M)
+            #sam.set_P(P)
             sam.full_update()
-            W_vals[i] = sam.work_extraction() -sam.work_measurement()
+            W_vals[i] = sam.work_extraction(work_type=work_type) -sam.work_measurement()
         # Find where the net work changes sign, i.e. the phase boundary
         sign_changes = np.where(np.diff(np.sign(W_vals)))[0]
         if True: #len(sign_changes) > 0:
-            #hw_dE_values = Q_M_range[sign_changes] / Q_S
-            P_values = P_range[sign_changes]
+            hw_dE_values = Q_M_range[sign_changes] / Q_S
+            #P_values = P_range[sign_changes]
         else:
             print(f"Phase boundary saved to {fname}")
             return
 
         # Append the data to the file
         with open(fname, mode="a") as file:
-            #file.write(f"{T},{hw_dE_values}\n")
-            file.write(f"{T},{P_values}\n")
+            file.write(f"{T},{hw_dE_values}\n")
+            #file.write(f"{T},{P_values}\n")
     print(f"Phase boundary saved to {fname}")
 
-def phase_boundary_multidata(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/testing.csv"):
+def phase_boundary_multidata(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), fname="data/testing.csv", work_type="ergotropy"):
     """ Investigate the phase boundary between the positive and negative net work regions.
         Saves the data to a csv file.
         
@@ -875,7 +880,7 @@ def phase_boundary_multidata(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.
             for i, T in enumerate(temp_range):
                 sam.set_x(T)
                 sam.full_update()
-                W_ext = sam.work_extraction()
+                W_ext = sam.work_extraction(work_type=work_type)
                 W_meas = sam.work_measurement()
                 W = W_ext - W_meas
                 element = [Q_M/Q_S, W, W_ext, W_meas]
@@ -886,7 +891,7 @@ def phase_boundary_multidata(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.
             file.write(f"\n")
     print(f"Phase boundary saved to {fname}")
 
-def phase_boundary_multidata_coupling(sam: SystemAndMeter, temp_range=np.linspace(1e-2, 2.0, 100), fname="data/testing.csv"):
+def phase_boundary_multidata_coupling(sam: SystemAndMeter, temp_range=np.linspace(1e-2, 2.0, 100), fname="data/testing.csv", work_type="ergotropy"):
     """ Investigate the phase boundary between negative net work regions by varying the parameter
     g_eff**2 / delta E or in other words the ratio P^2/Q_S 
 
@@ -916,7 +921,7 @@ def phase_boundary_multidata_coupling(sam: SystemAndMeter, temp_range=np.linspac
             for i,T in enumerate(temp_range):
                 sam.set_x(T)
                 sam.full_update()
-                W_ext = sam.work_extraction()
+                W_ext = sam.work_extraction(work_type=work_type)
                 W_meas = sam.work_measurement()
                 W = W_ext - W_meas
                 element = [P**2/Q_S, W, W_ext, W_meas]

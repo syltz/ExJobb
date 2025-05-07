@@ -556,7 +556,10 @@ class SystemAndMeter:
         Args:
             n_upper_limit (int): Upper limit of the energy levels of the meter to measure.
         """
-        self.n_upper_limit = n_upper_limit
+        if n_upper_limit == None:
+            self.n_upper_limit = self.get_total_levels()
+        else:
+            self.n_upper_limit = n_upper_limit
     def set_Q_S(self, Q_S):
         """Setter function for the dimensionless scaling parameter for the TLS energy.
 
