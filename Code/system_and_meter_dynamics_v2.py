@@ -62,15 +62,52 @@ def main():
     
     
     
-    params = params_opt_eq_temp
-    sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
-    sam.set_tau(params['tau'])
-    sam.set_n(params['n_prime'])
-    sam.set_n_upper_limit(params['n_upper_limit'])
-    sam.full_update()
-    sam.set_x(params['x'])
-    sam.set_R(0.1)
-    sam.full_update()
+    #params = params_opt_eq_temp
+    #sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
+    #sam.set_tau(params['tau'])
+    #sam.set_n(params['n_prime'])
+    #sam.set_n_upper_limit(params['n_upper_limit'])
+    #sam.full_update()
+    #sam.set_x(params['x'])
+    #sam.set_R(0.0)
+    #sam.full_update()
+    #sam2 = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
+    #sam2.set_tau(params['tau'])
+    #sam2.set_n(params['n_prime'])
+    #sam2.set_n_upper_limit(params['n_upper_limit'])
+    #sam2.set_R(0.0)
+    #sam2.full_update()
+    #eps = 0.01
+    #xvals = [0.266, 0.478, 0.618]
+    #for x in xvals:
+    #    sam.set_x(x-eps)
+    #    sam2.set_x(x+eps)
+    #    sam.full_update()
+    #    sam2.full_update()
+    #    p0minus = 1
+    #    p1minus = 0
+    #    p0plus = 1
+    #    p1plus = 0
+    #    try_minus = True
+    #    try_plus = True
+    #    for n in range(sam.get_total_levels()):
+    #        if try_minus:
+    #            p0minus, p1minus = sam.conditional_probability(n=n)
+    #            if p1minus > p0minus:
+    #                print(f"p1minus > p0minus for n = {n} and x = {x-eps}")
+    #                try_minus = False
+    #        if try_plus:
+    #            p0plus, p1plus = sam2.conditional_probability(n=n)
+    #            if p1plus > p0plus:
+    #                print(f"p1plus > p0plus for n = {n} and x = {x+eps}")
+    #                try_plus = False
+    #        if (try_minus==False and try_plus==False):
+    #            print("Both p1 are greater than p0")
+    #            break
+    #exit()
+
+
+    #params_vs_temp(sam, temp_range=np.linspace(0.0, 2.0, 2000), fname='params_vs_temp_opt_eq_temp_long_ergotropy.csv', type='ergotropy')
     #params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'data/params{params["file_ending"]}_vs_time.csv', fixed=params['n_prime'])
     #pareto_data = pd.read_csv('data/jonas_collab_data/pareto_HE.txt', sep='\t', header=None)
     #pareto_data.columns = ['Efficiency', 'Power', 'x', 'Q_S', 'Q_M', 'P', 'tau', 'n_prime']
@@ -124,14 +161,17 @@ def main():
 
     
 
-    #params = params_uneq_temp
-    #sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
-    #sam.set_tau(0.125)
-    #sam.set_x(0.30)
-    #sam.set_Q_S(1.)
-    #sam.set_Q_M(sam.get_Q_S()*1e-1)
-    #sam.set_P(np.sqrt(Q_S))
-    #sam.full_update()
+    params = params_uneq_temp
+    sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
+    sam.set_tau(0.125)
+    sam.set_x(0.30)
+    sam.set_Q_S(1.)
+    sam.set_Q_M(sam.get_Q_S()*1e-1)
+    sam.set_P(np.sqrt(Q_S))
+    sam.full_update()
+    params_vs_temp(sam, temp_range=np.linspace(1, 2.0, 10), fname='params_vs_temp_opt_eq_temp_long_ergotropy_V2.csv', type='ergotropy')
+
+
     #probabilities_against_meter_level(sam, fname='data/thesis_data/probabilities_against_meter_level_TESTING2.csv')
     #save_dirs = ['data/thesis_data/ergotropy/', 'data/thesis_data/excess_work/']
     #work_type = ['ergotropy', 'excess work']
@@ -235,10 +275,10 @@ def main():
     # Simulate phase boundary for dissipative case
     tau_list = [1e-6, 0.125, 0.25, 0.5]
     #tau_list= [tau_list[1]]
-    for tau in tau_list:
-        sam.set_tau(tau)
-        sam.full_update()
-        find_phase_boundary(sam, temp_range=np.linspace(1.7437437437437437, 1.745745745745745, 1000), fname=f'data/high_R_data/phase_boundary/phase_boundary_tau={tau}_end.csv', work_type='excess')
+    #for tau in tau_list:
+    #    sam.set_tau(tau)
+    #    sam.full_update()
+    #    find_phase_boundary(sam, temp_range=np.linspace(0, 0.178422911889845, 500), fname='data/new_data/phase_boundary_/phase_boundary_unitary_tau=1e-06_start.csv', work_type='excess')
     ## Simulate power output for unitary cases
     #for tau in tau_list:
     #    sam.set_tau(tau)
@@ -461,54 +501,56 @@ def params_vs_temp(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 100), f
     #sam.set_x(max(temp_range))
     #sam.full_update()
     #n_max = sam.get_total_levels()
-    for T in temp_range:
-        sam.set_x(T)
-        sam.full_update()
-        #sam.set_total_levels(n_max)
-        if fixed is None:
-            n = first_positive_W_ext(sam)
-            sam.set_n(n)
-        else:
-            sam.set_n(fixed)
-        if n_upper_limit is not None:
-            sam.set_n_upper_limit(n_upper_limit)
-        else:
-            sam.set_n_upper_limit(sam.get_total_levels())
-        # Check if we're in the Zeno regime
-        #if sam.get_tau() < 1e-5:
-        #    W_ext = sam.zeno_limit_work_extraction()
-        #    W_meas = sam.zeno_limit_work_measurement()
-        #else:
-        #    W_ext = sam.work_extraction()
-        #    W_meas = sam.work_measurement()
-        if type == 'ergotropy':
-            W_ext = sam.ergotropy()
-        elif type == 'excess work':
-            W_ext = sam.work_extraction_excess()
-        W_meas = sam.work_measurement()
-        W = W_ext - W_meas
-        Q_S = -W_ext
-        Q_M = W_meas
-        I_obs = sam.observer_information()
-        I_m = sam.mutual_information()
-        I = I_obs + I_m
-        results['Temperature'].append(T)
-        results['Work'].append(W)
-        results['System Heat'].append(Q_S)
-        results['Meter Heat'].append(Q_M)
-        results['Observer Information'].append(I_obs)
-        results['Mutual Information'].append(I_m)
-        results['Information'].append(I)
-    df = pd.DataFrame(results)
+    with open(fname, mode="a") as file:
+        for T in temp_range:
+            sam.set_x(T)
+            sam.full_update()
+            #sam.set_total_levels(n_max)
+            if fixed is None:
+                n = first_positive_W_ext(sam)
+                sam.set_n(n)
+            else:
+                sam.set_n(fixed)
+            if n_upper_limit is not None:
+                sam.set_n_upper_limit(n_upper_limit)
+            else:
+                sam.set_n_upper_limit(sam.get_total_levels())
+            # Check if we're in the Zeno regime
+            #if sam.get_tau() < 1e-5:
+            #    W_ext = sam.zeno_limit_work_extraction()
+            #    W_meas = sam.zeno_limit_work_measurement()
+            #else:
+            #    W_ext = sam.work_extraction()
+            #    W_meas = sam.work_measurement()
+            if type == 'ergotropy':
+                W_ext = sam.ergotropy()
+            elif type == 'excess work':
+                W_ext = sam.work_extraction_excess()
+            W_meas = sam.work_measurement()
+            W = W_ext - W_meas
+            Q_S = -W_ext
+            Q_M = W_meas
+            I_obs = sam.observer_information()
+            I_m = sam.mutual_information()
+            I = I_obs + I_m
+            results['Temperature'].append(T)
+            results['Work'].append(W)
+            results['System Heat'].append(Q_S)
+            results['Meter Heat'].append(Q_M)
+            results['Observer Information'].append(I_obs)
+            results['Mutual Information'].append(I_m)
+            results['Information'].append(I)
+        df = pd.DataFrame(results)
+        file.write(r'{T},{W},{Q_S},{Q_M},{I_obs},{I_m},{I}\n')
 
     # Write the header lines manually
-    with open(fname, mode="w") as file:
-        file.write(f"System temperature: {sam.get_temp_system():.3f},\
-                    Coupling strength: {sam.get_P():.3f}, \
-                         Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
-                            Period: {sam.get_tau():.3f}\n")
-    # Append the data to the file
-    df.to_csv(fname, mode='a', index=False)
+    #with open(fname, mode="w") as file:
+    #    file.write(f"System temperature: {sam.get_temp_system():.3f},\
+    #                Coupling strength: {sam.get_P():.3f}, \
+    #                     Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
+    #                        Period: {sam.get_tau():.3f}\n")
+    ## Append the data to the file
+    #df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs temperature saved to {fname}")
 
 def params_vs_omega_per_delta_E(sam: SystemAndMeter, omega_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_omega_per_delta_E.csv", fixed=None):
@@ -814,7 +856,10 @@ def find_phase_boundary(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.0, 10
             fname (str, optional): The filename to save the data to. Defaults to "data/phase_boundary.csv".
     """
     Q_S = sam.get_Q_S()
-    Q_M_range = np.linspace(0.01*Q_S, 2*Q_S, 100)
+    #Q_M_range = np.linspace(0.01*Q_S, 2*Q_S, 500)
+    range_1 = np.linspace(1e-5*Q_S, 0.1*Q_S, 300)
+    range_2 = np.linspace(0.98*Q_S, 1*Q_S, 100)
+    Q_M_range = np.concatenate((range_1, range_2))
     #P_range = np.logspace(start=-2, stop=10, num=100, base=10)
     # Write the header lines manually
     with open(fname, mode="w") as file:
