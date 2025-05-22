@@ -166,10 +166,11 @@ def main():
     sam.set_tau(0.125)
     sam.set_x(0.30)
     sam.set_Q_S(1.)
-    sam.set_Q_M(sam.get_Q_S()*1e-1)
+    sam.set_Q_M(sam.get_Q_S()/5)
     sam.set_P(np.sqrt(Q_S))
     sam.full_update()
-    params_vs_temp(sam, temp_range=np.linspace(1, 2.0, 10), fname='params_vs_temp_opt_eq_temp_long_ergotropy_V2.csv', type='ergotropy')
+    probabilities_against_meter_level(sam, fname='data/probabilities_against_meter_level_TEST.csv')
+    #params_vs_temp(sam, temp_range=np.linspace(1, 2.0, 10), fname='params_vs_temp_opt_eq_temp_long_ergotropy_V2.csv', type='ergotropy')
 
 
     #probabilities_against_meter_level(sam, fname='data/thesis_data/probabilities_against_meter_level_TESTING2.csv')
