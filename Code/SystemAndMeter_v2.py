@@ -1,10 +1,23 @@
+#########
+# SystemAndMeter_v2.py
+# This module defines the SystemAndMeter class which models a system and meter for quantum thermodynamics.
+# It includes methods for calculating joint probabilities, conditional probabilities, entropies, and work extraction.
+# It also includes methods for setting and getting the parameters of the system and meter.
+# Just as a note, there are parameters called Q_S, Q_M, and P which are dimensionless scaling parameters for the system and meter.
+# Q_S is the scaling parameter for the TLS energy, Q_M is the scaling parameter for the meter energy,
+# and P is the scaling parameter for the coupling strength and mass.
+# The system is a two-level system (TLS) and the meter is a harmonic oscillator.
+# I recognize that the naming of the parameters is a bit confusing, but I made a poor choice at some point in the past
+# and now I have to live with it.
+#########
+
+
 import numpy as np
 import scipy as sp # Not currently used but can be uncommented if needed
 from scipy.special import factorial, assoc_laguerre
 
 kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
 hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
-c = sp.constants.physical_constants['speed of light in vacuum'][0] # Speed of light in m/s
 
 class SystemAndMeter:
     def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0, n_upper_limit=None, R=0, mass = 1):
@@ -275,10 +288,6 @@ class SystemAndMeter:
         if (n==None):
             n = self.n
 
-        # If time is zero this is actually an easy calculation to do analytically
-        #if time == 0:
-        #    return -kB*(self.tls_state[0]*np.log(self.tls_state[0]) + self.tls_state[1]*np.log(self.tls_state[1]))
-
         # Get the conditional probabilities P(0|n,t) and P(1|n,t)
         p0, p1 = self.conditional_probability(n=n, t=time)
 
@@ -372,7 +381,6 @@ class SystemAndMeter:
         upper_limit = self.n_upper_limit
         for n in range(lower_limit, upper_limit+1):
             p0_n, p1_n = self.joint_probability(n=n, t=time)
-            #W+=a*p1_n - b*p0_n
             W += (p1_n - p0_n)
         W *= delta_E
         return W
@@ -397,9 +405,6 @@ class SystemAndMeter:
             p0_n, p1_n = self.joint_probability(n=n_prime, t=time) # Get the conditional probabilities
             if p1_n > p0_n: # If the conditional probability of the system being in state 1 is greater than 0
                 ergotropy += delta_E*(p1_n - p0_n) # Calculate the work extracted starting from n_prime
-                #ergotropy = self.work_extraction(time) # Calculate the work extracted starting from n_prime
-                #self.set_n(old_n) # Reset the meter state to the original state
-                #return ergotropy # Return the ergotropy
         
         # If no value of n' <= n_upper_limit exists for which the work extracted is positive, the ergotropy is zero.
         self.set_n(old_n) # Reset the meter state to the original state
@@ -524,7 +529,6 @@ class SystemAndMeter:
             float: The work required to measure the meter in the Zeno limit.
         """
         g = self.g
-        omega = self.omega_meter
         m = self.mass
         b = self.tls_state[1]
         wt = 2*np.pi*self.tau # t = tau*2*pi/omega
