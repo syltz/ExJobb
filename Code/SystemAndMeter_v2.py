@@ -342,6 +342,8 @@ class SystemAndMeter:
     
     def observer_information(self, time=None, n=None, n_upper_limit=None):
         """Calculates the observers information about the system after measurement in n at time t.
+        N.B. This is not the same as the mutual information, rather it is the information gained by the observer after
+        projective measurement. This also turns out to no be so useful, but the function is here anyway.
 
         Args:
             time (float, optional): The time to calculate the observer information at. Defaults to self.time if not set.
@@ -363,27 +365,6 @@ class SystemAndMeter:
         I_O = -kB * (p_n*np.log(p_n) + (1-p_n)*np.log(1-p_n))
         return I_O
 
-    def ergotropy_faulty(self, time=None):
-        """Calculates the work extracted from the system at time t.
-
-        Args:
-            time (float, optional): System time to calculate the work extracted at. Defaults to self.time if not set.
-
-        Returns:
-            float: The work extracted from the system at time t. sum_n P(n,t)*(P(1|n,t) - P(1|n,0))*delta_E
-        """
-        if (time==None):
-            time = self.time
-        delta_E = self.delta_E
-        a, b = self.tls_state
-        W = 0
-        lower_limit = self.n
-        upper_limit = self.n_upper_limit
-        for n in range(lower_limit, upper_limit+1):
-            p0_n, p1_n = self.joint_probability(n=n, t=time)
-            W += (p1_n - p0_n)
-        W *= delta_E
-        return W
     def ergotropy(self, time=None):
         """Calculates the ergotropy of the system, i.e. for a tls the work extracted via population inversion.
         If no value of n' <= n_upper_limit exists for which the work extracted is positive, the ergotropy is zero.
@@ -413,6 +394,7 @@ class SystemAndMeter:
     def work_extraction(self, time=None, work_type='ergotropy'):
         """Calculates the work extracted from the system at time t.
 
+
         Args:
             time (float, optional): System time to calculate the work extracted at. Defaults to self.time if not set.
             work_type (str, optional): The type of work extraction to calculate. Defaults to 'ergotropy'.
@@ -429,8 +411,10 @@ class SystemAndMeter:
 
 
     def work_extraction_excess(self, time=None):
-        """Calculates the work extracted from the system at time t. This is for the old version of the work extraction formula.
-        Probably don't use this, I'm not convinced it's correct.
+        """Calculates the work extracted from the system at time t. To be clear, this is not used in the paper and it differs
+        from the ergotropy. This is essentially the work extracted from the system when disregarding losses, essentially saying that
+        from an initial thermal state a|0><0| + b|1><1| you could extract b*delta_E from the system, i.e. disregarding the losses
+        due to absorption.
 
         Args:
             time (float, optional): System time to calculate the work extracted at. Defaults to self.time if not set.
@@ -471,25 +455,11 @@ class SystemAndMeter:
             return b*m*g**2*(wt)**2/2
         else:
             return b*m*g**2*(1-np.cos(wt))
-    def work_measurement_OLD(self, time=None):
-        """Returns the amount of work required to measure the meter at time t.
 
-        Args:
-            time (float, optional): The time to measure at. Defaults to self.time if not set.
-
-        Returns:
-            float: The work required to measure the meter at time t.
-        """
-        if time == None:
-            time = self.time
-        g = self.g
-        omega = self.omega_meter
-        m = self.mass   
-        b = self.tls_state[1]
-        return b*m*g**2*(1-np.cos(omega*time))
 
     def quality_factor(self, time=None):
-        """Calculates the quality factor of the measurement at time t.
+        """Calculates the quality factor of the measurement at time t. For some definition of a quality factor.
+        Not sure how useful this is, but it was considered at some point in the past so it's here.
 
         Args:
             time (float, optional): The time to calculate the quality factor at. Defaults to self.time if not set.
@@ -524,6 +494,7 @@ class SystemAndMeter:
 
     def zeno_limit_work_measurement(self):
         """Calculates the work required to measure the meter in the Zeno limit.
+        This turns out to not be needed, rather the normal W_meas is sufficient.
 
         Returns:
             float: The work required to measure the meter in the Zeno limit.
@@ -531,7 +502,7 @@ class SystemAndMeter:
         g = self.g
         m = self.mass
         b = self.tls_state[1]
-        wt = 2*np.pi*self.tau # t = tau*2*pi/omega
+        wt = 2*np.pi*self.tau 
         W_meas = b*m*g**2 * wt**2/2
         return W_meas
     def zeno_limit_work_extraction(self):
@@ -709,13 +680,13 @@ class SystemAndMeter:
         self.g = self.P*np.sqrt(kB*self.T_S/self.mass) # Coupling strength, g = P*sqrt(kB*T_S/m) but m = 1
         self.time = self.tau*2*np.pi/self.omega_meter # Interaction time, t = tau*2*pi/omega
         self.gamma = self.R*self.omega_meter # Dissipation rate of the meter, gamma = R*omega
-        a = 1/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) )
-        b = np.exp(-self.delta_E/(kB*self.T_S))/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) )
+        a = 1/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) ) # Initial ground state population of the TLS
+        b = np.exp(-self.delta_E/(kB*self.T_S))/( 1+np.exp( -self.delta_E/(kB*self.T_S) ) ) # Initial excited state population of the TLS
         self.tls_state = (a,b)
         if self.T_m == 0:
             self.beta = np.inf
         else:
-            self.beta = 1/(kB*self.T_m) # Beta value
+            self.beta = 1/(kB*self.T_m) # Inverse temperature of the meter, beta = 1/(kB*T_M)
 
     def update_total_levels(self):
         """

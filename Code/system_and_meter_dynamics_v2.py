@@ -4,10 +4,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
 import scipy as sp
 from SystemAndMeter_v2 import SystemAndMeter
-#from testing import SystemAndMeter
 import pandas as pd
-#import warnings
-#warnings.filterwarnings("error")
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
 # and the system is assumed to be a two-level system.
@@ -24,6 +21,9 @@ def main():
     sam = SystemAndMeter(T_S=temp_system, x=x, Q_S=Q_S, Q_M=Q_M, P=P, msmt_state=msmt_state)
     # Dictionaries of parameters to test. They are here to ensure consistency in the parameters.
     # Just uncomment the one you want to test and comment the others.
+    # To be clear to anyone reading this later, most of these parameters have been generated
+    # by running a simple optimizer on the old W_ext function. Input whatever parameters you want
+    # to test.
 
     # These are all the parameters determined in the old W_ext funciton.
     params_opt = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
@@ -64,7 +64,6 @@ def main():
     
     
     
-    #params = params_opt_eq_temp
     params = params_article
     sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
     sam.set_tau(params['tau'])
@@ -108,27 +107,79 @@ def main():
     exit()
 
 
-    #params_vs_temp(sam, temp_range=np.linspace(0.0, 1.0, 100), fname='data/article_data/params_vs_temp_test.csv', type='ergotropy')
-    #sam.set_x(params['x'])
-    #sam.full_update()
-    #meter_level = np.array([])
-    #temp_range = np.linspace(0.0, 2.0, 1000)
-    #for T in temp_range:
-    #    sam.set_x(T)
-    #    sam.full_update()
-    #    p_0 = 1
-    #    p_1 = 0
-    #    n = 0
+    # Data for the meter level as function of temperature
+    params_vs_temp(sam, temp_range=np.linspace(0.0, 1.0, 100), fname='data/article_data/params_vs_temp_test.csv', type='ergotropy')
+    sam.set_x(params['x'])
+    sam.full_update()
+    meter_level = np.array([])
+    temp_range = np.linspace(0.0, 2.0, 1000)
+    for T in temp_range:
+        sam.set_x(T)
+        sam.full_update()
+        p_0 = 1
+        p_1 = 0
+        n = 0
 
-    #    while (p_1 < p_0 and n < sam.get_total_levels()):
-    #        p_0, p_1 = sam.conditional_probability(n=n)
-    #        if p_1 > p_0:
-    #            break
-    #        n += 1
-    #    meter_level = np.append(meter_level, n)
-    #df = pd.DataFrame({'Temperature': temp_range, 'Meter Level': meter_level})
-    #df.to_csv('data/article_data/meter_level_vs_temp_test.csv', index=False)
-    #exit()
+        while (p_1 < p_0 and n < sam.get_total_levels()):
+            p_0, p_1 = sam.conditional_probability(n=n)
+            if p_1 > p_0:
+                break
+            n += 1
+        meter_level = np.append(meter_level, n)
+    df = pd.DataFrame({'Temperature': temp_range, 'Meter Level': meter_level})
+    df.to_csv('data/article_data/meter_level_vs_temp_test.csv', index=False)
+
+    sam.set_x(params['x'])
+
+    # ----------- Data for the work against time function in the appendix -----------
+    tau_vals = np.linspace(0.0, 1.0, 1000)
+    ratios = [0.01, 0.1, 1.0]
+    for ratio in ratios:
+    # g_eff^2 = P^2 *k_B * T_S and Delta E = k_B * T_S * Q_S
+    # Thus we have g_eff^2/Delta E = P^2/Q_S = ratio
+    # Therefore we can set P = np.sqrt(ratio * Q_S)
+        sam.set_P(np.sqrt(ratio*sam.get_Q_S())) 
+        sam.full_update()
+        params_vs_time(sam, tau_range=tau_vals, fname=f'params_vs_time_ratio={ratio}.csv')
+    # --------------------------------------------------------------------------------
+
+    # ----------- Data for the heatmaps -----------
+    # Reset all the parameters again to make sure we start from the same point
+    sam.set_Q_S(params['Q_S'])
+    sam.set_Q_M(params['Q_M'])
+    sam.set_P(params['P'])
+    sam.set_x(params['x'])
+    sam.set_tau(params['tau'])
+    sam.set_n(params['n_prime'])
+    sam.set_n_upper_limit(params['n_upper_limit'])
+    sam.set_R(0.0)
+    sam.full_update()
+
+    # Times at which to generate the heatmaps
+    tau_vals = [1e-6, 0.125, 0.25, 0.5]
+    for tau in tau_vals:
+        sam.set_tau(tau)
+        sam.full_update()
+        # Heatmap for the ergotropy
+        phase_boundary_multidata_coupling(sam, temp_range=np.linspace(0.0, 2.0, 1000),\
+                                           fname=f'phase_boundary_multidata_tau={tau}_R=0.0.csv',\
+                                              work_type='ergotropy')
+    # --------------------------------------------------------------------------------
+
+    # -------- Data for the thermodynamic and information efficiencies -----------
+    # Reset all the parameters again to make sure we start from the same point
+    sam.set_Q_S(params['Q_S'])
+    sam.set_Q_M(params['Q_M'])
+    sam.set_P(params['P'])
+    sam.set_x(params['x'])
+    sam.set_tau(params['tau'])
+    sam.set_n(params['n_prime'])
+    sam.set_n_upper_limit(params['n_upper_limit'])
+    sam.set_R(0.0)
+    sam.full_update()
+
+    temp_range = np.linspace(0.0, 1.0, 1000)
+    params_vs_temp(sam, temp_range=temp_range, fname='params_vs_temp.csv', type='ergotropy')
 
 
     #sam2 = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
