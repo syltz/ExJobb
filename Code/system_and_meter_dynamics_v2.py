@@ -8,11 +8,11 @@ import pandas as pd
 
 # Throughout this code, the meter is assumed to be a harmonic oscillator
 # and the system is assumed to be a two-level system.
-kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1
+hbar = 1
 
 def main():
-    temp_system = 1.0#*300
+    temp_system = 1.0
     x = 1.0
     Q_S = 1.0
     Q_M = 1.0
@@ -24,42 +24,8 @@ def main():
     # To be clear to anyone reading this later, most of these parameters have been generated
     # by running a simple optimizer on the old W_ext function. Input whatever parameters you want
     # to test.
-
-    # These are all the parameters determined in the old W_ext funciton.
-    params_opt = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.31,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
-    params_opt = {'Q_S': 1.97, 'P': 0.77, 'Q_M': 0.2, 'x': 0.01, 'tau': 0.21,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt'} # Optimal parameters
-    params_naive = {'Q_S': 1.0, 'P': 1.0, 'Q_M': 1.0, 'x': 1.0, 'tau': 0.5,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_naive'} # Naive parameters
-    params_zeno = {'Q_S': 2.25, 'P': 0.72, 'Q_M': 0.2, 'x': 0.01, 'tau': 1e-9,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno'} # Zeno parameters
-    params_opt_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.25,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_eq_temp'} # Optimal parameters but with equal temperatures
-    params_opt_uneq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 0.01, 'tau': 0.25,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_opt_uneq_temp'} # The above parameters but with unequal temperatures
-    params_zeno_eq_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 1.0, 'tau': 1e-6,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_zeno_eq_temp'} #  The above parameters but with equal temperatures and Zeno limit
-    params_big_temp = {'Q_S': 4.33, 'P': 1.04, 'Q_M': 1.51, 'x': 10.0, 'tau': 0.25,\
-                   'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_big_temp'} #  The above parameters but with T_M >> T_S
     params_article = {'Q_S': 4.33, 'P': 1., 'Q_M': 1.5, 'x': 0.01, 'tau': 0.25,\
                       'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_article'} # Parameters from the article
-    # Dictionary of the dictionaries of parameters to test
-    param_sets_exc = {'opt': params_opt, 'naive': params_naive, 'zeno': params_zeno,\
-                   'opt_eq_temp': params_opt_eq_temp, 'zeno_eq_temp': params_zeno_eq_temp,\
-                   'opt_uneq_temp': params_opt_uneq_temp}#, 'big_temp': params_big_temp}
-
-    ### New parameters with the new W_ext function  
-    params_eq_temp = {'Q_S': 4.33, 'P': 0.95, 'Q_M': 1.51, 'x': 1.0, 'tau': 0.27,\
-                      'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_eq_temp'} # Equal temperatures
-    params_eq_temp_zeno = {'Q_S': 0.955, 'P': 1e7, 'Q_M': 5.638, 'x': 1.0, 'tau': 1e-9,\
-                            'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_eq_temp_zeno'} # Equal temperatures and Zeno limit
-    params_uneq_temp = {'Q_S': 2.503, 'P': 2.139, 'Q_M': 1.032, 'x': 0.2, 'tau': 0.10,\
-                        'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_uneq_temp'} # Unequal temperatures
-    params_uneq_temp_zeno = {'Q_S': 1.97, 'P': 0.61, 'Q_M': 0.2, 'x': 0.2, 'tau': 1e-6,\
-                                'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_uneq_temp_zeno'} # Unequal temperatures and Zeno limit
-
-    param_sets_erg = {'eq_temp': params_eq_temp, 'eq_temp_zeno': params_eq_temp_zeno, 'uneq_temp': params_uneq_temp, 'uneq_temp_zeno': params_uneq_temp_zeno}
     
     
     
@@ -182,244 +148,6 @@ def main():
     params_vs_temp(sam, temp_range=temp_range, fname='params_vs_temp.csv', type='ergotropy')
 
 
-    #sam2 = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
-    #sam2.set_tau(params['tau'])
-    #sam2.set_n(params['n_prime'])
-    #sam2.set_n_upper_limit(params['n_upper_limit'])
-    #sam2.set_R(0.0)
-    #sam2.full_update()
-    #eps = 0.002
-    #xvals = [0.2778, 0.4690, 0.6036, 0.7112, 0.8038]
-    #for x in xvals:
-    #    sam.set_x(x-eps)
-    #    sam2.set_x(x+eps)
-    #    sam.full_update()
-    #    sam2.full_update()
-    #    p0minus = 1
-    #    p1minus = 0
-    #    p0plus = 1
-    #    p1plus = 0
-    #    try_minus = True
-    #    try_plus = True
-    #    for n in range(sam.get_total_levels()):
-    #        if try_minus:
-    #            p0minus, p1minus = sam.conditional_probability(n=n)
-    #            if p1minus > p0minus:
-    #                print(f"p1minus > p0minus for n = {n} and x = {x-eps}")
-    #                try_minus = False
-    #        if try_plus:
-    #            p0plus, p1plus = sam2.conditional_probability(n=n)
-    #            if p1plus > p0plus:
-    #                print(f"p1plus > p0plus for n = {n} and x = {x+eps}")
-    #                try_plus = False
-    #        if (try_minus==False and try_plus==False):
-    #            print("Both p1 are greater than p0")
-    #            break
-    #    print("------------------------------")
-    #exit()
-
-
-    #params_vs_temp(sam, temp_range=np.linspace(0.0, 2.0, 2000), fname='params_vs_temp_opt_eq_temp_long_ergotropy.csv', type='ergotropy')
-    #params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'data/params{params["file_ending"]}_vs_time.csv', fixed=params['n_prime'])
-    #pareto_data = pd.read_csv('data/jonas_collab_data/pareto_HE.txt', sep='\t', header=None)
-    #pareto_data.columns = ['Efficiency', 'Power', 'x', 'Q_S', 'Q_M', 'P', 'tau', 'n_prime']
-    #pareto_data.iloc[:, 2:7] = 10 ** pareto_data.iloc[:, 2:7]
-    ## Find the index where power is maximum
-    #max_power_index = pareto_data['Power'].idxmax()
-
-    ## Find the index where efficiency is maximum
-    #max_efficiency_index = pareto_data['Efficiency'].idxmax()
-    #sam_power = SystemAndMeter(T_S=temp_system, x=pareto_data['x'][max_power_index],\
-    #                            Q_S=pareto_data['Q_S'][max_power_index], Q_M=pareto_data['Q_M'][max_power_index],\
-    #                            P=pareto_data['P'][max_power_index], msmt_state=pareto_data['n_prime'][max_power_index],\
-    #                            tau=pareto_data['tau'][max_power_index])
-    #sam_power.full_update()
-    #sam_efficiency = SystemAndMeter(T_S=temp_system, x=pareto_data['x'][max_efficiency_index],\
-    #                                 Q_S=pareto_data['Q_S'][max_efficiency_index],\
-    #                                 Q_M=pareto_data['Q_M'][max_efficiency_index], P=pareto_data['P'][max_efficiency_index],\
-    #                                 msmt_state=pareto_data['n_prime'][max_efficiency_index], tau=pareto_data['tau'][max_efficiency_index])
-    #sams = [sam_power, sam_efficiency]
-    #per_cycle_work(sams, fname='data/per_cycle_work_testing.csv')
-    #fixed_time_work(sams, fname='data/fixed_time_work_testing.csv', time_interval=1.99*sam_power.get_tau())
-
-    #params = params_naive #params_opt_eq_temp
-    #params = param_sets_exc['opt_eq_temp']
-    #tau_vals = [1e-6, 0.125, 0.25, 0.5]
-    #for tau in tau_vals:
-    #    sam.set_Q_S(params['Q_S'])
-    #    sam.set_Q_M(params['Q_M'])
-    #    sam.set_P(params['P'])
-    #    sam.set_x(params['x'])
-    #    sam.set_tau(tau)
-    #    sam.set_R(0.1)
-    #    sam.set_n(1)
-    #    sam.full_update()
-    #    phase_boundary_multidata(sam, temp_range=np.linspace(0.0, 2.0, 1000), fname=f'data/phase_boundary_multidata_tau={tau}_R=0.1.csv', work_type='excess')
-    #sam.set_P(np.sqrt(0.8*sam.get_Q_S()))
-    ##sam.set_Q_M(0.2*sam.get_Q_S())
-    #sam.set_x(0.2)
-    #sam.set_tau(0.11616)
-    #sam.full_update()
-    #short_time = np.linspace(0.0, 0.1, 100)
-    #mid_time = np.linspace(0.1, 0.9, 100)
-    #long_time = np.linspace(0.9, 1.0, 100)
-    #time_interval = np.concatenate((short_time, mid_time, long_time))
-    ##params_vs_time(sam, tau_range=time_interval, fname=f'data/params_vs_time_x={sam.get_x()}_0.4.csv', fixed=params['n_prime'])
-    #low_temp = np.linspace(1e-5, 0.05, 200)
-    #mid_temp = np.linspace(0.05, 0.25, 200)
-    #high_temp = np.linspace(0.25, 0.3, 200)
-    #temp_interval = np.concatenate((low_temp, mid_temp, high_temp))
-    #params_vs_temp(sam, temp_range=temp_interval, fname=f'data/params_vs_temp_x={sam.get_x()}_0.8.csv', fixed=params['n_prime'])
-
-    
-
-    #params = params_uneq_temp
-    #sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
-    #sam.set_tau(0.125)
-    #sam.set_x(0.30)
-    #sam.set_Q_S(1.)
-    #sam.set_Q_M(sam.get_Q_S()/5)
-    #sam.set_P(np.sqrt(Q_S))
-    #sam.full_update()
-    #sam.set_tau(0.25)
-    #sam.set_Q_M(1.5)
-    #sam.set_P(1.0)
-    #sam.set_Q_S(4.33)
-    #sam.full_update()
-    ##probabilities_against_meter_level(sam, fname='data/probabilities_against_meter_level_TEST.csv')
-    #params_vs_temp(sam, temp_range=np.linspace(0, 1.0, 1000), fname='params_vs_temp_opt_eq_temp_long_ergotropy_V2.csv', type='ergotropy')
-
-    params = params_article
-    sam.set_Q_M(params['Q_M'])
-    sam.set_P(params['P'])
-    sam.set_Q_S(params['Q_S'])
-    sam.set_x(params['x'])
-    sam.set_tau(params['tau'])
-    sam.set_n(params['n_prime'])
-    sam.set_n_upper_limit(params['n_upper_limit'])
-    sam.full_update()
-    params_vs_temp(sam, temp_range=np.linspace(0, 1.0, 1000), fname='params_vs_temp_opt_eq_temp_long_ergotropy_V3.csv', type='ergotropy')
-
-
-
-    #probabilities_against_meter_level(sam, fname='data/thesis_data/probabilities_against_meter_level_TESTING2.csv')
-    #save_dirs = ['data/thesis_data/ergotropy/', 'data/thesis_data/excess_work/']
-    #work_type = ['ergotropy', 'excess work']
-    #for dir, work in zip(save_dirs, work_type):
-    #    sam.set_n(params['n_prime'])
-    #    params_vs_temp(sam, temp_range=np.linspace(1e-3, 2.0, 500), fname=f'{dir}params_vs_temp_NEW.csv', fixed=params['n_prime'], type=work)
-    #    params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'{dir}params_vs_time_NEW.csv', fixed=params['n_prime'], type=work)
-    #sam.set_R(0.00)
-    #params_vs_temp(sam, temp_range=np.linspace(0.001, 2, 400), fname=f'{save_dirs[1]}params_vs_temp_R=0.00.csv', fixed=params['n_prime'], type=work_type[1])
-    #for dir, work, in zip(save_dirs, work_type):
-    #    for R in R_vals:
-    #        sam.set_R(R)
-    #        print(f"Params vs temp, R = {R}, type = {work}")
-    #        params_vs_temp(sam, temp_range=np.linspace(0.001, 2, 1000), fname=f'{dir}params_vs_temp_R={R}.csv', fixed=params['n_prime'], type=work)
-    #        sam.set_x(params['x'])
-    #        print(f"Params vs time, R = {R}, type = {work}")
-    #        params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 1000), fname=f'{dir}params_vs_time_R={R}.csv', fixed=params['n_prime'], type=work)
-    #        sam.set_tau(params['tau'])
-
-    #tau_range = np.linspace(0.0, 2.0, 250)
-    #tau_range_2 = np.linspace(98.0, 100.0, 250)
-    #tau_range_tot = np.concatenate((tau_range, tau_range_2))
-    #params_vs_time(sam, tau_range=tau_range_tot, fname=f'data/test_3_vs_time_higher_res.csv', fixed=sam.get_n())
-    #sam.set_R(0.01)
-    #params_vs_time(sam, tau_range=tau_range_tot, fname=f'data/test_3_vs_time_higher_res_R=0.01.csv', fixed=sam.get_n())
-    #res_best = 0
-    #for i in range(10):
-    #    res, x = find_pos_net_work_fixed_temps(sam, n=1, T=1.0)
-    #    if res > res_best:
-    #        res_best = res
-    #        x_best = x
-    #    print(f"Maximum net work extraction: {res_best} meV")
-    #print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
-    #params_vs_time(sam, tau_range=np.linspace(0.0, 2.0, 100), fname=f'data/test_3_vs_time.csv', fixed=sam.get_n())
-    #sam.set_tau(0.335)
-    #params_vs_temp(sam, temp_range=np.linspace(0.01, 2.0, 100), fname=f'data/test_3_vs_temp.csv', fixed=sam.get_n())
-    #sam.set_x(0.2)
-    #params_vs_coupling(sam, g_range=np.linspace(0.01, 2.0, 100), fname=f'data/test_3_vs_coupling.csv', fixed=sam.get_n())
-    #sam.set_P(0.767)
-    #params_vs_omega_per_delta_E(sam, omega_range=np.linspace(0.01, 2.0, 100), fname=f'data/test_3_vs_omega_per_delta_E.csv', fixed=sam.get_n())
-    #sam.set_Q_S(2.451)
-    #sam.set_Q_M(1.018)
-    #params_vs_nprime(sam, nprime_range=np.arange(0, 10), fname=f'data/test_3_vs_nprime.csv')
-    #print("Test 3 done.")
-
-
-
-
-
-    #params_vs_temp(sam, temp_range=np.linspace(0.01, 2, 100), fname=f'data/params{params["file_ending"]}_vs_temperature.csv', fixed=params['n_prime'])
-    #sam.set_tau(params['tau'])
-    #sam.full_update()
-    #params_vs_temp(sam, temp_range=np.linspace(0.1, 2, 100), fname=f'data/params{params["file_ending"]}_vs_temperature.csv')
-    #for n in range(1,10):
-    #    res_best = 0
-    #    for i in range(10):
-    #        res, x = find_pos_net_work_fixed_temps(sam, n=n, T=0.2)
-    #        if res > res_best:
-    #            res_best = res
-    #            x_best = x
-    #    try:
-    #        print(f"Maximum net work extraction: {res_best} meV")
-    #        print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
-    #        print(f'Activation threshold n = {n}')
-    #    except:
-    #        print("No positive net work extraction.")
-    #for i in range(10):
-    #    res, x = find_pos_net_work_fixed_temps(sam)
-    #    if res > res_best:
-    #        res_best = res
-    #        x_best = x
-    #try:
-    #    print(f"Maximum net work extraction: {res_best:.9f} meV")
-    #    print(f'Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, tau = {x_best[3]:.9f}')
-    #    sam.set_Q_S(x_best[0])
-    #    sam.set_P(x_best[1])
-    #    sam.set_Q_M(x_best[2])
-    #    sam.set_tau(x_best[3])
-    #    sam.set_x(params['x'])
-    #    sam.full_update()
-    #    print(f"Net work extraction: {sam.work_extraction()-sam.work_measurement():.3f}")
-    #except:
-    #    print("No positive net work extraction.")
-    #for i in range(10):
-    #    res, x = find_pos_net_work(sam)
-    #    if res > res_best:
-    #        res_best = res
-    #        x_best = x
-    #try:
-    #    print(f"Maximum net work extraction: {res_best:.9f} meV")
-    #    print(f"Optimal parameters: Q_S = {x_best[0]:.3f}, P = {x_best[1]:.3f}, Q_M = {x_best[2]:.3f}, x = {x_best[3]:.3f}, tau = {x_best[4]:.9f}")
-    #    sam.set_Q_S(x_best[0])
-    #    sam.set_P(x_best[1])
-    #    sam.set_Q_M(x_best[2])
-    #    sam.set_x(x_best[3])
-    #    sam.set_tau(x_best[4])
-    #    sam.full_update()
-    #    print(f"Net work extraction: {sam.work_extraction()-sam.work_measurement():.3f}")
-    #except:
-    #    print("No positive net work extraction.")
-    # Simulate phase boundary for dissipative case
-    tau_list = [1e-6, 0.125, 0.25, 0.5]
-    #tau_list= [tau_list[1]]
-    #for tau in tau_list:
-    #    sam.set_tau(tau)
-    #    sam.full_update()
-    #    find_phase_boundary(sam, temp_range=np.linspace(0, 0.178422911889845, 500), fname='data/new_data/phase_boundary_/phase_boundary_unitary_tau=1e-06_start.csv', work_type='excess')
-    ## Simulate power output for unitary cases
-    #for tau in tau_list:
-    #    sam.set_tau(tau)
-    #    sam.full_update()
-    #    params_vs_temp(sam, temp_range=np.linspace(0.001, 2, 1000), fname=f'data/params_vs_temp_unitary_tau={tau}.csv')
-    ##Try to run the multidata function
-    #for tau in tau_list:
-    #    sam.set_tau(tau)
-    #    sam.full_update()
-    #    phase_boundary_multidata(sam, temp_range=np.linspace(0, 2, 1000), fname=f'data/multidata_unitary_tau={tau}_ending.csv')
-    
         
 
 def positive_work_extraction(sam, fname=None, times=[0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]):
@@ -525,7 +253,7 @@ def first_positive_W_ext(sam):
         the system and meter are currently at.
         
         Args:
-            sam (SystemAndMeter): The coupled system and meter object.
+   #e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K         sam (SystemAndMeter): The coupled system and meter object.
         
         Returns:
             int: The first meter level where positive work extraction is possible."""

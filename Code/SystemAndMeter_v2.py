@@ -16,8 +16,8 @@ import numpy as np
 import scipy as sp # Not currently used but can be uncommented if needed
 from scipy.special import factorial, assoc_laguerre
 
-kB = 1#e3*sp.constants.physical_constants['Boltzmann constant in eV/K'][0] # Boltzmann constant in meV/K
-hbar = 1#e3*sp.constants.physical_constants['reduced Planck constant in eV s'][0]# Reduced Planck constant in meV s
+kB = 1
+hbar = 1
 
 class SystemAndMeter:
     def __init__(self, T_S=300, x=1, Q_S=1, Q_M=1, P=1, tau = 0.5, msmt_state=0, n_upper_limit=None, R=0, mass = 1):
