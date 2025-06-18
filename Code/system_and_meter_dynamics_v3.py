@@ -26,14 +26,14 @@ def main():
     # by running a simple optimizer on the old W_ext function. Input whatever parameters you want
     # to test.
     # OLD
-    #params_article = {'Q_S': 4.00, 'P': 1., 'Q_M': 1.5, 'x': 0.1, 'tau': 0.25,\
-    #                  'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_article'} # Parameters from the article
-    params_article = {'Q_S': 1, 'P': 0.1, 'Q_M': 0.1, 'x': 0.1, 'tau': 0.25,\
+    params_article = {'Q_S': 4.00, 'P': 1., 'Q_M': 1.5, 'x': 0.1, 'tau': 0.25,\
+                      'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_article'} # Parameters from the article
+    params_All_Ones = {'Q_S': 1, 'P': 0.1, 'Q_M': 0.1, 'x': 0.1, 'tau': 0.25,\
                       'n_prime': int(1), 'n_upper_limit': None, 'file_ending': '_article'} # Parameters from the article
     
     
     
-    params = params_article
+    params = params_All_Ones
     sam = SystemAndMeter(T_S=temp_system, x=params['x'], Q_S=params['Q_S'], Q_M=params['Q_M'], P=params['P'], msmt_state=params['n_prime'])
     sam.set_tau(params['tau'])
     sam.set_n(params['n_prime'])
@@ -171,11 +171,12 @@ def main():
 
     ## ---------------- Data for the thermodynamic and information efficiencies against time ----------------
     ## Reset all the parameters again to make sure we start from the same point
+    params = params_All_Ones
     sam.set_Q_S(params['Q_S'])
     sam.set_Q_M(params['Q_M'])
     sam.set_P(np.sqrt(0.1*sam.get_Q_S()))  # Set P such that P^2/Q_S = 0.1
     sam.set_x(params['x'])
-    sam.set_x(0.1)
+    sam.set_x(0.05)
     sam.set_tau(params['tau'])
     sam.set_n(params['n_prime'])
     sam.set_n_upper_limit(params['n_upper_limit'])
@@ -190,8 +191,28 @@ def main():
     for ratio in ratios:
         sam.set_P(np.sqrt(ratio*sam.get_Q_S()))
         sam.full_update()
-        params_vs_time(sam, tau_range=tau_range, fname=f'{save_dir}params_vs_time_ratio={ratio}.csv', fixed=params['n_prime'], type='ergotropy')
+        params_vs_time(sam, tau_range=tau_range, fname=f'{save_dir}params_vs_time_ratio={ratio}_All_Ones_x=0.05.csv', fixed=params['n_prime'], type='ergotropy')
     # -----------------------------------------------------------------------------------------------------------
+
+    # ---------------- Just for our own curiosity ----------------
+    params = params_article
+    sam.set_Q_S(params['Q_S'])
+    sam.set_Q_M(params['Q_M'])
+    sam.set_P(np.sqrt(0.1*sam.get_Q_S()))  # Set P such that P^2/Q_S = 0.1
+    sam.set_x(0.2)
+    sam.set_tau(params['tau'])
+    sam.set_n(params['n_prime'])
+    sam.set_n_upper_limit(params['n_upper_limit'])
+    sam.set_R(0.0)
+    sam.full_update()
+    tau_range = np.concatenate( (np.linspace(0.0,0.06,500),np.linspace(0.06, 0.1, 10000),\
+                                    np.linspace(0.1,0.98,1000), np.linspace(0.98,1.02,1000),\
+                                    np.linspace(1.02,1.98,1000), np.linspace(1.98,2.0,500)) )
+    for ratio in ratios:
+        sam.set_P(np.sqrt(ratio*sam.get_Q_S()))
+        sam.full_update()
+        params_vs_time(sam, tau_range=tau_range, fname=f'{save_dir}params_vs_time_ratio={ratio}_x=0.2_extreme.csv', fixed=params['n_prime'], type='ergotropy')
+
 
 
 
@@ -531,9 +552,9 @@ def params_vs_time(
         #    sam.set_n_upper_limit(n_upper_limit)
         #else:
         #    sam.set_n_upper_limit(sam.get_total_levels())
-        T_M = sam.get_temp_meter()
-        omega = sam.get_omega()
-        if tau < 0.1:
+        if tau < 0.3:
+            T_M = sam.get_temp_meter()
+            omega = sam.get_omega()
             sam.set_n_upper_limit(int(100*np.ceil(kB*T_M/(hbar*omega))+1))
         else:
             sam.update_total_levels()
@@ -565,7 +586,7 @@ def params_vs_time(
             I_m = sam.mutual_information()
             I = I_obs + I_m
         except Exception as e:
-            print(f"[WARNING] Skipping T = {T:.3f}: error computing information: {e}")
+            print(f"[WARNING] Skipping tau = {tau:.3f}: error computing information: {e}")
             continue
 
         # Append results
@@ -655,65 +676,6 @@ def params_vs_omega_per_delta_E(sam: SystemAndMeter, omega_range=np.linspace(0.0
     df.to_csv(fname, mode='a', index=False)
     print(f"Parameters vs omega/delta_E saved to {fname}")
 
-#def params_vs_time(sam: SystemAndMeter, tau_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_time.csv", fixed=None, type='ergotropy'):
-#    """ Investigate how the various system parameters vary with time.
-#        The parameters are the work W, the system heat Q_S, the meter heat Q_M, the information I=I_m+I_obs
-#        Saves the data to a csv file.
-#        
-#        Args:
-#            sam (SystemAndMeter): The coupled system and meter object.
-#            tau_range (ndarray or list, optional): The time range to evaluate the parameters at. Defaults to np.linspace(0.0, 2.0, 100).
-#            fname (str, optional): The filename to save the data to. Defaults to "data/params_vs_time.csv".
-#    """
-#    results = {
-#        'Time': [],
-#        "Work": [],
-#        "System Heat": [],
-#        "Meter Heat": [],
-#        "Observer Information": [],
-#        "Mutual Information": [],
-#        "Information": []
-#    }
-#    for tau in tau_range:
-#        sam.set_tau(tau)
-#        sam.full_update()
-#        if fixed is None:
-#            n = first_positive_W_ext(sam)
-#        else:
-#            n = fixed
-#        sam.set_n(n)
-#        sam.set_n_upper_limit(sam.get_total_levels())
-#        # Check if we're in the Zeno regime, actually probably don't use this.
-#        # The Zeno regime function might not be correct.
-#        if type == 'ergotropy':
-#            W_ext = sam.ergotropy()
-#        elif type == 'excess work':
-#            W_ext = sam.work_extraction_excess()
-#        W_meas = sam.work_measurement()
-#        W = W_ext - W_meas
-#        Q_S = -W_ext
-#        Q_M = W_meas
-#        I_obs = sam.observer_information()
-#        I_m = sam.mutual_information()
-#        I = I_obs + I_m
-#        results['Time'].append(tau)
-#        results['Work'].append(W)
-#        results['System Heat'].append(Q_S)
-#        results['Meter Heat'].append(Q_M)
-#        results['Observer Information'].append(I_obs)
-#        results['Mutual Information'].append(I_m)
-#        results['Information'].append(I)
-#    df = pd.DataFrame(results)
-#
-#    # Write the header lines manually
-#    with open(fname, mode="w") as file:
-#        file.write(f"System temperature: {sam.get_temp_system():.3f}, \
-#                    Coupling strength: {sam.get_P():.3f}, \
-#                        Delta_E: {sam.get_Q_S():.3f}, Omega: {sam.get_Q_M():.3f}, \
-#                            Temperature: {sam.get_x():.3f}\n")
-#    # Append the data to the file
-#    df.to_csv(fname, mode='a', index=False)
-#    print(f"Parameters vs time saved to {fname}")
 
 def params_vs_coupling(sam: SystemAndMeter, g_range=np.linspace(0.0, 2.0, 100), fname="data/params_vs_coupling.csv", fixed=None):
     """ Investigate how the various system parameters vary with the coupling strength.
@@ -963,45 +925,92 @@ def phase_boundary_multidata(sam: SystemAndMeter, temp_range=np.linspace(0.0, 2.
             file.write(f"\n")
     print(f"Phase boundary saved to {fname}")
 
-def phase_boundary_multidata_coupling(sam: SystemAndMeter, temp_range=np.linspace(1e-2, 2.0, 100), fname="data/testing.csv", work_type="ergotropy"):
-    """ Investigate the phase boundary between negative net work regions by varying the parameter
-    g_eff**2 / delta E or in other words the ratio P^2/Q_S 
+def phase_boundary_multidata_coupling(sam: SystemAndMeter,
+                                      temp_range=np.linspace(1e-2, 2.0, 100),
+                                      fname="data/phase_boundary_coupling.csv",
+                                      work_type="ergotropy"):
+    """
+    Investigate the phase boundary by evaluating net work across varying coupling strengths
+    (P² / Q_S) for a range of temperatures.
+
+    Produces a long-form CSV table with columns:
+    T, P2_over_QS, W, W_ext, W_meas
 
     Args:
-        sam (SystemAndMeter): The coupled system and meter object.
-        temp_range (ndarray, list, optional): The temperature range to investigate.
-        fname (str, optional): the filename to save the data to. Defaults to "data/phase_boundary_coupling.csv".
-
+        sam (SystemAndMeter): Coupled system-meter object.
+        temp_range (array-like): Array of temperature values.
+        fname (str): Output CSV file name.
+        work_type (str): Type of work ('ergotropy' or 'excess work').
     """
     Q_S = sam.get_Q_S()
-    P_range = np.linspace(0.1*Q_S, 10*Q_S, 500)
-    # Write header lines manually
-    with open(fname, mode="w") as file:
-        file.write(f"System temperature: {sam.get_temp_system():.3f}, \
-                Omega param: {sam.get_Q_M():.3f},\
-                Period: {sam.get_tau():.3F}\n")
-        for T in temp_range:
-            file.write(f"{T},")
-        file.write("\n")
+    P_range = np.linspace(0.1 * Q_S, 10 * Q_S, 500)
 
-    # For each temperature calculate the net work for each P in the range
+    # Prepare a list of results to build the DataFrame
+    records = []
+
     for P in P_range:
         sam.set_P(P)
         sam.full_update()
-        # Calculate the net work for each Q_M in the range
-        with open(fname, mode="a") as file:
-            for i,T in enumerate(temp_range):
-                sam.set_x(T)
-                sam.full_update()
-                W_ext = sam.work_extraction(work_type=work_type)
-                W_meas = sam.work_measurement()
-                W = W_ext - W_meas
-                element = [P**2/Q_S, W, W_ext, W_meas]
-                file.write(f"{element},")
-        # New line for the next round of values
-        with open(fname, mode="a") as file:
-            file.write(f"\n")
+
+        for T in temp_range:
+            sam.set_x(T)
+            sam.full_update()
+
+            W_ext = sam.work_extraction(work_type=work_type)
+            W_meas = sam.work_measurement()
+            W = W_ext - W_meas
+
+            records.append({
+                "T": T,
+                "P2_over_QS": P**2 / Q_S,
+                "W": W,
+                "W_ext": W_ext,
+                "W_meas": W_meas
+            })
+
+    # Convert to DataFrame and write to CSV
+    df = pd.DataFrame(records)
+    df.to_csv(fname, index=False)
     print(f"Phase boundary multidata saved to {fname}")
+#def phase_boundary_multidata_coupling(sam: SystemAndMeter, temp_range=np.linspace(1e-2, 2.0, 100), fname="data/testing.csv", work_type="ergotropy"):
+#    """ Investigate the phase boundary between negative net work regions by varying the parameter
+#    g_eff**2 / delta E or in other words the ratio P^2/Q_S 
+#
+#    Args:
+#        sam (SystemAndMeter): The coupled system and meter object.
+#        temp_range (ndarray, list, optional): The temperature range to investigate.
+#        fname (str, optional): the filename to save the data to. Defaults to "data/phase_boundary_coupling.csv".
+#
+#    """
+#    Q_S = sam.get_Q_S()
+#    P_range = np.linspace(0.1*Q_S, 10*Q_S, 500)
+#    # Write header lines manually
+#    with open(fname, mode="w") as file:
+#        file.write(f"System temperature: {sam.get_temp_system():.3f}, \
+#                Omega param: {sam.get_Q_M():.3f},\
+#                Period: {sam.get_tau():.3F}\n")
+#        for T in temp_range:
+#            file.write(f"{T},")
+#        file.write("\n")
+#
+#    # For each temperature calculate the net work for each P in the range
+#    for P in P_range:
+#        sam.set_P(P)
+#        sam.full_update()
+#        # Calculate the net work for each Q_M in the range
+#        with open(fname, mode="a") as file:
+#            for i,T in enumerate(temp_range):
+#                sam.set_x(T)
+#                sam.full_update()
+#                W_ext = sam.work_extraction(work_type=work_type)
+#                W_meas = sam.work_measurement()
+#                W = W_ext - W_meas
+#                element = [P**2/Q_S, W, W_ext, W_meas]
+#                file.write(f"{element},")
+#        # New line for the next round of values
+#        with open(fname, mode="a") as file:
+#            file.write(f"\n")
+#    print(f"Phase boundary multidata saved to {fname}")
 
 def probabilities_against_meter_level(sam: SystemAndMeter, fname="data/probabilities_against_meter_level.csv"):
     """ Creates a DataFrame with four columns where the row indices correspond to the meter level.

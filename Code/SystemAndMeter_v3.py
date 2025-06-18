@@ -649,10 +649,10 @@ class SystemAndMeter:
         """
             Updates the total number of energy levels in the meter.
         """
-        self.total_levels = int(10*np.ceil(kB*self.T_m/(hbar*self.omega_meter))+1)
+        #self.total_levels = int(10*np.ceil(kB*self.T_m/(hbar*self.omega_meter))+1)
         T_M = self.get_temp_meter()
         omega = self.get_omega()
-        self.total_levels = int(20*np.ceil(kB*T_M/(hbar*omega))+1)
+        self.total_levels = int(30*np.ceil(kB*T_M/(hbar*omega))+1)
     def full_update(self):
         """
             Updates all the hidden parameters of the system and meter.
