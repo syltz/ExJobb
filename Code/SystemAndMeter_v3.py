@@ -9,6 +9,23 @@
 # The system is a two-level system (TLS) and the meter is a harmonic oscillator.
 # I recognize that the naming of the parameters is a bit confusing, but I made a poor choice at some point in the past
 # and now I have to live with it.
+#
+# Generally, everthing is scaled to the system temperature T_S, so the parameters are dimensionless.
+# The parameters are:
+# T_S: Temperature of the system 
+# x: Normalized temperature of the meter, T_M = x*T_S
+# Q_S: Dimensionless scaling parameter for the TLS energy, delta_E = Q_S*kB*T_S
+# Q_M: Dimensionless scaling parameter for the meter energy, hbar*omega = Q_M*kB*T_S
+# P: Dimensionless parameter that sets coupling strength and mass, g * sqrt(m) = P*sqrt(kB*T_S)
+# tau: Normalized time of interaction between the system and meter, t = tau*2*pi/omega
+# msmt_state: The energy level of the meter to measure, n (only really used by the excess work and faulty ergotropy)
+# n_upper_limit: The upper limit of the energy levels of the meter to measure
+# R: Dimensionless parameter that sets the dissipation rate of the meter, gamma = R*omega
+# mass: Mass of the meter (not really used, instead we at all times take m=1 and simply use the effective coupling g_eff^2=g^2*m. But it can be set)
+#
+# An important caveat is that some of the functions of this class are not fully vectorized, nor are they used in the paper.
+# They are remnants of previous versions of the code and may not work as intended. But everything that is used in the paper
+# works as intended and should be fully vectorized.
 #########
 
 
@@ -348,6 +365,59 @@ class SystemAndMeter:
 
 
 
+    def ergotropy_faulty(self, time=None):
+        """ Calculates a faulty ergotropy-like quantity. This time we essentially calculate the ergotropy, but also allow ourselves to
+        restrict the lower limit of the energy levels. Essentially allowing us to fix the meter state n', and then doing the same
+        calculation as in the ergotropy function. This is not the same as the ergotropy, but rather a faulty implementation of it.
+        This is done on purpose to investigate effects of fixing the meter state n' from which we can extract work.
+        Args:
+            time (float, optional): Time at which to evaluate the "faulty" ergotropy. Defaults to None.
+
+        Returns:
+            float: The faulty ergotropy-like quantity.
+        """
+        if time is None:
+            time = self.time
+
+        delta_E = self.delta_E
+        n_values = np.arange(self.n, self.n_upper_limit)
+
+        p0_array, p1_array = self.joint_probability(n=n_values, t=time)
+
+        mask = p1_array > p0_array  # Only consider states where work can be extracted
+        W = delta_E * np.sum(p1_array[mask] - p0_array[mask])
+
+        if not np.isfinite(W):
+            W = 0
+
+        return W
+    #def ergotropy_faulty(self, time=None):
+    #    """Vectorized calculation of an ergotropy-like quantity. To be clear, this is not
+    #    a faulty function, but rather a faulty implementation of the ergotropy. This is 
+    #    done on purpose to investigate effects of fixing the meter state n' from which
+    #    the ergotropy is calculated rather than updating dynamically via a Heaviside step.
+
+    #    Args:
+    #        time (float, optional): Time at which to evaluate the "faulty" ergotropy. Defaults to None.
+    #    """
+    #    if time is None:
+    #        time = self.time
+
+    #    delta_E = self.delta_E
+    #    n_values = np.arange(self.n, self.n_upper_limit + 1)
+
+    #    p0_array, p1_array = self.joint_probability(n=n_values, t=time)
+
+    #    delta_probs = p1_array - p0_array
+
+    #    W = delta_E * np.sum(delta_probs)
+
+    #    if not np.isfinite(W):
+    #        W = 0
+
+    #    return W
+
+
     def work_extraction(self, time=None, work_type='ergotropy'):
         """Calculates the work extracted from the system at time t.
 
@@ -361,10 +431,23 @@ class SystemAndMeter:
         """
         if (time==None):
             time = self.time
-        if work_type == 'ergotropy':
-            return self.ergotropy(time)
-        elif work_type == 'excess':
-            return self.work_extraction_excess(time)
+        work_methods = {
+            'ergotropy': self.ergotropy,
+            'excess': self.work_extraction_excess,
+            'faulty': self.ergotropy_faulty
+        }
+        try:
+            return work_methods[work_type](time)
+        except KeyError:
+            raise ValueError(f"Invalid work_type '{work_type}'. Choose from {list(work_methods.keys())}.")
+        #if work_type == 'ergotropy':
+        #    return self.ergotropy(time)
+        #elif work_type == 'excess':
+        #    return self.work_extraction_excess(time)
+        #elif work_type == 'faulty':
+        #    return self.ergotropy_faulty(time)
+        #else:
+        #    raise ValueError("Invalid work_type. Choose from 'ergotropy', 'excess', or 'faulty'.")
 
 
     def work_extraction_excess(self, time=None):
